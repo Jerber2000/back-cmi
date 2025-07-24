@@ -1,5 +1,8 @@
 //se importa la funcion de vericar token
-const { verificarToken } = require('../utils/jwt')
+const { verificarToken } = require('../utils/jwt');
+const { PrismaClient } = require('../generated/prisma');
+
+const prisma = new PrismaClient();
 
 const validarToken = (req, res, next) => {
     const authHeader = req.header('Authorization');
@@ -26,6 +29,76 @@ const validarToken = (req, res, next) => {
     }
 };
 
+const verificarUsuarioEnBD = async (req, res, next) => {
+    
+    try{
+        //tomar el id del usuario del token decodificado
+        const idusuario = req.usuario.id || req.usuario.idusuario;
+        
+        if(!idusuario){
+            return res.status(401).json({
+                success: false,
+                message: 'Token no contiene ID de usuario válido'
+            });
+        }
+
+        //buscar usuario en BD
+        const usuario = await prisma.usuario.findFirst({
+            where:{
+                idusuario: parseInt(idusuario),
+                estado: 1
+            },
+            select:{
+                idusuario: true,
+                usuario:   true,
+                correo:    true,
+                nombres:   true,
+                apellidos: true,
+                fkrol:     true,
+                estado:    true
+            }
+        });
+
+        if(!usuario){
+            return res.status(401).json({
+                success: false,
+                message: 'Usuario no encontrado o inactivo'
+            });
+        }
+
+        //agregar datos del usuario al request 
+        req.usuario = {
+            ...req.usuario,
+            ...usuario
+        };
+
+        next();
+    }catch(error){
+        return res.status(500).json({
+            success: false,
+            message: 'Error al verificar usuario midd validacion',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
+// Middleware para verificar si el usuario puede acceder a su propio perfil
+// const autorizarUsuario = (req, res, next) => {
+//     const { id } = req.params;
+//     const usuarioId = req.usuario.id;
+
+//     // Permitir acceso solo si es el mismo usuario o si es admin (puedes agregar lógica de roles)
+//     if (parseInt(id) !== usuarioId) {
+//         return res.status(403).json({
+//             success: false,
+//             message: 'No tienes permisos para acceder a este recurso'
+//         });
+//     }
+
+//     next();
+// };
+
 module.exports = {
-  validarToken
+  validarToken,
+  verificarUsuarioEnBD
 };

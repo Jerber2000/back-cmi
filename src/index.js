@@ -32,9 +32,11 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Importar rutas
 const authRoutes = require('./routes/authRoutes');
+const usuarioRoute = require('./routes/usuarioRoutes');
 
 // Usar rutas
 app.use('/api/auth', authRoutes);
+app.use('/api/usuario', usuarioRoute);
 
 // Ruta raíz
 app.get('/', (req, res) => {

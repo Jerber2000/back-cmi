@@ -5,7 +5,7 @@ const authController       = require('../controllers/authController');
 const validarLogin         = require('../middlewares/validarLogin');
 const { validarToken }     = require('../middlewares/auth');
 const ResetearClaveLimiter = require('../middlewares/rateLimiterMiddleware');
-const validarResetearPass  = require('../middlewares/validacionMiddleware');
+const { validarResetearPass } = require('../middlewares/validacionMiddleware');
 
 router.post('/login',
   validarLogin,
