@@ -46,7 +46,11 @@ app.use(helmet());
 
 // CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: [
+    'https://front-cmi-production.up.railway.app', // Tu frontend en Railway
+    'http://localhost:3000', // Para desarrollo local
+    'http://localhost:5173', // Si usas Vite
+  ],
   credentials: true
 }));
 
