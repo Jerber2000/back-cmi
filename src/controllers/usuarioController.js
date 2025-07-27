@@ -60,7 +60,7 @@ const crearUsuario = async (req, res) => {
 };
 
 //actualizar usuario
-const actuarlizarUsuario = async (req, res) => {
+const actualizarUsuario = async (req, res) => {
     try{
         const { idusuario } = req.params;
         const updateData = req.body;
@@ -131,7 +131,7 @@ const actualizarPerfil = async (req, res) => {
             delete updateData.fkrol;
         }
 
-        const resultado = await usuarioService.actuarlizarUsuario(idusuario, updateData);
+        const resultado = await usuarioService.actualizarUsuario(idusuario, updateData);
 
         if (resultado.success) {
             res.status(200).json(resultado);
@@ -148,7 +148,7 @@ const actualizarPerfil = async (req, res) => {
 };
 
 module.exports = {
- obtenerUsuarios,
+    obtenerUsuarios,
     obtenerUsuarioPorId,
     crearUsuario,
     actualizarUsuario, 
