@@ -5,7 +5,14 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/index.js",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "build": "npx prisma generate",
+    "migrate": "npx prisma migrate deploy",
+    "migrate:dev": "npx prisma migrate dev",
+    "db:push": "npx prisma db push",
+    "db:seed": "node src/utils/seed.js",
+    "prisma:studio": "npx prisma studio",
+    "prisma:reset": "npx prisma migrate reset"
   },
   "keywords": [],
   "author": "",
