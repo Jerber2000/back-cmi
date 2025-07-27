@@ -45,11 +45,11 @@ const app = express();
 app.use(helmet());
 
 // CORS
+// En tu back-cmi/src/index.js
 app.use(cors({
   origin: [
-    'https://front-cmi-production.up.railway.app', // Tu frontend en Railway
-    'http://localhost:3000', // Para desarrollo local
-    'http://localhost:5173', // Si usas Vite
+    'https://front-cmi-production.up.railway.app',
+    'http://localhost:4200'
   ],
   credentials: true
 }));
