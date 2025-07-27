@@ -4,7 +4,7 @@ const {
     obtenerUsuarios,
     obtenerUsuarioPorId,
     crearUsuario,
-    actuarlizarUsuario,
+    actualizarUsuario,
     eliminarUsuario
  } = require('../controllers/usuarioController');
 const autenticacion = require('../middlewares/auth');
@@ -37,7 +37,7 @@ router.put(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarUsuarioActualizar,
-    actuarlizarUsuario
+    actualizarUsuario
 );
 
 router.put(
