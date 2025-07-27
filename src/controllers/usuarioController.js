@@ -148,10 +148,10 @@ const actualizarPerfil = async (req, res) => {
 };
 
 module.exports = {
-    obtenerUsuarios,
+ obtenerUsuarios,
     obtenerUsuarioPorId,
     crearUsuario,
-    actuarlizarUsuario,
+    actualizarUsuario, 
     eliminarUsuario,
     obtenerPerfil,
     actualizarPerfil
