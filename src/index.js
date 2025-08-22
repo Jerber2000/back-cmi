@@ -1,35 +1,4 @@
 require('dotenv').config();
-
-// ✅ AGREGAR - Importar Prisma
-const { PrismaClient } = require('./generated/prisma');
-const prisma = new PrismaClient();
-
-// ✅ AGREGAR - Función de conexión a la base de datos
-async function connectDB() {
-  try {
-    await prisma.$connect();
-    console.log('✅ Conectado a PostgreSQL con Prisma');
-    
-    // Test opcional: contar usuarios
-    const userCount = await prisma.usuario.count();
-    console.log(`📊 Usuarios en la base de datos: ${userCount}`);
-    
-    // Test opcional: contar pacientes
-    const patientCount = await prisma.paciente.count();
-    console.log(`👥 Pacientes en la base de datos: ${patientCount}`);
-    
-  } catch (error) {
-    console.error('❌ Error conectando a la base de datos:', error);
-    // No terminar el proceso en producción, solo mostrar el error
-    if (process.env.NODE_ENV === 'development') {
-      process.exit(1);
-    }
-  }
-}
-
-// ✅ AGREGAR - Ejecutar conexión
-connectDB();
-
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -45,41 +14,56 @@ const app = express();
 app.use(helmet());
 
 // CORS
-// En tu back-cmi/src/index.js
 app.use(cors({
-  origin: [
-    'https://front-cmi-production.up.railway.app',
-    'http://localhost:4200'
-  ],
+  origin: process.env.FRONTEND_URL || '*',
   credentials: true
 }));
 
 // Logging
 app.use(morgan('combined'));
 
-// Parsing de requests
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// ========================
+// 🔧 MIDDLEWARE CONDICIONAL PARA JSON
+// ========================
 
-// ✅ AGREGAR - Middleware para hacer prisma disponible en las rutas
+// ✅ SOLUCIÓN: Solo aplicar express.json() a rutas que NO sean de archivos
 app.use((req, res, next) => {
-  req.prisma = prisma;
-  next();
+  // Si la ruta es de archivos, NO procesarla como JSON
+  if (req.path.startsWith('/api/files')) {
+    console.log('🔧 Ruta de archivos detectada, omitiendo express.json():', req.path);
+    return next();
+  }
+  
+  // Para todas las demás rutas, aplicar express.json()
+  express.json({ limit: '10mb' })(req, res, next);
+});
+
+// URLencoded solo para formularios normales (no archivos)
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/files')) {
+    return next();
+  }
+  express.urlencoded({ extended: true, limit: '10mb' })(req, res, next);
 });
 
 // ========================
 // RUTAS
 // ========================
 
-// Importar rutas
+// 🆕 IMPORTANTE: Rutas de archivos PRIMERO (antes que otras rutas)
+const fileRoutes = require('./routes/fileRoutes');
+app.use('/api/files', fileRoutes); // ← Esta ruta NO usará express.json()
+
+// Otras rutas (estas SÍ usarán express.json())
 const authRoutes = require('./routes/authRoutes');
 const usuarioRoute = require('./routes/usuarioRoutes');
 const pacienteRoutes = require('./routes/pacienteRoutes');
+const expedienteRoutes = require('./routes/expedienteRoutes'); // ⭐ NUEVA RUTA
 
-// Usar rutas
 app.use('/api/auth', authRoutes);
 app.use('/api/pacientes', pacienteRoutes);
 app.use('/api/usuario', usuarioRoute);
+app.use('/api/expedientes', expedienteRoutes); // ⭐ NUEVA RUTA REGISTRADA
 
 // Ruta raíz
 app.get('/', (req, res) => {
@@ -95,16 +79,26 @@ app.get('/', (req, res) => {
       pacientes: {
         listar: 'GET /api/pacientes',
         crear: 'POST /api/pacientes',
-        obtener: 'GET /api/pacientes/:id'
+        obtener: 'GET /api/pacientes/:id',
+        actualizar: 'PUT /api/pacientes/:id',
+        eliminar: 'DELETE /api/pacientes/:id'
       },
-      usuarios: {
-        listar: 'GET /api/usuario',
-        crear: 'POST /api/usuario'
+      expedientes: { // ⭐ NUEVOS ENDPOINTS
+        listar: 'GET /api/expedientes',
+        crear: 'POST /api/expedientes',
+        obtener: 'GET /api/expedientes/:id',
+        actualizar: 'PUT /api/expedientes/:id',
+        eliminar: 'DELETE /api/expedientes/:id',
+        disponibles: 'GET /api/expedientes/disponibles',
+        generarNumero: 'GET /api/expedientes/generar-numero',
+        estadisticas: 'GET /api/expedientes/estadisticas'
+      },
+      archivos: {
+        subir: 'POST /api/files/upload',
+        ver: 'GET /api/files/view/:fileName',
+        eliminar: 'DELETE /api/files/delete/:pacienteId/:tipo',
+        paciente: 'GET /api/files/patient/:pacienteId'
       }
-    },
-    database: {
-      status: 'connected',
-      provider: 'PostgreSQL'
     }
   });
 });
@@ -121,14 +115,51 @@ app.use((req, res, next) => {
   });
 });
 
-// Middleware global para manejo de errores
+// 🔧 MIDDLEWARE MEJORADO PARA MANEJO DE ERRORES
 app.use((error, req, res, next) => {
-  console.error('Error no manejado:', error);
+  console.error('❌ Error no manejado:', error);
   
+  // 🆕 Manejo especial para errores de parsing JSON (el error que tenías)
+  if (error.type === 'entity.parse.failed') {
+    console.error('❌ Error de parsing JSON en ruta:', req.path);
+    return res.status(400).json({
+      success: false,
+      message: 'Error al procesar los datos enviados. Verifique el formato.'
+    });
+  }
+  
+  // Errores de multer (archivos)
+  if (error.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({
+      success: false,
+      message: 'El archivo es muy grande. Máximo 5MB permitido.'
+    });
+  }
+  
+  if (error.code === 'LIMIT_UNEXPECTED_FILE') {
+    return res.status(400).json({
+      success: false,
+      message: 'Campo de archivo inesperado.'
+    });
+  }
+  
+  if (error.code === 'ENOENT') {
+    return res.status(404).json({
+      success: false,
+      message: 'Archivo no encontrado.'
+    });
+  }
+  
+  // Error genérico
   res.status(500).json({
     success: false,
     message: 'Error interno del servidor',
-    ...(process.env.NODE_ENV === 'development' && { error: error.message })
+    ...(process.env.NODE_ENV === 'development' && { 
+      error: error.message,
+      stack: error.stack,
+      path: req.path,
+      method: req.method
+    })
   });
 });
 
@@ -141,7 +172,8 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Servidor ejecutándose en puerto ${PORT}`);
   console.log(`🔗 URL: http://localhost:${PORT}`);
-  console.log(`🌍 Modo: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📁 Archivos se guardarán en: uploads/pacientes/`);
+  console.log(`🔧 Middleware configurado para manejar archivos correctamente`);
 });
 
 // Manejo de errores no capturados
@@ -155,13 +187,4 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-// ✅ AGREGAR - Graceful shutdown
-process.on('SIGINT', async () => {
-  console.log('🔄 Cerrando servidor...');
-  await prisma.$disconnect();
-  console.log('✅ Conexión a base de datos cerrada');
-  process.exit(0);
-});
-
-// ✅ AGREGAR - Exportar prisma para uso en otros archivos
-module.exports = { prisma };
+module.exports = app;
