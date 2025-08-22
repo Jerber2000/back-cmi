@@ -40,7 +40,7 @@ router.put(
     actuarlizarUsuario
 );
 
-router.put(
+router.delete(
     '/eliminarUsuario/:idusuario',
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,

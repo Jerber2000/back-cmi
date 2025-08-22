@@ -50,9 +50,9 @@ const validarUsuarioCreacion = [
     // Validación de clave
     body('clave')
         .isLength({ min: 8, max: 12 })
-        .withMessage('La clave debe tener entre 8 y 12 caracteres')
+        .withMessage('La contraseña debe tener entre 8 y 12 caracteres')
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[\]{};':"\\|,.<>\/?]).+$/)
-        .withMessage('La clave debe contener al menos: una mayúscula, una minúscula, un número y un carácter especial'),
+        .withMessage('La contraseña debe contener al menos: una mayúscula, una minúscula, un número y un carácter especial'),
     
     // Validación de nombres
     body('nombres')
@@ -103,9 +103,9 @@ const validarUsuarioActualizar = [
     body('clave')
         .optional()
         .isLength({ min: 8, max: 12 })
-        .withMessage('La clave debe tener al menos 8 caracteres y maximo 12 caracteres')
+        .withMessage('La contraseña debe tener al menos 8 caracteres y maximo 12 caracteres')
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[\]{};':"\\|,.<>\/?]).+$/)
-        .withMessage('La clave debe contener al menos una mayúscula, una minúscula, un caracter especial y un número'),
+        .withMessage('La contraseña debe contener al menos una mayúscula, una minúscula, un caracter especial y un número'),
     body('nombres')
         .optional()
         .isLength({ min: 2, max: 50 })
