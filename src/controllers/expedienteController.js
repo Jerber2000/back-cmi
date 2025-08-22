@@ -3,16 +3,18 @@ const { PrismaClient } = require('../generated/prisma');
 const prisma = new PrismaClient();
 
 class ExpedienteController {
-  // Obtener todos los expedientes con paginación
-  static async getAllExpedientes(req, res) {
+  /**
+   * Obtiene todos los expedientes con paginación y búsqueda
+   */
+  static async obtenerTodosLosExpedientes(req, res) {
     try {
-      const { page = 1, limit = 10, search = '' } = req.query;
-      const skip = (parseInt(page) - 1) * parseInt(limit);
+      const { pagina = 1, limite = 10, busqueda = '' } = req.query;
+      const saltar = (parseInt(pagina) - 1) * parseInt(limite);
 
-      const whereCondition = search ? {
+      const condicionBusqueda = busqueda ? {
         OR: [
-          { numeroexpediente: { contains: search, mode: 'insensitive' } },
-          { historiaenfermedad: { contains: search, mode: 'insensitive' } }
+          { numeroexpediente: { contains: busqueda, mode: 'insensitive' } },
+          { historiaenfermedad: { contains: busqueda, mode: 'insensitive' } }
         ]
       } : {};
 
@@ -20,10 +22,10 @@ class ExpedienteController {
         prisma.expediente.findMany({
           where: {
             estado: 1,
-            ...whereCondition
+            ...condicionBusqueda
           },
-          skip,
-          take: parseInt(limit),
+          skip: saltar,
+          take: parseInt(limite),
           orderBy: {
             fechacreacion: 'desc'
           },
@@ -41,33 +43,34 @@ class ExpedienteController {
         prisma.expediente.count({
           where: {
             estado: 1,
-            ...whereCondition
+            ...condicionBusqueda
           }
         })
       ]);
 
       res.json({
-        success: true,
-        data: expedientes,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
+        exito: true,
+        datos: expedientes,
+        paginacion: {
+          pagina: parseInt(pagina),
+          limite: parseInt(limite),
           total,
-          totalPages: Math.ceil(total / parseInt(limit))
+          totalPaginas: Math.ceil(total / parseInt(limite))
         }
       });
     } catch (error) {
-      console.error('Error al obtener expedientes:', error);
       res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
+        exito: false,
+        mensaje: 'Error interno del servidor',
         error: error.message
       });
     }
   }
 
-  // Obtener un expediente por ID
-  static async getExpedienteById(req, res) {
+  /**
+   * Obtiene un expediente específico por su ID
+   */
+  static async obtenerExpedientePorId(req, res) {
     try {
       const { id } = req.params;
 
@@ -105,32 +108,33 @@ class ExpedienteController {
 
       if (!expediente) {
         return res.status(404).json({
-          success: false,
-          message: 'Expediente no encontrado'
+          exito: false,
+          mensaje: 'Expediente no encontrado'
         });
       }
 
       res.json({
-        success: true,
-        data: expediente
+        exito: true,
+        datos: expediente
       });
     } catch (error) {
-      console.error('Error al obtener expediente:', error);
       res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
+        exito: false,
+        mensaje: 'Error interno del servidor',
         error: error.message
       });
     }
   }
 
-  // Crear nuevo expediente
-  static async createExpediente(req, res) {
+  /**
+   * Crea un nuevo expediente médico
+   */
+  static async crearExpediente(req, res) {
     try {
       const {
-        idpaciente,
+        fkpaciente,
         numeroexpediente,
-        generarAutomatico = false, // Nueva opción para generar automáticamente
+        generarAutomatico = false,
         historiaenfermedad,
         antmedico,
         antmedicamento,
@@ -167,41 +171,30 @@ class ExpedienteController {
         examenfisgmt
       } = req.body;
 
-      console.log('📝 Creando expediente con datos:', req.body);
-
-      
-      // Obtener usuario del middleware o usar valor por defecto
       const usuario = req.usuario?.usuario || 'sistema';
-
       let numeroExpedienteFinal;
 
       // Determinar el número de expediente
       if (generarAutomatico || !numeroexpediente || numeroexpediente.trim() === '') {
-        // Generar número automáticamente
-        console.log('🤖 Generando número de expediente automáticamente...');
         numeroExpedienteFinal = await ExpedienteController._generarNumeroAutomatico();
-        console.log('✅ Número generado:', numeroExpedienteFinal);
       } else {
-        // Usar número manual proporcionado
-        console.log('✏️ Usando número de expediente manual:', numeroexpediente);
         numeroExpedienteFinal = numeroexpediente.trim();
         
-        // Verificar que el número manual no exista
-        const existingExpediente = await prisma.expediente.findUnique({
+        const expedienteExistente = await prisma.expediente.findUnique({
           where: { numeroexpediente: numeroExpedienteFinal }
         });
 
-        if (existingExpediente) {
+        if (expedienteExistente) {
           return res.status(400).json({
-            success: false,
-            message: 'Ya existe un expediente con ese número'
+            exito: false,
+            mensaje: 'Ya existe un expediente con ese número'
           });
         }
       }
 
-      // Crear expediente
       const expediente = await prisma.expediente.create({
         data: {
+          fkpaciente: fkpaciente ? parseInt(fkpaciente) : null,
           numeroexpediente: numeroExpedienteFinal,
           historiaenfermedad,
           antmedico,
@@ -242,173 +235,150 @@ class ExpedienteController {
         }
       });
 
-      // 🎯 NUEVA LÓGICA: Si hay idpaciente, vincularlo al expediente
-      if (idpaciente) {
-        console.log('🔗 Vinculando expediente al paciente:', idpaciente);
-        
-        try {
-          await prisma.paciente.update({
-            where: { idpaciente: parseInt(idpaciente) },
-            data: { 
-              fkexpediente: expediente.idexpediente,
-              usuariomodificacion: usuario,
-              fechamodificacion: new Date()
-            }
-          });
-          
-          console.log('✅ Paciente vinculado al expediente exitosamente');
-        } catch (updateError) {
-          console.error('❌ Error al vincular paciente:', updateError);
-          // El expediente ya se creó, pero no se pudo vincular
-          // Podrías decidir si devolver error o solo advertencia
-        }
-      }
-
       res.status(201).json({
-        success: true,
-        message: `Expediente creado exitosamente con número: ${numeroExpedienteFinal}`,
-        data: expediente
+        exito: true,
+        mensaje: `Expediente creado exitosamente con número: ${numeroExpedienteFinal}`,
+        datos: expediente
       });
     } catch (error) {
-      console.error('❌ Error al crear expediente:', error);
       res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
+        exito: false,
+        mensaje: 'Error interno del servidor',
         error: error.message
       });
     }
   }
 
-  // Actualizar expediente
-  static async updateExpediente(req, res) {
+  /**
+   * Actualiza un expediente existente
+   */
+  static async actualizarExpediente(req, res) {
     try {
       const { id } = req.params;
       const usuario = req.usuario?.usuario || 'sistema';
-      const updateData = { ...req.body };
+      const datosActualizacion = { ...req.body };
 
-      console.log('📝 Actualizando expediente:', id, 'con datos:', updateData);
-
-      // Verificar que el expediente existe
-      const existingExpediente = await prisma.expediente.findFirst({
+      const expedienteExistente = await prisma.expediente.findFirst({
         where: {
           idexpediente: parseInt(id),
           estado: 1
         }
       });
 
-      if (!existingExpediente) {
+      if (!expedienteExistente) {
         return res.status(404).json({
-          success: false,
-          message: 'Expediente no encontrado'
+          exito: false,
+          mensaje: 'Expediente no encontrado'
         });
       }
 
-      // Si se está actualizando el número de expediente, verificar que no exista
-      if (updateData.numeroexpediente && updateData.numeroexpediente !== existingExpediente.numeroexpediente) {
-        const numeroExists = await prisma.expediente.findFirst({
+      // Verificar si el número de expediente ya existe
+      if (datosActualizacion.numeroexpediente && 
+          datosActualizacion.numeroexpediente !== expedienteExistente.numeroexpediente) {
+        const numeroExiste = await prisma.expediente.findFirst({
           where: { 
-            numeroexpediente: updateData.numeroexpediente,
+            numeroexpediente: datosActualizacion.numeroexpediente,
             idexpediente: { not: parseInt(id) }
           }
         });
 
-        if (numeroExists) {
+        if (numeroExiste) {
           return res.status(400).json({
-            success: false,
-            message: 'Ya existe un expediente con ese número'
+            exito: false,
+            mensaje: 'Ya existe un expediente con ese número'
           });
         }
       }
 
-      // Procesar fechas y números si vienen en el update
-      if (updateData.gineobsfur) {
-        updateData.gineobsfur = new Date(updateData.gineobsfur);
+      // Convertir fecha si existe
+      if (datosActualizacion.gineobsfur) {
+        datosActualizacion.gineobsfur = new Date(datosActualizacion.gineobsfur);
       }
 
-      // Convertir campos numéricos
-      const numericFields = ['antintolerantelactosa', 'gineobsgestas', 'gineobspartos', 'gineobsabortos', 'gineobscesareas', 'examenfisfc', 'examenfisfr'];
-      const decimalFields = ['examenfistc', 'examenfissao2', 'examenfispeso', 'examenfistalla', 'examenfisimc'];
+      // Procesar campos numéricos y decimales
+      const camposNumericos = ['antintolerantelactosa', 'gineobsgestas', 'gineobspartos', 
+                              'gineobsabortos', 'gineobscesareas', 'examenfisfc', 'examenfisfr'];
+      const camposDecimales = ['examenfistc', 'examenfissao2', 'examenfispeso', 
+                              'examenfistalla', 'examenfisimc'];
 
-      numericFields.forEach(field => {
-        if (updateData[field] !== undefined && updateData[field] !== null && updateData[field] !== '') {
-          updateData[field] = parseInt(updateData[field]);
+      camposNumericos.forEach(campo => {
+        if (datosActualizacion[campo] !== undefined && 
+            datosActualizacion[campo] !== null && 
+            datosActualizacion[campo] !== '') {
+          datosActualizacion[campo] = parseInt(datosActualizacion[campo]);
         }
       });
 
-      decimalFields.forEach(field => {
-        if (updateData[field] !== undefined && updateData[field] !== null && updateData[field] !== '') {
-          updateData[field] = parseFloat(updateData[field]);
+      camposDecimales.forEach(campo => {
+        if (datosActualizacion[campo] !== undefined && 
+            datosActualizacion[campo] !== null && 
+            datosActualizacion[campo] !== '') {
+          datosActualizacion[campo] = parseFloat(datosActualizacion[campo]);
         }
       });
 
-      // Actualizar expediente
       const expedienteActualizado = await prisma.expediente.update({
         where: {
           idexpediente: parseInt(id)
         },
         data: {
-          ...updateData,
+          ...datosActualizacion,
           usuariomodificacion: usuario,
           fechamodificacion: new Date()
         }
       });
 
-      console.log('✅ Expediente actualizado exitosamente');
-
       res.json({
-        success: true,
-        message: 'Expediente actualizado exitosamente',
-        data: expedienteActualizado
+        exito: true,
+        mensaje: 'Expediente actualizado exitosamente',
+        datos: expedienteActualizado
       });
     } catch (error) {
-      console.error('❌ Error al actualizar expediente:', error);
       res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
+        exito: false,
+        mensaje: 'Error interno del servidor',
         error: error.message
       });
     }
   }
 
-  // Eliminar expediente (soft delete)
-  static async deleteExpediente(req, res) {
+  /**
+   * Elimina lógicamente un expediente
+   */
+  static async eliminarExpediente(req, res) {
     try {
       const { id } = req.params;
       const usuario = req.usuario?.usuario || 'sistema';
 
-      console.log('🗑️ Eliminando expediente:', id);
-
-      // Verificar que el expediente existe
-      const existingExpediente = await prisma.expediente.findFirst({
+      const expedienteExistente = await prisma.expediente.findFirst({
         where: {
           idexpediente: parseInt(id),
           estado: 1
         }
       });
 
-      if (!existingExpediente) {
+      if (!expedienteExistente) {
         return res.status(404).json({
-          success: false,
-          message: 'Expediente no encontrado'
+          exito: false,
+          mensaje: 'Expediente no encontrado'
         });
       }
 
-      // Verificar si tiene pacientes asociados
-      const pacientesAsociados = await prisma.paciente.count({
+      // Verificar si tiene referencias asociadas
+      const referenciasAsociadas = await prisma.detallereferirpaciente.count({
         where: {
           fkexpediente: parseInt(id),
           estado: 1
         }
       });
 
-      if (pacientesAsociados > 0) {
+      if (referenciasAsociadas > 0) {
         return res.status(400).json({
-          success: false,
-          message: 'No se puede eliminar el expediente porque tiene pacientes asociados'
+          exito: false,
+          mensaje: 'No se puede eliminar el expediente porque tiene referencias asociadas'
         });
       }
 
-      // Soft delete
       await prisma.expediente.update({
         where: {
           idexpediente: parseInt(id)
@@ -420,24 +390,23 @@ class ExpedienteController {
         }
       });
 
-      console.log('✅ Expediente eliminado exitosamente');
-
       res.json({
-        success: true,
-        message: 'Expediente eliminado exitosamente'
+        exito: true,
+        mensaje: 'Expediente eliminado exitosamente'
       });
     } catch (error) {
-      console.error('❌ Error al eliminar expediente:', error);
       res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
+        exito: false,
+        mensaje: 'Error interno del servidor',
         error: error.message
       });
     }
   }
 
-  // Obtener estadísticas básicas
-  static async getEstadisticas(req, res) {
+  /**
+   * Obtiene estadísticas básicas de los expedientes
+   */
+  static async obtenerEstadisticas(req, res) {
     try {
       const [
         totalExpedientes,
@@ -445,12 +414,10 @@ class ExpedienteController {
         expedientesConPacientes,
         expedientesSinPacientes
       ] = await Promise.all([
-        // Total de expedientes activos
         prisma.expediente.count({
           where: { estado: 1 }
         }),
         
-        // Expedientes creados recientemente (últimos 7 días)
         prisma.expediente.count({
           where: {
             estado: 1,
@@ -460,34 +427,26 @@ class ExpedienteController {
           }
         }),
 
-        // Expedientes con pacientes asociados
         prisma.expediente.count({
           where: {
             estado: 1,
-            paciente: {
-              some: {
-                estado: 1
-              }
+            fkpaciente: {
+              not: null
             }
           }
         }),
 
-        // Expedientes sin pacientes asociados
         prisma.expediente.count({
           where: {
             estado: 1,
-            paciente: {
-              none: {
-                estado: 1
-              }
-            }
+            fkpaciente: null
           }
         })
       ]);
 
       res.json({
-        success: true,
-        data: {
+        exito: true,
+        datos: {
           totalExpedientes,
           expedientesRecientes,
           expedientesConPacientes,
@@ -495,26 +454,23 @@ class ExpedienteController {
         }
       });
     } catch (error) {
-      console.error('Error al obtener estadísticas:', error);
       res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
+        exito: false,
+        mensaje: 'Error interno del servidor',
         error: error.message
       });
     }
   }
 
-  // Buscar expedientes disponibles (sin pacientes asignados)
-  static async getExpedientesDisponibles(req, res) {
+  /**
+   * Obtiene expedientes disponibles (sin paciente asignado)
+   */
+  static async obtenerExpedientesDisponibles(req, res) {
     try {
       const expedientesDisponibles = await prisma.expediente.findMany({
         where: {
           estado: 1,
-          paciente: {
-            none: {
-              estado: 1
-            }
-          }
+          fkpaciente: null
         },
         select: {
           idexpediente: true,
@@ -528,23 +484,43 @@ class ExpedienteController {
       });
 
       res.json({
-        success: true,
-        data: expedientesDisponibles
+        exito: true,
+        datos: expedientesDisponibles
       });
     } catch (error) {
-      console.error('Error al obtener expedientes disponibles:', error);
       res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
+        exito: false,
+        mensaje: 'Error interno del servidor',
         error: error.message
       });
     }
   }
 
-  // Método privado para generar número automático
+  /**
+   * Genera y devuelve un número de expediente automático
+   */
+  static async generarNumeroExpediente(req, res) {
+    try {
+      const nuevoNumero = await ExpedienteController._generarNumeroAutomatico();
+
+      res.json({
+        exito: true,
+        datos: { numeroexpediente: nuevoNumero }
+      });
+    } catch (error) {
+      res.status(500).json({
+        exito: false,
+        mensaje: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  /**
+   * Método privado para generar número de expediente automáticamente
+   */
   static async _generarNumeroAutomatico() {
     try {
-      // Obtener el último número de expediente
       const ultimoExpediente = await prisma.expediente.findFirst({
         orderBy: {
           idexpediente: 'desc'
@@ -555,57 +531,34 @@ class ExpedienteController {
       });
 
       let nuevoNumero;
+      
       if (ultimoExpediente && ultimoExpediente.numeroexpediente) {
-        // Intentar extraer número del patrón EXP-XXXXXX
-        const match = ultimoExpediente.numeroexpediente.match(/EXP-(\d+)/);
-        if (match) {
-          const ultimoNumero = parseInt(match[1]);
+        const coincidencia = ultimoExpediente.numeroexpediente.match(/EXP-(\d+)/);
+        
+        if (coincidencia) {
+          const ultimoNumero = parseInt(coincidencia[1]);
           nuevoNumero = `EXP-${String(ultimoNumero + 1).padStart(6, '0')}`;
         } else {
-          // Si no sigue el patrón, extraer todos los números y sumar 1
           const numeros = ultimoExpediente.numeroexpediente.replace(/\D/g, '');
           const ultimoNumero = numeros ? parseInt(numeros) : 0;
           nuevoNumero = `EXP-${String(ultimoNumero + 1).padStart(6, '0')}`;
         }
       } else {
-        // Si no hay expedientes, comenzar con 1
         nuevoNumero = 'EXP-000001';
       }
 
-      // Verificar que el número generado no exista (por seguridad)
+      // Verificar que el número generado no exista
       const existe = await prisma.expediente.findUnique({
         where: { numeroexpediente: nuevoNumero }
       });
 
       if (existe) {
-        // Si existe, generar con timestamp como fallback
         nuevoNumero = `EXP-${Date.now()}`;
       }
 
       return nuevoNumero;
     } catch (error) {
-      console.error('Error al generar número automático:', error);
-      // Fallback con timestamp
       return `EXP-${Date.now()}`;
-    }
-  }
-
-  // Generar número de expediente automático (endpoint público)
-  static async generarNumeroExpediente(req, res) {
-    try {
-      const nuevoNumero = await ExpedienteController._generarNumeroAutomatico();
-
-      res.json({
-        success: true,
-        data: { numeroexpediente: nuevoNumero }
-      });
-    } catch (error) {
-      console.error('Error al generar número de expediente:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
-        error: error.message
-      });
     }
   }
 }

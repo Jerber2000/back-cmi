@@ -3,17 +3,19 @@ const { PrismaClient } = require('../generated/prisma');
 const prisma = new PrismaClient();
 
 class PacienteController {
-  // Obtener todos los pacientes con paginación
-  static async getAllPacientes(req, res) {
+  /**
+   * Obtiene todos los pacientes con paginación y búsqueda
+   */
+  static async obtenerTodosLosPacientes(req, res) {
     try {
-      const { page = 1, limit = 10, search = '' } = req.query;
-      const skip = (parseInt(page) - 1) * parseInt(limit);
+      const { pagina = 1, limite = 10, busqueda = '' } = req.query;
+      const saltar = (parseInt(pagina) - 1) * parseInt(limite);
 
-      const whereCondition = search ? {
+      const condicionBusqueda = busqueda ? {
         OR: [
-          { nombres: { contains: search, mode: 'insensitive' } },
-          { apellidos: { contains: search, mode: 'insensitive' } },
-          { cui: { contains: search, mode: 'insensitive' } }
+          { nombres: { contains: busqueda, mode: 'insensitive' } },
+          { apellidos: { contains: busqueda, mode: 'insensitive' } },
+          { cui: { contains: busqueda, mode: 'insensitive' } }
         ]
       } : {};
 
@@ -21,44 +23,54 @@ class PacienteController {
         prisma.paciente.findMany({
           where: {
             estado: 1,
-            ...whereCondition
+            ...condicionBusqueda
           },
-          skip,
-          take: parseInt(limit),
+          skip: saltar,
+          take: parseInt(limite),
           orderBy: {
             fechacreacion: 'desc'
+          },
+          include: {
+            expedientes: {
+              select: {
+                idexpediente: true,
+                numeroexpediente: true,
+                historiaenfermedad: true
+              }
+            }
           }
         }),
         prisma.paciente.count({
           where: {
             estado: 1,
-            ...whereCondition
+            ...condicionBusqueda
           }
         })
       ]);
 
       res.json({
-        success: true,
-        data: pacientes,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
+        exito: true,
+        datos: pacientes,
+        paginacion: {
+          pagina: parseInt(pagina),
+          limite: parseInt(limite),
           total,
-          totalPages: Math.ceil(total / parseInt(limit))
+          totalPaginas: Math.ceil(total / parseInt(limite))
         }
       });
     } catch (error) {
-      console.error('Error al obtener pacientes:', error);
       res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
+        exito: false,
+        mensaje: 'Error interno del servidor',
         error: error.message
       });
     }
   }
 
-  // Obtener un paciente por ID
-  static async getPacienteById(req, res) {
+  /**
+   * Obtiene un paciente específico por su ID
+   */
+  static async obtenerPacientePorId(req, res) {
     try {
       const { id } = req.params;
 
@@ -66,35 +78,45 @@ class PacienteController {
         where: {
           idpaciente: parseInt(id),
           estado: 1
+        },
+        include: {
+          expedientes: {
+            select: {
+              idexpediente: true,
+              numeroexpediente: true,
+              historiaenfermedad: true,
+              fechacreacion: true
+            }
+          }
         }
       });
 
       if (!paciente) {
         return res.status(404).json({
-          success: false,
-          message: 'Paciente no encontrado'
+          exito: false,
+          mensaje: 'Paciente no encontrado'
         });
       }
 
       res.json({
-        success: true,
-        data: paciente
+        exito: true,
+        datos: paciente
       });
     } catch (error) {
-      console.error('Error al obtener paciente:', error);
       res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
+        exito: false,
+        mensaje: 'Error interno del servidor',
         error: error.message
       });
     }
   }
 
-  // Crear nuevo paciente - CORREGIDO
-  static async createPaciente(req, res) {
+  /**
+   * Crea un nuevo paciente en el sistema
+   */
+  static async crearPaciente(req, res) {
     try {
       const {
-        // Datos del paciente
         nombres,
         apellidos,
         cui,
@@ -113,24 +135,20 @@ class PacienteController {
         direccion
       } = req.body;
 
-      console.log('📝 Creando paciente con datos:', req.body);
-
-      // Obtener usuario del middleware o usar valor por defecto
       const usuario = req.usuario?.usuario || 'sistema';
 
       // Verificar que el CUI no exista
-      const existingPaciente = await prisma.paciente.findUnique({
+      const pacienteExistente = await prisma.paciente.findUnique({
         where: { cui }
       });
 
-      if (existingPaciente) {
+      if (pacienteExistente) {
         return res.status(400).json({
-          success: false,
-          message: 'Ya existe un paciente con ese CUI'
+          exito: false,
+          mensaje: 'Ya existe un paciente con ese CUI'
         });
       }
 
-      // Crear paciente directamente (sin expediente por ahora)
       const paciente = await prisma.paciente.create({
         data: {
           nombres,
@@ -149,128 +167,133 @@ class PacienteController {
           municipio,
           aldea,
           direccion,
-          fkexpediente: null,
           usuariocreacion: usuario,
           estado: 1
         }
       });
 
-      console.log('✅ Paciente creado exitosamente:', paciente.idpaciente);
-
       res.status(201).json({
-        success: true,
-        message: 'Paciente creado exitosamente',
-        data: paciente
+        exito: true,
+        mensaje: 'Paciente creado exitosamente',
+        datos: paciente
       });
     } catch (error) {
-      console.error('❌ Error al crear paciente:', error);
       res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
+        exito: false,
+        mensaje: 'Error interno del servidor',
         error: error.message
       });
     }
   }
 
-  // Actualizar paciente
-  static async updatePaciente(req, res) {
+  /**
+   * Actualiza la información de un paciente existente
+   */
+  static async actualizarPaciente(req, res) {
     try {
       const { id } = req.params;
       const usuario = req.usuario?.usuario || 'sistema';
-      const updateData = { ...req.body };
-
-      console.log('📝 Actualizando paciente:', id, 'con datos:', updateData);
+      const datosActualizacion = { ...req.body };
 
       // Verificar que el paciente existe
-      const existingPaciente = await prisma.paciente.findFirst({
+      const pacienteExistente = await prisma.paciente.findFirst({
         where: {
           idpaciente: parseInt(id),
           estado: 1
         }
       });
 
-      if (!existingPaciente) {
+      if (!pacienteExistente) {
         return res.status(404).json({
-          success: false,
-          message: 'Paciente no encontrado'
+          exito: false,
+          mensaje: 'Paciente no encontrado'
         });
       }
 
-      // Si se está actualizando el CUI, verificar que no exista
-      if (updateData.cui && updateData.cui !== existingPaciente.cui) {
-        const cuiExists = await prisma.paciente.findFirst({
+      // Verificar unicidad del CUI si se está actualizando
+      if (datosActualizacion.cui && datosActualizacion.cui !== pacienteExistente.cui) {
+        const cuiExiste = await prisma.paciente.findFirst({
           where: { 
-            cui: updateData.cui,
+            cui: datosActualizacion.cui,
             idpaciente: { not: parseInt(id) }
           }
         });
 
-        if (cuiExists) {
+        if (cuiExiste) {
           return res.status(400).json({
-            success: false,
-            message: 'Ya existe un paciente con ese CUI'
+            exito: false,
+            mensaje: 'Ya existe un paciente con ese CUI'
           });
         }
       }
 
-      // Procesar fecha de nacimiento si viene en el update
-      if (updateData.fechanacimiento) {
-        updateData.fechanacimiento = new Date(updateData.fechanacimiento);
+      // Procesar fecha de nacimiento si está presente
+      if (datosActualizacion.fechanacimiento) {
+        datosActualizacion.fechanacimiento = new Date(datosActualizacion.fechanacimiento);
       }
 
-      // Actualizar paciente
       const pacienteActualizado = await prisma.paciente.update({
         where: {
           idpaciente: parseInt(id)
         },
         data: {
-          ...updateData,
+          ...datosActualizacion,
           usuariomodificacion: usuario,
           fechamodificacion: new Date()
         }
       });
 
-      console.log('✅ Paciente actualizado exitosamente');
-
       res.json({
-        success: true,
-        message: 'Paciente actualizado exitosamente',
-        data: pacienteActualizado
+        exito: true,
+        mensaje: 'Paciente actualizado exitosamente',
+        datos: pacienteActualizado
       });
     } catch (error) {
-      console.error('❌ Error al actualizar paciente:', error);
       res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
+        exito: false,
+        mensaje: 'Error interno del servidor',
         error: error.message
       });
     }
   }
 
-  // Eliminar paciente (soft delete)
-  static async deletePaciente(req, res) {
+  /**
+   * Elimina lógicamente un paciente del sistema
+   */
+  static async eliminarPaciente(req, res) {
     try {
       const { id } = req.params;
       const usuario = req.usuario?.usuario || 'sistema';
 
-      console.log('🗑️ Eliminando paciente:', id);
-
-      // Verificar que el paciente existe
-      const existingPaciente = await prisma.paciente.findFirst({
+      const pacienteExistente = await prisma.paciente.findFirst({
         where: {
           idpaciente: parseInt(id),
           estado: 1
         }
       });
 
-      if (!existingPaciente) {
+      if (!pacienteExistente) {
         return res.status(404).json({
-          success: false,
-          message: 'Paciente no encontrado'
+          exito: false,
+          mensaje: 'Paciente no encontrado'
         });
       }
 
-      // Soft delete
+      // Verificar si tiene expedientes asociados
+      const expedientesAsociados = await prisma.expediente.count({
+        where: {
+          fkpaciente: parseInt(id),
+          estado: 1
+        }
+      });
+
+      if (expedientesAsociados > 0) {
+        return res.status(400).json({
+          exito: false,
+          mensaje: 'No se puede eliminar el paciente porque tiene expedientes asociados'
+        });
+      }
+
       await prisma.paciente.update({
         where: {
           idpaciente: parseInt(id)
@@ -282,36 +305,34 @@ class PacienteController {
         }
       });
 
-      console.log('✅ Paciente eliminado exitosamente');
-
       res.json({
-        success: true,
-        message: 'Paciente eliminado exitosamente'
+        exito: true,
+        mensaje: 'Paciente eliminado exitosamente'
       });
     } catch (error) {
-      console.error('❌ Error al eliminar paciente:', error);
       res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
+        exito: false,
+        mensaje: 'Error interno del servidor',
         error: error.message
       });
     }
   }
 
-  // Obtener estadísticas básicas
-  static async getEstadisticas(req, res) {
+  /**
+   * Obtiene estadísticas básicas de los pacientes
+   */
+  static async obtenerEstadisticas(req, res) {
     try {
       const [
         totalPacientes,
         pacientesPorGenero,
-        pacientesRecientes
+        pacientesRecientes,
+        pacientesConExpedientes
       ] = await Promise.all([
-        // Total de pacientes activos
         prisma.paciente.count({
           where: { estado: 1 }
         }),
         
-        // Pacientes por género
         prisma.paciente.groupBy({
           by: ['genero'],
           where: { estado: 1 },
@@ -320,7 +341,6 @@ class PacienteController {
           }
         }),
 
-        // Pacientes registrados recientemente (últimos 7 días)
         prisma.paciente.count({
           where: {
             estado: 1,
@@ -328,22 +348,69 @@ class PacienteController {
               gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
             }
           }
+        }),
+
+        prisma.paciente.count({
+          where: {
+            estado: 1,
+            expedientes: {
+              some: {
+                estado: 1
+              }
+            }
+          }
         })
       ]);
 
       res.json({
-        success: true,
-        data: {
+        exito: true,
+        datos: {
           totalPacientes,
           pacientesPorGenero,
-          pacientesRecientes
+          pacientesRecientes,
+          pacientesConExpedientes
         }
       });
     } catch (error) {
-      console.error('Error al obtener estadísticas:', error);
       res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
+        exito: false,
+        mensaje: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  }
+
+  /**
+   * Obtiene la lista de pacientes disponibles para asignación
+   */
+  static async obtenerPacientesDisponibles(req, res) {
+    try {
+      const pacientesDisponibles = await prisma.paciente.findMany({
+        where: {
+          estado: 1
+        },
+        select: {
+          idpaciente: true,
+          nombres: true,
+          apellidos: true,
+          cui: true,
+          fechanacimiento: true,
+          genero: true
+        },
+        orderBy: [
+          { apellidos: 'asc' },
+          { nombres: 'asc' }
+        ]
+      });
+
+      res.json({
+        exito: true,
+        datos: pacientesDisponibles
+      });
+    } catch (error) {
+      res.status(500).json({
+        exito: false,
+        mensaje: 'Error interno del servidor',
         error: error.message
       });
     }

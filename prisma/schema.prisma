@@ -127,6 +127,7 @@ model detallereferirpaciente {
 
 model expediente {
   idexpediente           Int                      @id @default(autoincrement())
+  fkpaciente             Int? 
   numeroexpediente       String                   @unique @db.VarChar(50)
   historiaenfermedad     String?
   antmedico              String?
@@ -168,12 +169,13 @@ model expediente {
   fechamodificacion      DateTime?                @db.Timestamp(6)
   estado                 Int?                     @default(1) @db.SmallInt
   detallereferirpaciente detallereferirpaciente[]
-  paciente               paciente[]
+  paciente               paciente?                @relation(fields: [fkpaciente], references: [idpaciente], onDelete: NoAction, onUpdate: NoAction, map: "fk_expediente_paciente")
+
+  @@index([fkpaciente], map: "idx_expediente_fkpaciente")
 }
 
 model paciente {
   idpaciente               Int                       @id @default(autoincrement())
-  fkexpediente             Int?
   nombres                  String                    @db.VarChar(100)
   apellidos                String                    @db.VarChar(100)
   cui                      String                    @unique @db.VarChar(20)
@@ -201,7 +203,7 @@ model paciente {
   agenda                   agenda[]
   detallehistorialclinico  detallehistorialclinico[]
   detallereferirpaciente   detallereferirpaciente[]
-  expediente               expediente?               @relation(fields: [fkexpediente], references: [idexpediente], onDelete: NoAction, onUpdate: NoAction, map: "fk_paciente_expediente")
+  expedientes              expediente[]
 }
 
 model inventariomedico {
