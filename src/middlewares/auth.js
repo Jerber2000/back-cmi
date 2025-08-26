@@ -49,13 +49,14 @@ const verificarUsuarioEnBD = async (req, res, next) => {
                 estado: 1
             },
             select:{
-                idusuario: true,
-                usuario:   true,
-                correo:    true,
-                nombres:   true,
-                apellidos: true,
-                fkrol:     true,
-                estado:    true
+                idusuario:    true,
+                usuario:      true,
+                correo:       true,
+                nombres:      true,
+                apellidos:    true,
+                fkrol:        true,
+                estado:       true,
+                cambiarclave: true
             }
         });
 
@@ -81,22 +82,6 @@ const verificarUsuarioEnBD = async (req, res, next) => {
         });
     }
 };
-
-// Middleware para verificar si el usuario puede acceder a su propio perfil
-// const autorizarUsuario = (req, res, next) => {
-//     const { id } = req.params;
-//     const usuarioId = req.usuario.id;
-
-//     // Permitir acceso solo si es el mismo usuario o si es admin (puedes agregar lógica de roles)
-//     if (parseInt(id) !== usuarioId) {
-//         return res.status(403).json({
-//             success: false,
-//             message: 'No tienes permisos para acceder a este recurso'
-//         });
-//     }
-
-//     next();
-// };
 
 module.exports = {
   validarToken,

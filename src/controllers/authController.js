@@ -7,6 +7,15 @@ const login = async (req, res) => {
 
         const resultado = await authService.login(usuario, clave);
 
+        if (resultado.cambiarClave) {
+            return res.status(200).json({
+                success: true,
+                cambiarClave: true,
+                message: 'Debes cambiar tu contraseña temporal',
+                data: resultado
+            });
+        }
+
         res.status(200).json({
             success: true,
             message: 'Login exitoso',
@@ -86,8 +95,57 @@ const RecuperarClave = async (req, res) => {
     }
 };
 
+const CambiarClaveTemporal = async (req, res) => {
+    try {
+        const { usuario, claveActual, claveNueva, confirmarClave } = req.body;
+
+        // Validar que las claves nuevas coincidan
+        if (claveNueva !== confirmarClave) {
+            return res.status(400).json({
+                success: false,
+                message: 'Las contraseñas no coinciden'
+            });
+        }
+
+        // Cambiar la contraseña usando el authService
+        const resultado = await authService.cambiarClaveObligatoria(usuario, claveActual, claveNueva);
+
+        res.status(200).json({
+            success: true,
+            message: 'Contraseña actualizada correctamente.',
+            data: resultado
+        });
+
+    } catch (error) {
+        console.error('Error en AuthController.CambiarClaveTemporary:', error.message);
+        
+        let statusCode = 500;
+        let message = 'Error interno del servidor';
+        
+        if (error.message === 'Usuario no encontrado') {
+            statusCode = 404;
+            message = 'Usuario no encontrado';
+        } else if (error.message === 'Contraseña actual incorrecta') {
+            statusCode = 400;
+            message = 'La contraseña temporal es incorrecta';
+        } else if (error.message === 'No es necesario cambiar la contraseña') {
+            statusCode = 400;
+            message = 'No tienes una contraseña temporal pendiente de cambio';
+        } else if (error.message.includes('La contraseña debe')) {
+            statusCode = 400;
+            message = error.message;
+        }
+        
+        res.status(statusCode).json({
+            success: false,
+            message: message
+        });
+    }
+};
+
 module.exports = {
     login,
     logout,
-    RecuperarClave
+    RecuperarClave,
+    CambiarClaveTemporal
 };

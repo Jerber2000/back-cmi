@@ -217,7 +217,7 @@ const EnviarClaveReseteada = async (email_, tempClave_, nombreUsuario_) => {
                     <h3>Pasos a seguir:</h3>
                     <p style="font-size: 14px; color: #555; margin-bottom: 15px;">
                         <strong style="display: inline-block; background-color: #007bff; color: white; width: 20px; height: 20px; border-radius: 50%; text-align: center; font-size: 12px; line-height: 20px; margin-right: 10px;">1</strong>
-                        Inicia sesión con tu correo electrónico y la contraseña temporal mostrada arriba
+                        Inicia sesión con tu usuario y la contraseña temporal mostrada arriba
                     </p>
                     <p style="font-size: 14px; color: #555; margin-bottom: 15px;">
                         <strong style="display: inline-block; background-color: #007bff; color: white; width: 20px; height: 20px; border-radius: 50%; text-align: center; font-size: 12px; line-height: 20px; margin-right: 10px;">2</strong>
@@ -317,12 +317,17 @@ const ResetearClave = async (correo_) => {
         await prisma.usuario.update({
             where: { correo: correo_ },
             data: {
-                clave: hashPass
-                //mustChangePassword: true
+                clave: hashPass,
+                cambiarclave: true
             }
         });
 
         await EnviarClaveReseteada(correo_, tempPass, usuario.nombres);
+
+        return { 
+            success: true, 
+            message: 'Contraseña temporal enviada al correo' 
+        };
 
     }catch(error){
         console.error('Error en EmailService.ResetearClave:', error.message);
