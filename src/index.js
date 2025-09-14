@@ -25,13 +25,17 @@ app.use(helmet());
 
 // TEMPORAL - solo para debug
 app.use(cors({
-  origin: [
-    'https://front-cmi-production.up.railway.app',
-    'http://localhost:4200'  // Para desarrollo
-  ],
+  origin: 'https://front-cmi-production.up.railway.app',
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization',
+    'X-Requested-With',
+    'Accept',
+    'Origin'
+  ],
+  exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar']
 }));
 
 // Logging
