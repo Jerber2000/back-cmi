@@ -30,7 +30,7 @@ router.get('/verificar',
 );
 
 router.post('/resetearPass',
-  ResetearClaveLimiter,
+ // ResetearClaveLimiter,
   validarResetearPass,
   authController.RecuperarClave
 );
