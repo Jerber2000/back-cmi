@@ -24,7 +24,7 @@ app.use(helmet());
 
 
 app.use(cors({
-  origin: '*',
+  origin: 'https://front-cmi-production.up.railway.app',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -212,26 +212,6 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-// Agregar después de la ruta raíz app.get('/', ...)
-app.get('/api/test-db', async (req, res) => {
-  try {
-    const { PrismaClient } = require('./generated/prisma');
-    const prisma = new PrismaClient();
-    
-    const userCount = await prisma.usuario.count();
-    
-    res.json({
-      success: true,
-      message: 'Conexión a BD exitosa',
-      userCount: userCount
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error de conexión a BD',
-      error: error.message
-    });
-  }
-});
+
 
 module.exports = app;
