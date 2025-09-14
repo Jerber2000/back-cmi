@@ -22,6 +22,7 @@ app.use(helmet());
 
 // CORS
 
+
 app.use(cors({
   origin: '*',
   credentials: true,
@@ -209,6 +210,28 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('❌ Promesa rechazada no manejada:', reason);
   process.exit(1);
+});
+
+// Agregar después de la ruta raíz app.get('/', ...)
+app.get('/api/test-db', async (req, res) => {
+  try {
+    const { PrismaClient } = require('./generated/prisma');
+    const prisma = new PrismaClient();
+    
+    const userCount = await prisma.usuario.count();
+    
+    res.json({
+      success: true,
+      message: 'Conexión a BD exitosa',
+      userCount: userCount
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error de conexión a BD',
+      error: error.message
+    });
+  }
 });
 
 module.exports = app;
