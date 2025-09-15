@@ -12,6 +12,7 @@ const app = express();
 
 // Seguridad
 app.use(helmet());
+app.set('trust proxy', 1);
 
 // CORS ANTIGUOS
 
@@ -80,17 +81,40 @@ const pacienteRoutes = require('./routes/pacienteRoutes');
 const archivoRoutes = require('./routes/archivoRoutes');
 const { ServeFileController } = require('./controllers/serveFileController');
 
+
 const serveFileController = new ServeFileController();
 const expedienteRoutes = require('./routes/expedienteRoutes'); 
-const historialRoutes = require('./routes/historialMedico');
 
-app.use('/api/auth', authRoutes);
-app.use('/api/pacientes', pacienteRoutes);
-app.use('/api/usuario', usuarioRoute);
-app.use('/api/archivo', archivoRoutes);
-app.get('/api/files/:filename', (req, res) => serveFileController.serveFile(req, res));
-app.use('/api/expedientes', expedienteRoutes); 
-app.use('/api/historial', historialRoutes);
+// ANTES DE CARGAR HISTORIAL - AGREGAR DEBUG
+console.log('🔍 Iniciando carga de rutas de historial...');
+try {
+    console.log('📋 Cargando historialController...');
+    const historialController = require('./controllers/historialMedicoController');
+    console.log('✅ historialController cargado');
+    
+    console.log('📋 Cargando middlewares de validación...');
+    const validacionHistorial = require('./middlewares/validacionHistorialMedico');
+    console.log('✅ Middlewares de validación cargados');
+    
+    console.log('📋 Cargando historialRoutes...');
+    const historialRoutes = require('./routes/historialMedico');
+    console.log('✅ historialRoutes cargado exitosamente');
+    
+    app.use('/api/auth', authRoutes);
+    app.use('/api/pacientes', pacienteRoutes);
+    app.use('/api/usuario', usuarioRoute);
+    app.use('/api/archivo', archivoRoutes);
+    app.get('/api/files/:filename', (req, res) => serveFileController.serveFile(req, res));
+    app.use('/api/expedientes', expedienteRoutes); 
+    
+    console.log('📋 Registrando rutas en /api/historial...');
+    app.use('/api/historial', historialRoutes);
+    console.log('✅ Rutas de historial registradas correctamente');
+    
+} catch (error) {
+    console.error('❌ ERROR CRÍTICO cargando historial:', error.message);
+    console.error('Stack trace:', error.stack);
+}
 
 // Ruta raíz
 app.get('/', (req, res) => {
