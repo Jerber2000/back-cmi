@@ -5,18 +5,13 @@ const { PrismaClient } = require('../generated/prisma');
 const prisma = new PrismaClient();
 
 const transporte = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD
-    },
-    pool: true,
-    maxConnections: 1,
-    rateDelta: 20000,
-    rateLimit: 5,
-    socketTimeout: 60000,
-    connectionTimeout: 60000,
-    greetingTimeout: 30000
+    }
 });
 
 const EnviarClaveReseteada = async (email_, tempClave_, nombreUsuario_) => {
