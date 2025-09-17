@@ -5,18 +5,11 @@ const { PrismaClient } = require('../generated/prisma');
 const prisma = new PrismaClient();
 
 const transporte = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
-    },
-    pool: true,
-    maxConnections: 1,
-    rateDelta: 20000,
-    rateLimit: 5,
-    socketTimeout: 60000,
-    connectionTimeout: 60000,
-    greetingTimeout: 30000
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD
+  }
 });
 
 const EnviarClaveReseteada = async (email_, tempClave_, nombreUsuario_) => {
@@ -300,22 +293,19 @@ const EnviarClaveReseteada = async (email_, tempClave_, nombreUsuario_) => {
 };
 
 const ResetearClave = async (correo_) => {
-    try {
-        console.log('🔧 EMAIL_USER:', process.env.EMAIL_USER);
-        console.log('🔧 EMAIL_PASSWORD existe:', !!process.env.EMAIL_PASSWORD);
-        console.log('🔧 NOMBRE_EMPRESA:', process.env.NOMBRE_EMPRESA);
-        
+    try{
         const usuario = await prisma.usuario.findUnique({
-            where: {
+            where:{
                 correo: correo_.toLowerCase().trim()
             }
         });
 
-        if (!usuario) {
+        if(!usuario){
             throw new Error('Credenciales inválidas');
         }
 
-        if (!usuario.estado) {
+        //Verifica si el usuario esta activo
+        if(!usuario.estado){
             throw new Error('Usuario inactivo. Contacte al administrador');
         }
 
@@ -330,23 +320,15 @@ const ResetearClave = async (correo_) => {
             }
         });
 
-        console.log('📧 Intentando enviar email...');
         await EnviarClaveReseteada(correo_, tempPass, usuario.nombres);
-        console.log('✅ Email enviado exitosamente');
 
         return { 
             success: true, 
             message: 'Contraseña temporal enviada al correo' 
         };
 
-    } catch (error) {
-        console.error('❌ Error completo en ResetearClave:', {
-            message: error.message,
-            code: error.code,
-            command: error.command,
-            response: error.response,
-            stack: error.stack
-        });
+    }catch(error){
+        console.error('Error en EmailService.ResetearClave:', error.message);
         throw error;
     }
 };
