@@ -260,64 +260,138 @@ class PacienteController {
   /**
    * Elimina lógicamente un paciente del sistema
    */
-  static async eliminarPaciente(req, res) {
-    try {
-      const { id } = req.params;
-      const usuario = req.usuario?.usuario || 'sistema';
+// AGREGAR este método a tu pacienteController.js 
+// (después del método actualizarPaciente y antes del método obtenerEstadisticas)
 
-      const pacienteExistente = await prisma.paciente.findFirst({
-        where: {
-          idpaciente: parseInt(id),
-          estado: 1
-        }
-      });
+/**
+ * Elimina lógicamente un paciente del sistema
+ */
+// REEMPLAZA el método eliminarPaciente en tu pacienteController.js por este:
 
-      if (!pacienteExistente) {
-        return res.status(404).json({
-          exito: false,
-          mensaje: 'Paciente no encontrado'
-        });
+static async eliminarPaciente(req, res) {
+  try {
+    const { id } = req.params;
+    const usuario = req.usuario?.usuario || 'sistema';
+
+    console.log('🗑️ Intentando eliminar paciente ID:', id);
+
+    // Verificar que el paciente existe
+    const pacienteExistente = await prisma.paciente.findFirst({
+      where: {
+        idpaciente: parseInt(id),
+        estado: 1
       }
+    });
 
-      // Verificar si tiene expedientes asociados
-      const expedientesAsociados = await prisma.expediente.count({
-        where: {
+    if (!pacienteExistente) {
+      return res.status(404).json({
+        exito: false,
+        mensaje: 'Paciente no encontrado'
+      });
+    }
+
+    // ✅ MEJORA: Verificar expedientes activos e inactivos por separado
+    const [historialCount, expedientesActivos, expedientesInactivos] = await Promise.all([
+      prisma.detallehistorialclinico.count({
+        where: { 
           fkpaciente: parseInt(id),
           estado: 1
         }
-      });
+      }),
+      prisma.expediente.count({
+        where: { 
+          fkpaciente: parseInt(id),
+          estado: 1  // Solo expedientes activos
+        }
+      }),
+      prisma.expediente.count({
+        where: { 
+          fkpaciente: parseInt(id),
+          estado: 0  // Expedientes inactivos
+        }
+      })
+    ]);
 
-      if (expedientesAsociados > 0) {
-        return res.status(400).json({
-          exito: false,
-          mensaje: 'No se puede eliminar el paciente porque tiene expedientes asociados'
-        });
+    console.log(`📊 Paciente tiene ${historialCount} historiales, ${expedientesActivos} expedientes activos y ${expedientesInactivos} expedientes inactivos`);
+
+    // ✅ MEJORA: Solo bloquear si tiene expedientes ACTIVOS o historial médico
+    if (historialCount > 0 || expedientesActivos > 0) {
+      let mensajeDetallado = 'No se puede eliminar el paciente. ';
+      
+      if (historialCount > 0 && expedientesActivos > 0) {
+        mensajeDetallado += `Tiene ${historialCount} registros de historial médico y ${expedientesActivos} expedientes activos.`;
+      } else if (historialCount > 0) {
+        mensajeDetallado += `Tiene ${historialCount} registros de historial médico.`;
+      } else {
+        mensajeDetallado += `Tiene ${expedientesActivos} expedientes activos.`;
       }
-
-      await prisma.paciente.update({
-        where: {
-          idpaciente: parseInt(id)
-        },
-        data: {
-          estado: 0,
-          usuariomodificacion: usuario,
-          fechamodificacion: new Date()
+      
+      mensajeDetallado += ' Debe eliminar o desactivar estos registros primero.';
+      
+      return res.status(409).json({
+        exito: false,
+        mensaje: mensajeDetallado,
+        detalles: {
+          historialCount,
+          expedientesActivos,
+          expedientesInactivos,
+          puedeEliminar: false
         }
       });
+    }
 
-      res.json({
-        exito: true,
-        mensaje: 'Paciente eliminado exitosamente'
-      });
-    } catch (error) {
-      res.status(500).json({
+    // ✅ MEJORA: Si solo tiene expedientes inactivos, permitir eliminación
+    if (expedientesInactivos > 0) {
+      console.log(`ℹ️ Paciente tiene ${expedientesInactivos} expedientes inactivos, pero se permite la eliminación`);
+    }
+
+    // Eliminar lógicamente el paciente
+    const pacienteEliminado = await prisma.paciente.update({
+      where: {
+        idpaciente: parseInt(id)
+      },
+      data: {
+        estado: 0,
+        usuariomodificacion: usuario,
+        fechamodificacion: new Date()
+      }
+    });
+
+    console.log('✅ Paciente eliminado lógicamente');
+
+    res.json({
+      exito: true,
+      mensaje: expedientesInactivos > 0 
+        ? `Paciente eliminado correctamente. Tenía ${expedientesInactivos} expedientes inactivos que se mantienen archivados.`
+        : 'Paciente eliminado correctamente',
+      datos: pacienteEliminado
+    });
+
+  } catch (error) {
+    console.error('❌ Error eliminando paciente:', error);
+    
+    // Manejar errores específicos de Prisma
+    if (error.code === 'P2003') {
+      return res.status(409).json({
         exito: false,
-        mensaje: 'Error interno del servidor',
-        error: error.message
+        mensaje: 'No se puede eliminar el paciente porque tiene datos relacionados (restricción de integridad referencial)'
       });
     }
-  }
 
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        exito: false,
+        mensaje: 'Paciente no encontrado'
+      });
+    }
+
+    res.status(500).json({
+      exito: false,
+      mensaje: 'Error interno del servidor al eliminar paciente',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno'
+    });
+  }
+}
   /**
    * Obtiene estadísticas básicas de los pacientes
    */

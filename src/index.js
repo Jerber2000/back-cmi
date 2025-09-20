@@ -80,6 +80,7 @@ app.use('/api/pacientes', pacienteRoutes);
 app.use('/api/usuario', usuarioRoute);
 app.use('/api/archivo', archivoRoutes);
 app.get('/api/files/:filename', (req, res) => serveFileController.serveFile(req, res));
+app.get('/api/files/check/:filename', (req, res) => serveFileController.verificarArchivo(req, res));
 app.use('/api/expedientes', expedienteRoutes); 
 app.use('/api/historial', historialRoutes);
 

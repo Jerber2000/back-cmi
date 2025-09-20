@@ -1,4 +1,4 @@
-//services/authService.js
+
 
 const bcrypt = require('bcryptjs');                      //para encriptar contraseñas
 const { PrismaClient } = require('../generated/prisma'); // ORM que sirve para conectar con base de datos

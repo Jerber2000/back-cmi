@@ -52,4 +52,20 @@ router.post('/subir-archivos/:idpaciente',
     historialController.subirArchivos
 );
 
+// Actualizar archivos de sesión
+router.put('/sesion/:idhistorial/archivos',
+    validarHistorialId,
+    historialController.actualizarSesionConArchivos
+);
+
+router.delete('/eliminar-sesion/:idhistorial',
+    validarHistorialId,
+    historialController.eliminarSesion
+);
+
+// Obtener archivos de sesión específica
+router.get('/sesion/:idhistorial/archivos',
+    validarHistorialId,
+    historialController.obtenerArchivosSesion
+);
 module.exports = router;
