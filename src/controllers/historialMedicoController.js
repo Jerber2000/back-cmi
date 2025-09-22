@@ -1,5 +1,6 @@
-// controllers/historialMedicoController.js
+// controllers/historialMedicoController.js - VERSIÓN COMPLETA CON MEJORAS
 const { PrismaClient } = require('../generated/prisma');
+const { fileService } = require('../services/fileService');
 const prisma = new PrismaClient();
 
 class HistorialMedicoController {
@@ -168,6 +169,7 @@ class HistorialMedicoController {
           motivoconsulta,
           evolucion: evolucion || null,
           diagnosticotratamiento: diagnosticotratamiento || null,
+          rutahistorialclinico: null,
           usuariocreacion,
           fechacreacion: new Date(),
           estado: 1
@@ -281,15 +283,187 @@ class HistorialMedicoController {
     }
   }
 
-  // Subir archivos para historial médico
+  // ✅ NUEVO: Eliminar sesión
+  async eliminarSesion(req, res) {
+    try {
+      const { idhistorial } = req.params;
+      console.log('🗑️ Eliminando sesión ID:', idhistorial);
+
+      // Verificar que la sesión existe
+      const sesionExiste = await prisma.detallehistorialclinico.findUnique({
+        where: { idhistorial: parseInt(idhistorial) }
+      });
+
+      if (!sesionExiste) {
+        return res.status(404).json({
+          success: false,
+          message: 'Sesión no encontrada'
+        });
+      }
+
+      // Eliminar físicamente o marcar como eliminado
+      await prisma.detallehistorialclinico.update({
+        where: { idhistorial: parseInt(idhistorial) },
+        data: {
+          estado: 0, // Marcar como eliminado en lugar de borrar físicamente
+          usuariomodificacion: req.usuario?.usuario || 'Sistema',
+          fechamodificacion: new Date()
+        }
+      });
+
+      console.log('✅ Sesión eliminada correctamente');
+
+      return res.status(200).json({
+        success: true,
+        message: 'Sesión eliminada correctamente'
+      });
+
+    } catch (error) {
+      console.error('❌ Error al eliminar sesión:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error al eliminar sesión',
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno'
+      });
+    }
+  }
+
+  // Actualizar sesión con archivos
+  async actualizarSesionConArchivos(req, res) {
+    try {
+      const { idhistorial } = req.params;
+      const { rutaarchivos } = req.body;
+
+      console.log('🔄 Actualizando archivos para sesión ID:', idhistorial);
+
+      const sesionExiste = await prisma.detallehistorialclinico.findUnique({
+        where: { idhistorial: parseInt(idhistorial) }
+      });
+
+      if (!sesionExiste) {
+        return res.status(404).json({
+          success: false,
+          message: 'Sesión no encontrada'
+        });
+      }
+
+      const usuariomodificacion = req.usuario?.usuario || req.usuario?.nombres || 'Sistema';
+
+      const sesionActualizada = await prisma.detallehistorialclinico.update({
+        where: { idhistorial: parseInt(idhistorial) },
+        data: {
+          rutahistorialclinico: rutaarchivos,
+          usuariomodificacion,
+          fechamodificacion: new Date()
+        }
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: 'Archivos de sesión actualizados correctamente',
+        data: sesionActualizada
+      });
+
+    } catch (error) {
+      console.error('❌ Error al actualizar archivos de sesión:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error al actualizar archivos',
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno'
+      });
+    }
+  }
+
+  // Obtener archivos de una sesión específica
+async obtenerArchivosSesion(req, res) {
+  try {
+    const { idhistorial } = req.params;
+    console.log('📎 Obteniendo archivos para sesión ID:', idhistorial);
+
+    const sesion = await prisma.detallehistorialclinico.findUnique({
+      where: { idhistorial: parseInt(idhistorial) },
+      select: {
+        rutahistorialclinico: true
+      }
+    });
+
+    if (!sesion) {
+      return res.status(404).json({
+        success: false,
+        message: 'Sesión no encontrada'
+      });
+    }
+
+    let archivos = [];
+    
+    if (sesion.rutahistorialclinico) {
+      try {
+        // Si las rutas están como string separado por comas
+        if (typeof sesion.rutahistorialclinico === 'string') {
+          const rutas = sesion.rutahistorialclinico.split(',').filter(r => r.trim());
+          
+          archivos = rutas.map(ruta => {
+            const rutaLimpia = ruta.trim();
+            const nombreArchivo = rutaLimpia.split('/').pop();
+            const esImagen = /\.(jpg|jpeg|png|gif|webp)$/i.test(nombreArchivo);
+            
+            return {
+              id: Date.now() + Math.random(), // ID único temporal
+              nombre: nombreArchivo,
+              nombreOriginal: nombreArchivo,
+              ruta: rutaLimpia,
+              rutaServicio: rutaLimpia,
+              url: `/api/files/${nombreArchivo}`, // URL para descargar
+              tipo: esImagen ? 'imagen' : 'documento',
+              categoria: esImagen ? 'imagen' : 'documento'
+            };
+          });
+        } else {
+          // Si ya está como JSON
+          archivos = JSON.parse(sesion.rutahistorialclinico);
+        }
+        
+      } catch (parseError) {
+        console.error('Error parseando rutas de archivos:', parseError);
+        // Si falla el parsing, intentar como string simple
+        archivos = [{
+          id: Date.now(),
+          nombre: sesion.rutahistorialclinico.split('/').pop(),
+          ruta: sesion.rutahistorialclinico,
+          rutaServicio: sesion.rutahistorialclinico,
+          url: `/api/files/${sesion.rutahistorialclinico.split('/').pop()}`
+        }];
+      }
+    }
+
+    console.log(`✅ ${archivos.length} archivos encontrados para la sesión`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Archivos obtenidos correctamente',
+      data: archivos,
+      total: archivos.length
+    });
+
+  } catch (error) {
+    console.error('❌ Error al obtener archivos:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener archivos',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno'
+    });
+  }
+}
+
+  // ✅ MEJORADO: Subir archivos para historial médico usando fileService
   async subirArchivos(req, res) {
     try {
       const { idpaciente } = req.params;
-      const archivos = req.files;
+      const files = req.files;
 
       console.log('📎 Subiendo archivos para paciente:', idpaciente);
 
-      if (!archivos || archivos.length === 0) {
+      if (!files || files.length === 0) {
         return res.status(400).json({
           success: false,
           message: 'No se enviaron archivos para subir'
@@ -308,24 +482,47 @@ class HistorialMedicoController {
         });
       }
 
-      const archivosInfo = archivos.map(archivo => ({
-        nombreOriginal: archivo.originalname,
-        nombreArchivo: archivo.filename,
-        rutaArchivo: archivo.path,
-        url: `/uploads/${archivo.filename}`,
-        tamaño: archivo.size,
-        tipo: archivo.mimetype
-      }));
+      const archivosSubidos = [];
 
-      console.log(`✅ ${archivos.length} archivos subidos correctamente`);
+      // Procesar cada archivo usando fileService
+      for (const file of files) {
+        try {
+          // Determinar subcarpeta según tipo
+          const esImagen = file.mimetype.startsWith('image/');
+          const subcarpeta = esImagen ? 'historiales/fotos' : 'historiales/documentos';
+          
+          // Subir archivo usando el servicio genérico
+          const resultado = await fileService.uploadFiles(subcarpeta, {
+            [esImagen ? 'foto' : 'documento']: file
+          });
+
+          archivosSubidos.push({
+            nombreOriginal: file.originalname,
+            nombreArchivo: file.filename,
+            rutaServicio: esImagen ? resultado.foto : resultado.documento,
+            rutaCompleta: file.path,
+            url: `/api/files/${file.filename}`,
+            tamaño: file.size,
+            tipo: file.mimetype,
+            categoria: esImagen ? 'imagen' : 'documento'
+          });
+
+        } catch (error) {
+          console.error(`Error subiendo archivo ${file.originalname}:`, error);
+          // Continuar con otros archivos
+        }
+      }
+
+      console.log(`✅ ${archivosSubidos.length} de ${files.length} archivos subidos correctamente`);
 
       return res.status(201).json({
         success: true,
-        message: `${archivos.length} archivo(s) subido(s) correctamente`,
+        message: `${archivosSubidos.length} archivo(s) subido(s) correctamente`,
         data: {
           pacienteId: parseInt(idpaciente),
-          archivos: archivosInfo,
-          total: archivos.length
+          archivos: archivosSubidos,
+          total: archivosSubidos.length,
+          errores: files.length - archivosSubidos.length
         }
       });
 
@@ -338,7 +535,6 @@ class HistorialMedicoController {
       });
     }
   }
-
 }
 
 module.exports = new HistorialMedicoController();

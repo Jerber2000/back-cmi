@@ -70,10 +70,24 @@ const validarSubirArchivos = [
     handleValidationErrors
 ];
 
+const validarActualizarArchivos = [
+    param('idhistorial')
+        .isInt({ min: 1 })
+        .withMessage('ID del historial debe ser válido'),
+    
+    body('rutaarchivos')
+        .optional()
+        .isString()
+        .withMessage('Ruta de archivos debe ser un string válido'),
+    
+    handleValidationErrors
+];
+
 module.exports = {
     validarCrearSesion,
     validarActualizarSesion,
     validarPacienteId,
     validarHistorialId,
-    validarSubirArchivos
+    validarSubirArchivos,
+    validarActualizarArchivos 
 };

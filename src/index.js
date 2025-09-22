@@ -13,10 +13,20 @@ const app = express();
 // Seguridad
 app.use(helmet());
 
+// CORS ANTIGUOS
+
+//app.use(cors({
+//  origin: process.env.FRONTEND_URL,
+//  credentials: true
+//}));
+
 // CORS
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
-  credentials: true
+  origin: '*',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Logging
@@ -70,6 +80,7 @@ app.use('/api/pacientes', pacienteRoutes);
 app.use('/api/usuario', usuarioRoute);
 app.use('/api/archivo', archivoRoutes);
 app.get('/api/files/:filename', (req, res) => serveFileController.serveFile(req, res));
+app.get('/api/files/check/:filename', (req, res) => serveFileController.verificarArchivo(req, res));
 app.use('/api/expedientes', expedienteRoutes); 
 app.use('/api/historial', historialRoutes);
 

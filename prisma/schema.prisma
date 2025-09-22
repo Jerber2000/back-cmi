@@ -91,6 +91,7 @@ model detallehistorialclinico {
   motivoconsulta         String?
   evolucion              String?
   diagnosticotratamiento String?
+  rutahistorialclinico   String?
   usuariocreacion        String    @db.VarChar(100)
   fechacreacion          DateTime? @default(now()) @db.Timestamp(6)
   usuariomodificacion    String?   @db.VarChar(100)

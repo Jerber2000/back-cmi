@@ -1,4 +1,4 @@
-//se importa la funcion de vericar token
+//middlewares/auth.js
 const { verificarToken } = require('../utils/jwt');
 const { PrismaClient } = require('../generated/prisma');
 
