@@ -74,6 +74,7 @@ const { ServeFileController } = require('./controllers/serveFileController');
 const serveFileController = new ServeFileController();
 const expedienteRoutes = require('./routes/expedienteRoutes'); 
 const historialRoutes = require('./routes/historialMedico');
+const agendaRoutes = require('./routes/agendaRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/pacientes', pacienteRoutes);
@@ -83,6 +84,7 @@ app.get('/api/files/:filename', (req, res) => serveFileController.serveFile(req,
 app.get('/api/files/check/:filename', (req, res) => serveFileController.verificarArchivo(req, res));
 app.use('/api/expedientes', expedienteRoutes); 
 app.use('/api/historial', historialRoutes);
+app.use('/api/agenda', agendaRoutes);
 
 // Ruta raíz
 app.get('/', (req, res) => {

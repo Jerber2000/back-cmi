@@ -91,12 +91,12 @@ model detallehistorialclinico {
   motivoconsulta         String?
   evolucion              String?
   diagnosticotratamiento String?
-  rutahistorialclinico   String?
   usuariocreacion        String    @db.VarChar(100)
   fechacreacion          DateTime? @default(now()) @db.Timestamp(6)
   usuariomodificacion    String?   @db.VarChar(100)
   fechamodificacion      DateTime? @db.Timestamp(6)
   estado                 Int?      @default(1) @db.SmallInt
+  rutahistorialclinico   String?
   paciente               paciente  @relation(fields: [fkpaciente], references: [idpaciente], onDelete: NoAction, onUpdate: NoAction, map: "fk_historial_paciente")
   usuario                usuario   @relation(fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_historial_usuario")
 }
@@ -129,7 +129,6 @@ model detallereferirpaciente {
 
 model expediente {
   idexpediente           Int                      @id @default(autoincrement())
-  fkpaciente             Int? 
   numeroexpediente       String                   @unique @db.VarChar(50)
   historiaenfermedad     String?
   antmedico              String?
@@ -170,6 +169,7 @@ model expediente {
   usuariomodificacion    String?                  @db.VarChar(100)
   fechamodificacion      DateTime?                @db.Timestamp(6)
   estado                 Int?                     @default(1) @db.SmallInt
+  fkpaciente             Int?
   detallereferirpaciente detallereferirpaciente[]
   paciente               paciente?                @relation(fields: [fkpaciente], references: [idpaciente], onDelete: NoAction, onUpdate: NoAction, map: "fk_expediente_paciente")
 

@@ -9,8 +9,6 @@ const prisma = new PrismaClient();
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     try {
-      console.log('📁 === CONFIGURANDO DESTINO ===');
-      console.log('Request body:', req.body);
       console.log('File info:', {
         fieldname: file.fieldname,
         originalname: file.originalname,
@@ -22,55 +20,47 @@ const storage = multer.diskStorage({
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
       
-      // ✅ RUTA ABSOLUTA CORREGIDA
+      //RUTA ABSOLUTA CORREGIDA
       const uploadPath = path.join(__dirname, '../uploads/pacientes', year.toString(), month);
-      
-      console.log('📂 Ruta de destino calculada:', uploadPath);
       
       // Crear directorio si no existe
       if (!fs.existsSync(uploadPath)) {
         fs.mkdirSync(uploadPath, { recursive: true });
-        console.log('✅ Directorio creado exitosamente:', uploadPath);
+        console.log('Directorio creado exitosamente:', uploadPath);
       } else {
-        console.log('✅ Directorio ya existe:', uploadPath);
+        console.log('Directorio ya existe:', uploadPath);
       }
       
       // ✅ VERIFICAR PERMISOS DE ESCRITURA
       try {
         fs.accessSync(uploadPath, fs.constants.W_OK);
-        console.log('✅ Permisos de escritura verificados');
       } catch (permError) {
-        console.error('❌ Sin permisos de escritura:', permError);
+        console.error('Sin permisos de escritura:', permError);
         return cb(new Error('Sin permisos de escritura en el directorio'), null);
       }
       
       cb(null, uploadPath);
     } catch (error) {
-      console.error('❌ Error en destination:', error);
+      console.error('Error en destination:', error);
       cb(error, null);
     }
   },
   filename: function (req, file, cb) {
     try {
-      console.log('📝 === GENERANDO NOMBRE DE ARCHIVO ===');
-      console.log('Request body en filename:', req.body);
-      
       const pacienteId = req.body?.pacienteId;
       const tipo = req.body?.tipo;
       
       if (!pacienteId || !tipo) {
-        console.error('❌ Faltan datos para generar nombre:', { pacienteId, tipo });
+        console.error('Faltan datos para generar nombre:', { pacienteId, tipo });
         return cb(new Error('pacienteId y tipo son requeridos'), null);
       }
       
       const extension = path.extname(file.originalname).toLowerCase();
       const timestamp = Date.now();
       const fileName = `paciente_${pacienteId}_${tipo}_${timestamp}${extension}`;
-      
-      console.log('✅ Nombre de archivo generado:', fileName);
       cb(null, fileName);
     } catch (error) {
-      console.error('❌ Error en filename:', error);
+      console.error('Error en filename:', error);
       cb(error, null);
     }
   }
@@ -79,7 +69,6 @@ const storage = multer.diskStorage({
 // 🔧 FILTRO DE ARCHIVOS MEJORADO
 const fileFilter = (req, file, cb) => {
   try {
-    console.log('🔍 === VALIDANDO ARCHIVO ===');
     console.log('File details:', {
       fieldname: file.fieldname,
       originalname: file.originalname,
@@ -92,7 +81,7 @@ const fileFilter = (req, file, cb) => {
     
     // ✅ VALIDAR QUE EL TIPO ESTÉ PRESENTE
     if (!tipo) {
-      console.error('❌ Tipo de archivo no especificado');
+      console.error('Tipo de archivo no especificado');
       return cb(new Error('Tipo de archivo no especificado'), false);
     }
     
@@ -105,21 +94,20 @@ const fileFilter = (req, file, cb) => {
 
     // ✅ VERIFICAR SI EL TIPO ES VÁLIDO
     if (!allowedMimes[tipo]) {
-      console.error('❌ Tipo no válido:', tipo);
+      console.error('Tipo no válido:', tipo);
       return cb(new Error(`Tipo de archivo no válido: ${tipo}. Tipos permitidos: ${Object.keys(allowedMimes).join(', ')}`), false);
     }
 
     // ✅ VERIFICAR SI EL MIMETYPE ES PERMITIDO
     if (allowedMimes[tipo].includes(file.mimetype)) {
-      console.log('✅ Archivo aceptado');
       cb(null, true);
     } else {
-      console.error('❌ Archivo rechazado - mimetype no permitido');
+      console.error('Archivo rechazado - mimetype no permitido');
       const allowedTypes = allowedMimes[tipo].join(', ');
       cb(new Error(`Tipo de archivo no permitido para ${tipo}. Tipos permitidos: ${allowedTypes}`), false);
     }
   } catch (error) {
-    console.error('❌ Error en fileFilter:', error);
+    console.error('Error en fileFilter:', error);
     cb(error, false);
   }
 };
@@ -133,7 +121,7 @@ const upload = multer({
     files: 1 // Solo un archivo por vez
   },
   onError: function(err, next) {
-    console.error('❌ Error en multer:', err);
+    console.error('Error en multer:', err);
     next(err);
   }
 });
@@ -160,7 +148,7 @@ class FileController {
       const file = req.file;
 
       if (!pacienteId) {
-        console.error('❌ pacienteId faltante');
+        console.error('pacienteId faltante');
         return res.status(400).json({
           success: false,
           message: 'pacienteId es requerido'
@@ -239,8 +227,6 @@ class FileController {
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
       const relativePath = path.join('uploads', 'pacientes', year.toString(), month, file.filename).replace(/\\/g, '/');
-
-      console.log('📂 Ruta relativa calculada:', relativePath);
 
       // ✅ PREPARAR DATOS PARA ACTUALIZAR
       const updateData = {};
@@ -414,7 +400,6 @@ class FileController {
       
       // ✅ BUSCAR ARCHIVO EN LA ESTRUCTURA DE DIRECTORIOS
       const uploadsDir = path.join(__dirname, '../uploads/pacientes');
-      console.log('📂 Directorio base de búsqueda:', uploadsDir);
 
       if (!fs.existsSync(uploadsDir)) {
         console.error('❌ Directorio de uploads no existe:', uploadsDir);
@@ -437,7 +422,6 @@ class FileController {
               const result = findFileRecursively(fullPath, target);
               if (result) return result;
             } else if (item === target) {
-              console.log('✅ Archivo encontrado en:', fullPath);
               return fullPath;
             }
           }
@@ -451,7 +435,7 @@ class FileController {
       const filePath = findFileRecursively(uploadsDir, fileName);
 
       if (!filePath || !fs.existsSync(filePath)) {
-        console.error('❌ Archivo no encontrado:', fileName);
+        console.error('Archivo no encontrado:', fileName);
         return res.status(404).json({
           success: false,
           message: 'Archivo no encontrado'
@@ -485,7 +469,7 @@ class FileController {
       // ✅ ENVIAR ARCHIVO
       res.sendFile(filePath, (error) => {
         if (error) {
-          console.error('❌ Error al enviar archivo:', error);
+          console.error('Error al enviar archivo:', error);
           if (!res.headersSent) {
             res.status(500).json({
               success: false,
@@ -570,12 +554,9 @@ class FileController {
           break;
       }
 
-      console.log('📂 Ruta del archivo a eliminar:', filePath);
-
       // ✅ ELIMINAR ARCHIVO FÍSICO
       if (filePath) {
         const fullPath = path.join(__dirname, '..', filePath);
-        console.log('🗑️ Ruta completa del archivo:', fullPath);
         
         if (fs.existsSync(fullPath)) {
           try {
@@ -593,13 +574,10 @@ class FileController {
       }
 
       // ✅ ACTUALIZAR BASE DE DATOS
-      console.log('💾 Actualizando base de datos:', updateData);
       await prisma.paciente.update({
         where: { idpaciente: parseInt(pacienteId) },
         data: updateData
       });
-
-      console.log('✅ Base de datos actualizada exitosamente');
 
       return res.json({
         success: true,
