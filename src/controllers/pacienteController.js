@@ -67,6 +67,34 @@ class PacienteController {
     }
   }
 
+  static async listadoPacientes(req, res){
+    try{
+      const pacienteListado = await prisma.paciente.findMany({
+        select:{
+          idpaciente: true,
+          nombres: true,
+          apellidos: true,
+          nombreencargado: true,
+          telefonoencargado: true
+        },
+        orderBy:{
+          nombres: 'asc'
+        }
+      });
+
+      res.json({
+        exito: true,
+        datos: pacienteListado
+      });
+    }catch(error){
+      res.status(500).json({
+        exito: false,
+        mensaje: 'Error interno del servidor',
+        error: error.mensaje
+      });
+    }
+  }
+
   /**
    * Obtiene un paciente específico por su ID
    */

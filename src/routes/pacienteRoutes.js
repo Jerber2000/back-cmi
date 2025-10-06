@@ -30,6 +30,12 @@ router.get('/estadisticas',
     PacienteController.obtenerEstadisticas
 );
 
+router.get('/obtenerListado',
+    autenticacion.validarToken,
+    autenticacion.verificarUsuarioEnBD,
+    PacienteController.listadoPacientes
+)
+
 // GET /api/pacientes/:id - Obtener un paciente específico por ID
 router.get('/:id', 
     autenticacion.validarToken, 

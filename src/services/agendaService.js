@@ -22,7 +22,7 @@ class AgendaService{
 
     async crearCita(agendaData){
         try{
-            const { fkusuario, fkpaciente, fechaatencion, horaatencion, comentario, transporte, fechatransporte, horariotransporte,
+            const { fkusuario, fkpaciente, fechaatencion, horaatencion, comentario, transporte, fechatransporte, horariotransporte, direccion,
                     usuariocreacion, estado } = agendaData;
 
             if(!fkusuario || !fkpaciente || !fechaatencion || !horaatencion || !usuariocreacion){
@@ -32,18 +32,27 @@ class AgendaService{
                 };
             }
 
+            let horaFormateada = horaatencion;
+    
+            // Si viene en formato HH:mm:ss, usarla directamente
+            // Si viene en formato HH:mm, agregar :00
+            if (horaatencion.split(':').length === 2) {
+            horaFormateada = `${horaatencion}:00`;
+            }
+
             const citaNueva = await prisma.agenda.create({
                 data:{
                     fkusuario:          parseInt(fkusuario),
                     fkpaciente:         parseInt(fkpaciente),
                     fechaatencion:      this.convertirFecha(fechaatencion),
-                    horaatencion:       new Date(`1970-01-01T${horaatencion}:00Z`),
+                    horaatencion:       new Date(`1970-01-01T${horaFormateada}Z`),
                     comentario:         comentario,
                     transporte:         parseInt(transporte),
                     fechatransporte:    this.convertirFecha(fechatransporte),
                     horariotransporte:  horariotransporte
                                         ? new Date(`1970-01-01T${horariotransporte}:00Z`)
                                         : null,
+                    direccion:          direccion,
                     usuariocreacion:    usuariocreacion,
                     estado:             parseInt(estado)
                 },
@@ -56,6 +65,7 @@ class AgendaService{
                     transporte:         true,
                     fechatransporte:    true,
                     horariotransporte:  true,
+                    direccion:          true,
                     estado:             true
                 }
             });

@@ -66,6 +66,7 @@ model agenda {
   usuariomodificacion String?   @db.VarChar(100)
   fechamodificacion   DateTime? @db.Timestamp(6)
   estado              Int?      @default(1) @db.SmallInt
+  direccion           String?   @default("Dirección no especificada")
   paciente            paciente  @relation(fields: [fkpaciente], references: [idpaciente], onDelete: NoAction, onUpdate: NoAction, map: "fk_agenda_paciente")
   usuario             usuario   @relation(fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_agenda_usuario")
 }

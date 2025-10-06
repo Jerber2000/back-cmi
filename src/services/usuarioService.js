@@ -95,6 +95,47 @@ class UsuarioService {
         }
     }
 
+    async obtenerUsuarioPorRol(rol){
+        try{
+            if(!rol || isNaN(parseInt(rol))){
+                return{
+                    success: false,
+                    message: 'Rol invalido'
+                };
+            }
+
+            const usuarioPorRol = await prisma.usuario.findMany({
+                select:{
+                    idusuario: true,
+                    nombres:   true,
+                    apellidos: true
+                },
+                where:{
+                    fkrol: parseInt(rol)
+                },
+                orderBy:{
+                    usuario: 'asc'
+                }
+            });
+
+            if(usuarioPorRol.length === 0){
+                console.log('Array vacío');
+                return{
+                    success: false,
+                    message: 'No se encontraron usuarios con ese rol'
+                };
+            }
+            
+            return{
+                success: true,
+                data: usuarioPorRol
+            }
+        }catch(error){
+            console.error("Error en usuarioService al consultar por rol: ", error);
+            throw error;
+        }
+    }
+
     async crearUsuario(usuarioData){
         try{
             const { fkrol, usuario, clave, nombres, apellidos, fechanacimiento, correo, puesto, profesion, telinstitucional, extension, telefonopersonal,
@@ -173,7 +214,7 @@ class UsuarioService {
                     correo:                   correo.toLowerCase(), 
                     puesto:                   puesto?.trim(), 
                     profesion:                profesion?.trim(), 
-                    telinstitucional:          telinstitucional?.trim(), 
+                    telinstitucional:         telinstitucional?.trim(), 
                     extension:                extension?.trim(), 
                     telefonopersonal:         telefonopersonal?.trim(),
                     nombrecontactoemergencia: nombrecontactoemergencia?.trim(), 

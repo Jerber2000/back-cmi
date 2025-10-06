@@ -3,6 +3,7 @@ const router = express.Router();
 const { 
     obtenerUsuarios,
     obtenerUsuarioPorId,
+    obtenerUsuarioPorRol,
     crearUsuario,
     actuarlizarUsuario,
     eliminarUsuario
@@ -26,6 +27,14 @@ router.get(
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
     obtenerUsuarioPorId
+);
+
+router.get(
+    '/buscarPorRol/:rol',
+    autenticacion.validarToken,
+    autenticacion.verificarUsuarioEnBD,
+    validarCambioClave,
+    obtenerUsuarioPorRol
 );
 
 router.post(
