@@ -1,5 +1,5 @@
 // src/controllers/inventarioMedicoController.js
-const inventarioMedicoService = require('../services/inventariomedicoService');
+const inventarioMedicoService = require('../services/inventarioMedicoService');
 
 class InventarioMedicoController {
   // GET /api/inventario - Listar todos

@@ -1,6 +1,6 @@
 // src/routes/inventariomedicoRoutes.js
 const { Router } = require('express');
-const inventarioMedicoController = require('../controllers/inventariomedicoController');
+const inventarioMedicoController = require('../controllers/inventarioMedicoController');
 const inventarioMiddleware = require('../middlewares/validationInventario');
 
 const router = Router();
@@ -27,8 +27,8 @@ router.put('/:id',
   inventarioMedicoController.actualizar
 );
 
-// PATCH - Cambiar estado
-router.patch('/:id/estado', 
+// PATCH - Cambiar estado (activo/inactivo)
+router.put('/:id/estado', 
   inventarioMiddleware.validarId,
   inventarioMiddleware.validarCambiarEstado,
   inventarioMedicoController.cambiarEstado
