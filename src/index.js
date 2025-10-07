@@ -1,3 +1,4 @@
+// src/index.js
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -25,7 +26,7 @@ app.use(helmet());
 app.use(cors({
   origin: '*',
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], 
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
@@ -75,6 +76,9 @@ const serveFileController = new ServeFileController();
 const expedienteRoutes = require('./routes/expedienteRoutes'); 
 const historialRoutes = require('./routes/historialMedico');
 const agendaRoutes = require('./routes/agendaRoutes');
+const referirRoutes = require('./routes/referirRoutes'); 
+const inventarioMedico = require('./routes/inventariomedicoRoutes'); 
+
 
 app.use('/api/auth', authRoutes);
 app.use('/api/pacientes', pacienteRoutes);
@@ -85,6 +89,8 @@ app.get('/api/files/check/:filename', (req, res) => serveFileController.verifica
 app.use('/api/expedientes', expedienteRoutes); 
 app.use('/api/historial', historialRoutes);
 app.use('/api/agenda', agendaRoutes);
+app.use('/api/referir', referirRoutes);
+app.use('/api/inventario', inventarioMedico);
 
 // Ruta raíz
 app.get('/', (req, res) => {
@@ -104,7 +110,7 @@ app.get('/', (req, res) => {
         actualizar: 'PUT /api/pacientes/:id',
         eliminar: 'DELETE /api/pacientes/:id'
       },
-      expedientes: { // ⭐ NUEVOS ENDPOINTS
+      expedientes: { 
         listar: 'GET /api/expedientes',
         crear: 'POST /api/expedientes',
         obtener: 'GET /api/expedientes/:id',
@@ -125,6 +131,22 @@ app.get('/', (req, res) => {
         crear: 'POST /api/historial/crear-sesion',
         actualizar: 'PUT /api/historial/actualizar-sesion/:idhistorial',
         subirArchivos: 'POST /api/historial/subir-archivos/:idpaciente'
+      },
+      referir: {
+        crear: 'POST /api/referir',
+        listar: 'GET /api/referir?tipo=pendientes|enviados|recibidos|completados',
+        detalle: 'GET /api/referir/:id',
+        confirmar: 'PUT /api/referir/:id/confirmar',
+        actualizar: 'PUT /api/referir/:id',
+        cambiarEstado: 'PUT /api/referir/:id/estado',
+        historialPaciente: 'GET /api/referir/paciente/:idPaciente'
+      },
+      inventario: {
+        listar: 'GET /api/inventario',
+        obtener: 'GET /api/inventario/:id',
+        crear: 'POST /api/inventario',
+        actualizar: 'PUT /api/inventario/:id',
+        cambiarEstado: 'PUT /api/inventario/:id/estado'
       }
     }
   });
