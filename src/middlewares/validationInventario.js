@@ -1,4 +1,4 @@
-// src/middlewares/inventario.middleware.js
+// src/middlewares/validationInventario.js
 
 class InventarioMiddleware {
   // Validar ID en parámetros
