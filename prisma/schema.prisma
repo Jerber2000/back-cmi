@@ -31,10 +31,11 @@ model usuario {
   usuariomodificacion      String?                   @db.VarChar(100)
   fechamodificacion        DateTime?                 @db.Timestamp(6)
   estado                   Int?                      @default(1) @db.SmallInt
-  cambiarclave             Boolean                   @default(false)
+  cambiarclave             Boolean?                  @default(false)
   agendas                  agenda[]
   detallesHistorialClinico detallehistorialclinico[]
-  referenciasPaciente      detallereferirpaciente[]
+  referidosComoOrigen      detallereferirpaciente[]  @relation("referir_usuario_origen")
+  referidosComoDestino     detallereferirpaciente[]  @relation("referir_usuario_destino")
   inventariomedico         inventariomedico[]
   rol                      rol                       @relation(fields: [fkrol], references: [idrol], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_rol")
 }
@@ -122,10 +123,12 @@ model detallereferirpaciente {
   usuariomodificacion String?    @db.VarChar(100)
   fechamodificacion   DateTime?  @db.Timestamp(6)
   estado              Int?       @default(1) @db.SmallInt
+  fkusuariodestino    Int?
   clinica             clinica    @relation(fields: [fkclinica], references: [idclinica], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_clinica")
   expediente          expediente @relation(fields: [fkexpediente], references: [idexpediente], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_expediente")
   paciente            paciente   @relation(fields: [fkpaciente], references: [idpaciente], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_paciente")
-  usuario             usuario    @relation(fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_usuario")
+  usuario             usuario    @relation("referir_usuario_origen", fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_usuario")
+  usuarioDestino      usuario?   @relation("referir_usuario_destino", fields: [fkusuariodestino], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_usuariodestino")
 }
 
 model expediente {

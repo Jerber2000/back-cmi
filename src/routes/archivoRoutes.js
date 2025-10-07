@@ -1,3 +1,4 @@
+//routes/archivoRoutes.js
 const express = require('express');
 const { ArchivoController } = require('../controllers/archivoController');
 const { fileService } = require('../services/fileService');
