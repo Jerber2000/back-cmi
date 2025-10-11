@@ -14,7 +14,8 @@ const referirService = {
         fkexpediente,
         fkclinica,
         comentario,
-        usuariocreacion
+        usuariocreacion,
+        rutadocumentoinicial 
       } = datos;
 
       // Validar que el paciente exista
@@ -67,6 +68,7 @@ const referirService = {
           fkexpediente,
           fkclinica,
           comentario,
+          rutadocumentoinicial: rutadocumentoinicial || null,
           confirmacion1: 1,
           usuarioconfirma1: usuariocreacion,
           confirmacion2: 0,
@@ -479,6 +481,9 @@ const referirService = {
       if (datos.fkclinica) datosActualizar.fkclinica = datos.fkclinica;
       if (datos.fkusuariodestino) datosActualizar.fkusuariodestino = datos.fkusuariodestino;
       if (datos.comentario !== undefined) datosActualizar.comentario = datos.comentario;
+       if (datos.rutadocumentoinicial !== undefined) datosActualizar.rutadocumentoinicial = datos.rutadocumentoinicial;
+      if (datos.rutadocumentofinal !== undefined) datosActualizar.rutadocumentofinal = datos.rutadocumentofinal;
+
 
       const referidoActualizado = await prisma.detallereferirpaciente.update({
         where: { idrefpaciente: id },

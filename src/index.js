@@ -14,15 +14,7 @@ const app = express();
 // Seguridad
 app.use(helmet());
 
-// CORS ANTIGUOS
-
-//app.use(cors({
-//  origin: process.env.FRONTEND_URL,
-//  credentials: true
-//}));
-
 // CORS
-
 app.use(cors({
   origin: '*',
   credentials: true,
@@ -34,38 +26,15 @@ app.use(cors({
 app.use(morgan('combined'));
 
 // ========================
-// 🔧 MIDDLEWARE CONDICIONAL PARA JSON
+// 🔧 MIDDLEWARE PARA JSON
 // ========================
-
-// ✅ SOLUCIÓN: Solo aplicar express.json() a rutas que NO sean de archivos
-app.use((req, res, next) => {
-  // Si la ruta es de archivos, NO procesarla como JSON
-  if (req.path.startsWith('/api/files')) {
-    console.log('🔧 Ruta de archivos detectada, omitiendo express.json():', req.path);
-    return next();
-  }
-  
-  // Para todas las demás rutas, aplicar express.json()
-  express.json({ limit: '10mb' })(req, res, next);
-});
-
-// URLencoded solo para formularios normales (no archivos)
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api/files')) {
-    return next();
-  }
-  express.urlencoded({ extended: true, limit: '10mb' })(req, res, next);
-});
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ========================
 // RUTAS
 // ========================
 
-// 🆕 IMPORTANTE: Rutas de archivos PRIMERO (antes que otras rutas)
-const fileRoutes = require('./routes/fileRoutes');
-app.use('/api/files', fileRoutes); // ← Esta ruta NO usará express.json()
-
-// Otras rutas (estas SÍ usarán express.json())
 const authRoutes = require('./routes/authRoutes');
 const usuarioRoute = require('./routes/usuarioRoutes');
 const pacienteRoutes = require('./routes/pacienteRoutes');
@@ -78,7 +47,7 @@ const historialRoutes = require('./routes/historialMedico');
 const agendaRoutes = require('./routes/agendaRoutes');
 const referirRoutes = require('./routes/referirRoutes'); 
 const inventarioMedico = require('./routes/inventariomedicoRoutes'); 
-
+const reporteriaRoutes = require('./routes/reporteriaRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/pacientes', pacienteRoutes);
@@ -91,6 +60,7 @@ app.use('/api/historial', historialRoutes);
 app.use('/api/agenda', agendaRoutes);
 app.use('/api/referir', referirRoutes);
 app.use('/api/inventario', inventarioMedico);
+app.use('/api/reporteria', reporteriaRoutes);
 
 // Ruta raíz
 app.get('/', (req, res) => {
@@ -147,6 +117,16 @@ app.get('/', (req, res) => {
         crear: 'POST /api/inventario',
         actualizar: 'PUT /api/inventario/:id',
         cambiarEstado: 'PUT /api/inventario/:id/estado'
+      },
+      reporteria: {
+        dashboard: 'GET /api/reporteria/dashboard',
+        pacientes: 'GET /api/reporteria/pacientes',
+        consultas: 'GET /api/reporteria/consultas',
+        inventario: 'GET /api/reporteria/inventario',
+        agenda: 'GET /api/reporteria/agenda',
+        referencias: 'GET /api/reporteria/referencias',
+        generarPDF: 'POST /api/reporteria/generar-pdf',
+        exportarExcel: 'POST /api/reporteria/exportar-excel'
       }
     }
   });
@@ -168,7 +148,7 @@ app.use((req, res, next) => {
 app.use((error, req, res, next) => {
   console.error('❌ Error no manejado:', error);
   
-  // 🆕 Manejo especial para errores de parsing JSON (el error que tenías)
+  // 🆕 Manejo especial para errores de parsing JSON
   if (error.type === 'entity.parse.failed') {
     console.error('❌ Error de parsing JSON en ruta:', req.path);
     return res.status(400).json({
@@ -221,8 +201,8 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Servidor ejecutándose en puerto ${PORT}`);
   console.log(`🔗 URL: http://localhost:${PORT}`);
-  console.log(`📁 Archivos se guardarán en: uploads/pacientes/`);
-  console.log(`🔧 Middleware configurado para manejar archivos correctamente`);
+  console.log(`📁 Archivos genéricos: /api/archivo`);
+  console.log(`🔧 Sistema de archivos configurado correctamente`);
 });
 
 // Manejo de errores no capturados

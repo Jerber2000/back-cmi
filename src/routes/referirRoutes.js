@@ -6,9 +6,15 @@ const referirController = require('../controllers/referirController');
 const { validarToken, verificarUsuarioEnBD } = require('../middlewares/auth');
 const validarReferido = require('../middlewares/validarReferido');
 
-// Todas las rutas requieren autenticación
+// ============================================================================
+// MIDDLEWARE DE AUTENTICACIÓN GLOBAL
+// ============================================================================
 router.use(validarToken);
 router.use(verificarUsuarioEnBD);
+
+// ============================================================================
+// RUTAS CRUD
+// ============================================================================
 
 // POST /referir - Crear nuevo referido
 router.post('/',

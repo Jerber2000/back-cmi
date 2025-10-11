@@ -11,7 +11,8 @@ const referirController = {
         fkexpediente,
         fkclinica,
         fkusuariodestino,
-        comentario
+        comentario,
+        rutadocumentoinicial 
       } = req.body;
 
       // Validaciones básicas
@@ -33,7 +34,8 @@ const referirController = {
         fkexpediente,
         fkclinica,
         comentario,
-        usuariocreacion
+        usuariocreacion,
+        rutadocumentoinicial 
       });
 
       return res.status(201).json({
@@ -241,7 +243,6 @@ const referirController = {
     }
   },
 
-  // GET /referir/paciente/:idPaciente - Historial de referidos de un paciente
   async obtenerHistorialPaciente(req, res) {
     try {
       const { idPaciente } = req.params;

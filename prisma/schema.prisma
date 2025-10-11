@@ -67,7 +67,7 @@ model agenda {
   usuariomodificacion String?   @db.VarChar(100)
   fechamodificacion   DateTime? @db.Timestamp(6)
   estado              Int?      @default(1) @db.SmallInt
-  direccion           String?   @default("Dirección no especificada")
+  direccion           String?   @default("Dirección no especificada")
   paciente            paciente  @relation(fields: [fkpaciente], references: [idpaciente], onDelete: NoAction, onUpdate: NoAction, map: "fk_agenda_paciente")
   usuario             usuario   @relation(fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_agenda_usuario")
 }
@@ -104,31 +104,33 @@ model detallehistorialclinico {
 }
 
 model detallereferirpaciente {
-  idrefpaciente       Int        @id @default(autoincrement())
-  fkusuario           Int
-  fkpaciente          Int
-  fkexpediente        Int
-  fkclinica           Int
-  comentario          String?
-  confirmacion1       Int?       @default(0) @db.SmallInt
-  usuarioconfirma1    String?    @db.VarChar(100)
-  confirmacion2       Int?       @default(0) @db.SmallInt
-  usuarioconfirma2    String?    @db.VarChar(100)
-  confirmacion3       Int?       @default(0) @db.SmallInt
-  usuarioconfirma3    String?    @db.VarChar(100)
-  confirmacion4       Int?       @default(0) @db.SmallInt
-  usuarioconfirma4    String?    @db.VarChar(100)
-  usuariocreacion     String     @db.VarChar(100)
-  fechacreacion       DateTime?  @default(now()) @db.Timestamp(6)
-  usuariomodificacion String?    @db.VarChar(100)
-  fechamodificacion   DateTime?  @db.Timestamp(6)
-  estado              Int?       @default(1) @db.SmallInt
-  fkusuariodestino    Int?
-  clinica             clinica    @relation(fields: [fkclinica], references: [idclinica], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_clinica")
-  expediente          expediente @relation(fields: [fkexpediente], references: [idexpediente], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_expediente")
-  paciente            paciente   @relation(fields: [fkpaciente], references: [idpaciente], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_paciente")
-  usuario             usuario    @relation("referir_usuario_origen", fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_usuario")
-  usuarioDestino      usuario?   @relation("referir_usuario_destino", fields: [fkusuariodestino], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_usuariodestino")
+  idrefpaciente        Int        @id @default(autoincrement())
+  fkusuario            Int
+  fkpaciente           Int
+  fkexpediente         Int
+  fkclinica            Int
+  comentario           String?
+  confirmacion1        Int?       @default(0) @db.SmallInt
+  usuarioconfirma1     String?    @db.VarChar(100)
+  confirmacion2        Int?       @default(0) @db.SmallInt
+  usuarioconfirma2     String?    @db.VarChar(100)
+  confirmacion3        Int?       @default(0) @db.SmallInt
+  usuarioconfirma3     String?    @db.VarChar(100)
+  confirmacion4        Int?       @default(0) @db.SmallInt
+  usuarioconfirma4     String?    @db.VarChar(100)
+  usuariocreacion      String     @db.VarChar(100)
+  fechacreacion        DateTime?  @default(now()) @db.Timestamp(6)
+  usuariomodificacion  String?    @db.VarChar(100)
+  fechamodificacion    DateTime?  @db.Timestamp(6)
+  estado               Int?       @default(1) @db.SmallInt
+  fkusuariodestino     Int?
+  rutadocumentoinicial String?
+  rutadocumentofinal   String?
+  clinica              clinica    @relation(fields: [fkclinica], references: [idclinica], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_clinica")
+  expediente           expediente @relation(fields: [fkexpediente], references: [idexpediente], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_expediente")
+  paciente             paciente   @relation(fields: [fkpaciente], references: [idpaciente], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_paciente")
+  usuario              usuario    @relation("referir_usuario_origen", fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_usuario")
+  usuarioDestino       usuario?   @relation("referir_usuario_destino", fields: [fkusuariodestino], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_usuariodestino")
 }
 
 model expediente {
