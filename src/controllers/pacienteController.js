@@ -71,11 +71,14 @@ class PacienteController {
     try{
       const pacienteListado = await prisma.paciente.findMany({
         select:{
-          idpaciente: true,
-          nombres: true,
-          apellidos: true,
-          nombreencargado: true,
-          telefonoencargado: true
+          idpaciente:        true,
+          nombres:           true,
+          apellidos:         true,
+          nombreencargado:   true,
+          telefonoencargado: true,
+          municipio:         true,
+          aldea:             true,
+          direccion:         true
         },
         orderBy:{
           nombres: 'asc'
