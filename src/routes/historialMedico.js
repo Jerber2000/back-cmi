@@ -1,11 +1,10 @@
 // routes/historialMedico.js
 
-
 const express = require('express');
 const router = express.Router();
 const historialController = require('../controllers/historialMedicoController');
 const { validarToken, verificarUsuarioEnBD } = require('../middlewares/auth');
-const { upload, handleMulterError } = require('../services/fileUpload');
+const { fileService } = require('../services/fileService'); // ✅ CAMBIO 1
 const {
     validarCrearSesion,
     validarActualizarSesion,
@@ -13,6 +12,9 @@ const {
     validarHistorialId,
     validarSubirArchivos
 } = require('../middlewares/validacionHistorialMedico');
+
+// ✅ CAMBIO 2: Crear middleware genérico para historial médico
+const uploadHistorial = fileService.createGenericMiddleware(['image', 'document'], 5);
 
 // Aplicar autenticación a todas las rutas
 router.use(validarToken);
@@ -44,11 +46,11 @@ router.put('/actualizar-sesion/:idhistorial',
     historialController.actualizarSesion
 );
 
+// ✅ CAMBIO 3: Usar uploadHistorial.array() en lugar de upload.array()
 // Subir archivos para historial
 router.post('/subir-archivos/:idpaciente',
     validarSubirArchivos,
-    upload.array('archivos', 5),
-    handleMulterError,
+    uploadHistorial.array('archivos', 5), // ✅ CAMBIO AQUÍ
     historialController.subirArchivos
 );
 
@@ -68,4 +70,5 @@ router.get('/sesion/:idhistorial/archivos',
     validarHistorialId,
     historialController.obtenerArchivosSesion
 );
+
 module.exports = router;
