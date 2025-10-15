@@ -12,6 +12,8 @@ const autenticacion = require('../middlewares/auth');
 const { validarCambioClave } = require('../middlewares/validarCambioClave');
 const { validarUsuarioCreacion, validarUsuarioActualizar } = require('../middlewares/validacionMiddleware');
 const RolService = require('../services/rolService');
+const authService = require('../services/authService');
+const clinicaService = require('../services/clinicaService');
 
 router.get(
     '/buscarUsuarios',
@@ -70,6 +72,21 @@ router.get('/roles',
         try{
             const roles = await RolService.consultarRol();
             res.json(roles);
+        }catch(error){
+            res.status(500).json({ error: error.message });
+        }
+    }
+);
+
+router.get(
+    '/clinicas',
+    autenticacion.validarToken,
+    autenticacion.verificarUsuarioEnBD,
+    validarCambioClave,
+    async (req, res) => {
+        try{
+            const clinicas = await clinicaService.consultarClinica();
+            res.json(clinicas);
         }catch(error){
             res.status(500).json({ error: error.message });
         }

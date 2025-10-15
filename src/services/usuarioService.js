@@ -43,7 +43,8 @@ class UsuarioService {
                     nombrecontactoemergencia: true,
                     telefonoemergencia:       true,
                     observaciones:            true,
-                    rutafotoperfil:           true
+                    rutafotoperfil:           true,
+                    fkclinica:                true
                 },
                 orderBy:{
                     usuario: 'asc'
@@ -139,7 +140,7 @@ class UsuarioService {
     async crearUsuario(usuarioData){
         try{
             const { fkrol, usuario, clave, nombres, apellidos, fechanacimiento, correo, puesto, profesion, telinstitucional, extension, telefonopersonal,
-                    nombrecontactoemergencia, telefonoemergencia, rutafotoperfil, observaciones, usuariocreacion, estado } = usuarioData;
+                    nombrecontactoemergencia, telefonoemergencia, rutafotoperfil, observaciones, usuariocreacion, estado, fkclinica } = usuarioData;
             // validar datos requeridos
             if(!usuario || !clave || !nombres || !apellidos || !correo){
                 return{
@@ -222,7 +223,8 @@ class UsuarioService {
                     rutafotoperfil:           rutafotoperfil?.trim(), 
                     observaciones:            observaciones?.trim(), 
                     usuariocreacion:          usuariocreacion,
-                    estado:                   parseInt(estado)
+                    estado:                   parseInt(estado),
+                    fkclinica:                parseInt(fkclinica)
                 },
                 select: {
                     fkrol:                    true,
@@ -233,14 +235,15 @@ class UsuarioService {
                     correo:                   true,
                     puesto:                   true,
                     profesion:                true,
-                    telinstitucional:          true,
+                    telinstitucional:         true,
                     extension:                true,
                     telefonopersonal:         true,
                     nombrecontactoemergencia: true,
                     telefonoemergencia:       true,
                     rutafotoperfil:           true,
                     observaciones:            true,
-                    estado:                   true
+                    estado:                   true,
+                    fkclinica:                true
                 }
             });
 
@@ -391,6 +394,10 @@ class UsuarioService {
                 dataParaActualizar.estado = updateData.estado;
             }
 
+            if(updateData.fkclinica){
+                dataParaActualizar.fkclinica = updateData.fkclinica;
+            }
+
             // Solo actualizar si hay cambios
             if (Object.keys(dataParaActualizar).length === 0) {
                 return {
@@ -408,7 +415,8 @@ class UsuarioService {
                     correo:    true,
                     nombres:   true,
                     apellidos: true,
-                    fkrol:     true
+                    fkrol:     true,
+                    fkclinica: true
                 }
             });
             
