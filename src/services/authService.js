@@ -1,8 +1,6 @@
-
-
-const bcrypt = require('bcryptjs');                      //para encriptar contraseñas
-const { PrismaClient } = require('../generated/prisma'); // ORM que sirve para conectar con base de datos
-const { generarToken } = require('../utils/jwt');        // función para crear token
+const bcrypt = require('bcryptjs');
+const { PrismaClient } = require('../generated/prisma');
+const { generarToken } = require('../utils/jwt');
 
 const prisma = new PrismaClient();
 
@@ -22,6 +20,7 @@ class AuthService{
                     puesto:         true,
                     rutafotoperfil: true,
                     fkrol:          true,
+                    fkclinica:      true,  // ✅ AGREGADO
                     estado:         true,
                     clave:          true,
                     cambiarclave:   true

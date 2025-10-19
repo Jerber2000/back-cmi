@@ -1,41 +1,37 @@
 // src/controllers/referirController.js
-const referirService = require('../services/referirService');
 
+const { PrismaClient } = require('../generated/prisma');
+const prisma = new PrismaClient();
+const referirService = require('../services/referirService');
 const referirController = {
   
   // POST /referir - Crear nuevo referido
-  async crearReferido(req, res) {
+async crearReferido(req, res) {
     try {
       const {
         fkpaciente,
         fkexpediente,
         fkclinica,
-        fkusuariodestino,
-        comentario,
-        rutadocumentoinicial 
+        comentario
       } = req.body;
 
-      // Validaciones básicas
-      if (!fkpaciente || !fkexpediente || !fkclinica || !fkusuariodestino) {
+      if (!fkpaciente || !fkexpediente || !fkclinica) {
         return res.status(400).json({
           ok: false,
-          mensaje: 'Faltan campos requeridos'
+          mensaje: 'Faltan campos requeridos (paciente, expediente, clínica)'
         });
       }
 
-      // El usuario que crea viene del token JWT
       const fkusuario = req.usuario.idusuario;
       const usuariocreacion = req.usuario.usuario;
 
       const nuevoReferido = await referirService.crearReferido({
         fkusuario,
-        fkusuariodestino,
         fkpaciente,
         fkexpediente,
         fkclinica,
         comentario,
-        usuariocreacion,
-        rutadocumentoinicial 
+        usuariocreacion
       });
 
       return res.status(201).json({
@@ -48,7 +44,7 @@ const referirController = {
       console.error('Error en crearReferido:', error);
       return res.status(500).json({
         ok: false,
-        mensaje: 'Error al crear el referido',
+        mensaje: error.message || 'Error al crear el referido',
         error: error.message
       });
     }
@@ -58,7 +54,7 @@ const referirController = {
   async obtenerReferidos(req, res) {
     try {
       const { 
-        tipo,  // 'pendientes', 'completados', 'enviados', 'recibidos'
+        tipo,
         search,
         page = 1,
         limit = 10
@@ -124,51 +120,61 @@ const referirController = {
   },
 
   // PUT /referir/:id/confirmar - Confirmar/aprobar un referido
-  async confirmarReferido(req, res) {
-    try {
-      const { id } = req.params;
-      const { comentario } = req.body;
-      const usuario = req.usuario;
+async confirmarReferido(req, res) {
+  try {
+    console.log('🚀 === INICIO confirmarReferido CONTROLLER ===');
+    console.log('📋 req.params:', req.params);
+    console.log('📋 req.body:', req.body);
+    console.log('👤 req.usuario:', req.usuario);
+    
+    const { id } = req.params;
+    const { comentario } = req.body;
+    const usuario = req.usuario;
 
-      const resultado = await referirService.confirmarReferido(
-        parseInt(id),
-        usuario,
-        comentario
-      );
+    console.log('🔍 Llamando a referirService.confirmarReferido...');
+    const resultado = await referirService.confirmarReferido(
+      parseInt(id),
+      usuario,
+      comentario
+    );
 
-      return res.status(200).json({
-        ok: true,
-        mensaje: resultado.mensaje,
-        data: resultado.referido
-      });
+    console.log('✅ Confirmación exitosa:', resultado);
 
-    } catch (error) {
-      console.error('Error en confirmarReferido:', error);
-      
-      if (error.message.includes('no tiene permisos') || 
-          error.message.includes('no autorizado')) {
-        return res.status(403).json({
-          ok: false,
-          mensaje: error.message
-        });
-      }
+    return res.status(200).json({
+      ok: true,
+      mensaje: resultado.mensaje,
+      data: resultado.referido
+    });
 
-      return res.status(500).json({
+  } catch (error) {
+    console.error('💥 ERROR en confirmarReferido controller:', error);
+    
+    if (error.message.includes('no tiene permisos') || 
+        error.message.includes('no autorizado')) {
+      return res.status(403).json({
         ok: false,
-        mensaje: 'Error al confirmar el referido',
-        error: error.message
+        mensaje: error.message
       });
     }
-  },
 
-  // PUT /referir/:id - Actualizar datos del referido (solo antes de completar)
-  async actualizarReferido(req, res) {
+    return res.status(500).json({
+      ok: false,
+      mensaje: 'Error al confirmar el referido',
+      error: error.message
+    });
+  }
+},
+
+  // PUT /referir/:id - Actualizar datos del referido
+ async actualizarReferido(req, res) {
     try {
       const { id } = req.params;
       const {
         fkclinica,
-        fkusuariodestino,
-        comentario
+        comentario,
+        rutadocumentoinicial,
+        rutadocumentofinal
+        // ❌ YA NO fkusuariodestino
       } = req.body;
       
       const usuario = req.usuario;
@@ -177,8 +183,9 @@ const referirController = {
         parseInt(id),
         {
           fkclinica,
-          fkusuariodestino,
-          comentario
+          comentario,
+          rutadocumentoinicial,
+          rutadocumentofinal
         },
         usuario
       );
@@ -192,7 +199,8 @@ const referirController = {
     } catch (error) {
       console.error('Error en actualizarReferido:', error);
       
-      if (error.message.includes('no puede modificar')) {
+      if (error.message.includes('no puede modificar') || 
+          error.message.includes('no tiene permisos')) {
         return res.status(403).json({
           ok: false,
           mensaje: error.message
@@ -211,7 +219,7 @@ const referirController = {
   async cambiarEstado(req, res) {
     try {
       const { id } = req.params;
-      const { estado } = req.body; // 0 = inactivo, 1 = activo
+      const { estado } = req.body;
       const usuario = req.usuario;
 
       if (estado === undefined || estado === null) {
@@ -238,6 +246,32 @@ const referirController = {
       return res.status(500).json({
         ok: false,
         mensaje: 'Error al cambiar el estado',
+        error: error.message
+      });
+    }
+  },
+   // GET /referir/clinicas - Obtener clínicas activas
+  async obtenerClinicas(req, res) {
+    try {
+      const clinicas = await prisma.clinica.findMany({
+        where: { estado: 1 },
+        select: {
+          idclinica: true,
+          nombreclinica: true
+        },
+        orderBy: { nombreclinica: 'asc' }
+      });
+
+      return res.status(200).json({
+        ok: true,
+        data: clinicas
+      });
+
+    } catch (error) {
+      console.error('Error en obtenerClinicas:', error);
+      return res.status(500).json({
+        ok: false,
+        mensaje: 'Error al obtener clínicas',
         error: error.message
       });
     }

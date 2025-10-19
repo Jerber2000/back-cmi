@@ -7,8 +7,8 @@ const prisma = new PrismaClient();
 const validarToken = (req, res, next) => {
     const authHeader = req.header('Authorization');
     const token = authHeader && authHeader.startsWith('Bearer ')
-        ?authHeader.slice(7)
-        :null;
+        ? authHeader.slice(7)
+        : null;
 
     if(!token){
         return res.status(401).json({
@@ -55,6 +55,7 @@ const verificarUsuarioEnBD = async (req, res, next) => {
                 nombres:      true,
                 apellidos:    true,
                 fkrol:        true,
+                fkclinica:    true,  // ✅ AGREGADO
                 estado:       true,
                 cambiarclave: true
             }

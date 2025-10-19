@@ -69,11 +69,124 @@ function generarPDFDashboard(doc, data) {
     .text(`  Completadas: ${data.referencias.completadas}`);
 }
 
+// ACTUALIZADO: Tabla de pacientes con TODAS las columnas
 function generarTablaPacientesPDF(doc, datos) {
-  const headers = ['Nombre', 'CUI', 'Género', 'Edad', 'Municipio', 'Exp.'];
-  const colWidths = [150, 80, 50, 40, 90, 50];
-  const startX = 50;
-  const startY = doc.y;
+  const headers = ['Nombre', 'CUI', 'Género', 'Edad', 'F.Nac', 'Tel.Personal', 'Municipio', 'Aldea', 'Dirección'];
+  const colWidths = [80, 70, 40, 30, 55, 60, 70, 60, 85];
+  const startX = 30;
+  
+  function dibujarHeaders(yPos) {
+    doc.fontSize(7).font('Helvetica-Bold');
+    let x = startX;
+    headers.forEach((header, i) => {
+      doc.text(header, x, yPos, { width: colWidths[i], continued: false });
+      x += colWidths[i];
+    });
+    doc.moveTo(startX, yPos + 10).lineTo(startX + 550, yPos + 10).stroke();
+    return yPos + 14;
+  }
+  
+  let y = dibujarHeaders(doc.y);
+
+  if (!datos || !datos.data || datos.data.length === 0) {
+    doc.font('Helvetica').fontSize(10);
+    doc.text('No hay datos para mostrar', startX, y);
+    return;
+  }
+
+  doc.font('Helvetica').fontSize(6);
+  
+  datos.data.forEach((item) => {
+    if (y > 730) {
+      doc.addPage();
+      y = 50;
+      y = dibujarHeaders(y);
+      doc.font('Helvetica').fontSize(6);
+    }
+
+    const edad = calcularEdad(item.fechanacimiento);
+    const row = [
+      truncarTexto(`${item.nombres || ''} ${item.apellidos || ''}`, 18),
+      truncarTexto(item.cui || 'N/A', 13),
+      item.genero === 'M' ? 'M' : 'F',
+      `${edad}`,
+      new Date(item.fechanacimiento).toLocaleDateString('es-GT'),
+      truncarTexto(item.telefonopersonal || 'N/A', 12),
+      truncarTexto(item.municipio || 'N/A', 15),
+      truncarTexto(item.aldea || 'N/A', 12),
+      truncarTexto(item.direccion || 'N/A', 18)
+    ];
+
+    let x = startX;
+    row.forEach((cell, i) => {
+      doc.text(cell, x, y, { width: colWidths[i], continued: false });
+      x += colWidths[i];
+    });
+
+    y += 14;
+  });
+  
+  // SEGUNDA PÁGINA: Datos adicionales del paciente
+  doc.addPage();
+  doc.fontSize(12).font('Helvetica-Bold').text('Información Adicional de Pacientes', 50, 50);
+  doc.moveDown(1);
+  
+  const headers2 = ['Nombre', 'Exp.', 'Contacto Emerg.', 'Tel.Emerg.', 'Encargado', 'DPI Enc.', 'Tel.Enc.'];
+  const colWidths2 = [100, 50, 95, 65, 95, 65, 65];
+  const startX2 = 30;
+  
+  function dibujarHeaders2(yPos) {
+    doc.fontSize(7).font('Helvetica-Bold');
+    let x = startX2;
+    headers2.forEach((header, i) => {
+      doc.text(header, x, yPos, { width: colWidths2[i], continued: false });
+      x += colWidths2[i];
+    });
+    doc.moveTo(startX2, yPos + 10).lineTo(startX2 + 535, yPos + 10).stroke();
+    return yPos + 14;
+  }
+  
+  y = dibujarHeaders2(doc.y);
+  doc.font('Helvetica').fontSize(6);
+  
+  datos.data.forEach((item) => {
+    if (y > 730) {
+      doc.addPage();
+      y = 50;
+      y = dibujarHeaders2(y);
+      doc.font('Helvetica').fontSize(6);
+    }
+
+    const numeroExpediente = item.expedientes && item.expedientes.length > 0 
+      ? item.expedientes[0].numeroexpediente 
+      : 'Sin Exp.';
+
+    const row = [
+      truncarTexto(`${item.nombres || ''} ${item.apellidos || ''}`, 20),
+      truncarTexto(numeroExpediente, 10),
+      truncarTexto(item.nombrecontactoemergencia || 'N/A', 18),
+      truncarTexto(item.telefonoemergencia || 'N/A', 12),
+      truncarTexto(item.nombreencargado || 'N/A', 18),
+      truncarTexto(item.dpiencargado || 'N/A', 12),
+      truncarTexto(item.telefonoencargado || 'N/A', 12)
+    ];
+
+    let x = startX2;
+    row.forEach((cell, i) => {
+      doc.text(cell, x, y, { width: colWidths2[i], continued: false });
+      x += colWidths2[i];
+    });
+
+    y += 14;
+  });
+}
+
+// ACTUALIZADO: Tabla de consultas con campos separados
+function generarTablaConsultasPDF(doc, datos) {
+  // PÁGINA 1: Información básica
+  const headers = ['Fecha', 'Paciente', 'F.Nac', 'Médico', 'Clínica'];
+  const colWidths = [60, 110, 60, 110, 120];
+  const startX = 40;
   
   function dibujarHeaders(yPos) {
     doc.fontSize(8).font('Helvetica-Bold');
@@ -86,7 +199,7 @@ function generarTablaPacientesPDF(doc, datos) {
     return yPos + 18;
   }
   
-  let y = dibujarHeaders(startY);
+  let y = dibujarHeaders(doc.y);
 
   if (!datos || !datos.data || datos.data.length === 0) {
     doc.font('Helvetica').fontSize(10);
@@ -104,14 +217,12 @@ function generarTablaPacientesPDF(doc, datos) {
       doc.font('Helvetica').fontSize(7);
     }
 
-    const edad = calcularEdad(item.fechanacimiento);
     const row = [
-      truncarTexto(`${item.nombres || ''} ${item.apellidos || ''}`, 30),
-      truncarTexto(item.cui || 'N/A', 15),
-      item.genero === 'M' ? 'M' : 'F',
-      `${edad}`,
-      truncarTexto(item.municipio || 'N/A', 18),
-      item.tieneExpediente ? 'Sí' : 'No'
+      new Date(item.fecha).toLocaleDateString('es-GT'),
+      truncarTexto(`${item.paciente?.nombres || ''} ${item.paciente?.apellidos || ''}`, 25),
+      item.paciente?.fechanacimiento ? new Date(item.paciente.fechanacimiento).toLocaleDateString('es-GT') : 'N/A',
+      truncarTexto(`${item.usuario?.nombres || ''} ${item.usuario?.apellidos || ''}`, 25),
+      truncarTexto(item.usuario?.clinica?.nombreclinica || 'N/A', 25)
     ];
 
     let x = startX;
@@ -122,72 +233,74 @@ function generarTablaPacientesPDF(doc, datos) {
 
     y += 18;
   });
-}
-
-function generarTablaConsultasPDF(doc, datos) {
-  const headers = ['Fecha', 'Paciente', 'Médico', 'Motivo Consulta', 'Diagnóstico'];
-  const colWidths = [55, 85, 85, 160, 160];
-  const startX = 40;
-  const startY = doc.y;
   
-  function dibujarHeaders(yPos) {
-    doc.fontSize(8).font('Helvetica-Bold');
-    let x = startX;
-    headers.forEach((header, i) => {
-      doc.text(header, x, yPos, { width: colWidths[i], align: 'left', continued: false });
-      x += colWidths[i];
+  // PÁGINA 2: Detalles de consulta
+  doc.addPage();
+  doc.fontSize(12).font('Helvetica-Bold').text('Detalles de Consultas', 50, 50);
+  doc.moveDown(1);
+  
+  const headers2 = ['Paciente', 'Recordatorio', 'Nota', 'Motivo', 'Evolución', 'Diagnóstico'];
+  const colWidths2 = [85, 85, 85, 85, 85, 85];
+  const startX2 = 30;
+  
+  function dibujarHeaders2(yPos) {
+    doc.fontSize(7).font('Helvetica-Bold');
+    let x = startX2;
+    headers2.forEach((header, i) => {
+      doc.text(header, x, yPos, { width: colWidths2[i], continued: false });
+      x += colWidths2[i];
     });
-    doc.moveTo(startX, yPos + 12).lineTo(startX + 545, yPos + 12).stroke();
-    return yPos + 18;
+    doc.moveTo(startX2, yPos + 10).lineTo(startX2 + 510, yPos + 10).stroke();
+    return yPos + 14;
   }
   
-  let y = dibujarHeaders(startY);
-
-  if (!datos || !datos.data || datos.data.length === 0) {
-    doc.font('Helvetica').fontSize(10);
-    doc.text('No hay datos para mostrar', startX, y);
-    return;
-  }
-
-  doc.font('Helvetica').fontSize(7);
+  y = dibujarHeaders2(doc.y);
+  doc.font('Helvetica').fontSize(6);
   
   datos.data.forEach((item) => {
+    const recordatorio = item.recordatorio || 'N/A';
+    const nota = item.notaconsulta || 'N/A';
     const motivo = item.motivoconsulta || 'N/A';
-    const diagnostico = item.diagnosticotratamiento || 'Sin diagnóstico';
+    const evolucion = item.evolucion || 'N/A';
+    const diagnostico = item.diagnosticotratamiento || 'N/A';
     
-    // Calcular altura necesaria para el texto más largo
-    const alturaMotivo = doc.heightOfString(motivo, { width: colWidths[3] });
-    const alturaDiagnostico = doc.heightOfString(diagnostico, { width: colWidths[4] });
-    const alturaFila = Math.max(alturaMotivo, alturaDiagnostico, 18) + 8;
+    const alturaMaxima = Math.max(
+      doc.heightOfString(recordatorio, { width: colWidths2[1] }),
+      doc.heightOfString(nota, { width: colWidths2[2] }),
+      doc.heightOfString(motivo, { width: colWidths2[3] }),
+      doc.heightOfString(evolucion, { width: colWidths2[4] }),
+      doc.heightOfString(diagnostico, { width: colWidths2[5] }),
+      14
+    ) + 6;
     
-    // Verificar si necesitamos nueva página
-    if (y + alturaFila > 720) {
+    if (y + alturaMaxima > 730) {
       doc.addPage();
       y = 50;
-      y = dibujarHeaders(y);
-      doc.font('Helvetica').fontSize(7);
+      y = dibujarHeaders2(y);
+      doc.font('Helvetica').fontSize(6);
     }
 
     const row = [
-      new Date(item.fecha).toLocaleDateString('es-GT'),
-      `${item.paciente?.nombres || ''} ${item.paciente?.apellidos || ''}`,
-      `${item.usuario?.nombres || ''} ${item.usuario?.apellidos || ''}`,
+      truncarTexto(`${item.paciente?.nombres || ''} ${item.paciente?.apellidos || ''}`, 18),
+      recordatorio,
+      nota,
       motivo,
+      evolucion,
       diagnostico
     ];
 
-    let x = startX;
+    let x = startX2;
     row.forEach((cell, i) => {
       doc.text(cell, x, y, { 
-        width: colWidths[i], 
+        width: colWidths2[i], 
         align: 'left',
         lineBreak: true,
         continued: false
       });
-      x += colWidths[i];
+      x += colWidths2[i];
     });
 
-    y += alturaFila;
+    y += alturaMaxima;
   });
 }
 
@@ -262,27 +375,20 @@ function generarTablaAgendaPDF(doc, datos) {
     return yPos + 18;
   }
   
-  // Función para formatear hora correctamente
   function formatearHora(hora) {
     if (!hora) return '';
-    
-    // Si es string, retornar directamente
     if (typeof hora === 'string') {
-      // Si ya está en formato HH:MM:SS, extraer solo HH:MM
       if (hora.includes(':')) {
         const partes = hora.split(':');
         return `${partes[0]}:${partes[1]}`;
       }
       return hora;
     }
-    
-    // Si es objeto Date
     if (hora instanceof Date) {
       const horas = hora.getHours().toString().padStart(2, '0');
       const minutos = hora.getMinutes().toString().padStart(2, '0');
       return `${horas}:${minutos}`;
     }
-    
     return String(hora);
   }
   
@@ -323,21 +429,22 @@ function generarTablaAgendaPDF(doc, datos) {
   });
 }
 
+// ACTUALIZADO: Tabla de referencias con usuario confirmador y número de expediente
 function generarTablaReferenciasPDF(doc, datos) {
-  const headers = ['Fecha', 'Paciente', 'De', 'Para', 'Clínica', 'Estado'];
-  const colWidths = [60, 95, 95, 95, 100, 55];
-  const startX = 50;
+  const headers = ['Fecha', 'Paciente', 'N° Exp.', 'De', 'Para', 'Clínica', 'Estado'];
+  const colWidths = [55, 85, 60, 85, 85, 90, 55];
+  const startX = 35;
   const startY = doc.y;
   
   function dibujarHeaders(yPos) {
-    doc.fontSize(8).font('Helvetica-Bold');
+    doc.fontSize(7).font('Helvetica-Bold');
     let x = startX;
     headers.forEach((header, i) => {
       doc.text(header, x, yPos, { width: colWidths[i], continued: false });
       x += colWidths[i];
     });
-    doc.moveTo(startX, yPos + 12).lineTo(startX + 500, yPos + 12).stroke();
-    return yPos + 18;
+    doc.moveTo(startX, yPos + 10).lineTo(startX + 515, yPos + 10).stroke();
+    return yPos + 14;
   }
   
   let y = dibujarHeaders(startY);
@@ -348,22 +455,26 @@ function generarTablaReferenciasPDF(doc, datos) {
     return;
   }
 
-  doc.font('Helvetica').fontSize(7);
+  doc.font('Helvetica').fontSize(6);
   
   datos.data.forEach((item) => {
-    if (y > 720) {
+    if (y > 730) {
       doc.addPage();
       y = 50;
       y = dibujarHeaders(y);
-      doc.font('Helvetica').fontSize(7);
+      doc.font('Helvetica').fontSize(6);
     }
+
+    // Usuario que confirmó (confirmacion4)
+    const usuarioConfirmador = item.usuarioconfirma4 || 'Pendiente';
 
     const row = [
       new Date(item.fechacreacion).toLocaleDateString('es-GT'),
-      truncarTexto(`${item.paciente?.nombres || ''} ${item.paciente?.apellidos || ''}`, 20),
-      truncarTexto(`${item.usuario?.nombres || ''} ${item.usuario?.apellidos || ''}`, 20),
-      truncarTexto(`${item.usuarioDestino?.nombres || ''} ${item.usuarioDestino?.apellidos || ''}`, 20),
-      truncarTexto(item.clinica?.nombreclinica || 'N/A', 22),
+      truncarTexto(`${item.paciente?.nombres || ''} ${item.paciente?.apellidos || ''}`, 18),
+      truncarTexto(item.expediente?.numeroexpediente || 'N/A', 12),
+      truncarTexto(`${item.usuario?.nombres || ''} ${item.usuario?.apellidos || ''}`, 18),
+      truncarTexto(usuarioConfirmador, 18),
+      truncarTexto(item.clinica?.nombreclinica || 'N/A', 18),
       item.confirmacion4 === 1 ? 'Completado' : 'Pendiente'
     ];
 
@@ -373,7 +484,7 @@ function generarTablaReferenciasPDF(doc, datos) {
       x += colWidths[i];
     });
 
-    y += 18;
+    y += 14;
   });
 }
 
@@ -397,15 +508,24 @@ function generarPDFTabla(doc, tipoReporte, datosReporte) {
   }
 }
 
-// Funciones de Excel (sin cambios)
+// ACTUALIZADO: Excel Pacientes con todas las columnas
 function generarExcelPacientes(worksheet, datos) {
   worksheet.columns = [
-    { header: 'Nombre', key: 'nombre', width: 30 },
-    { header: 'CUI', key: 'cui', width: 15 },
+    { header: 'Nombre Completo', key: 'nombre', width: 35 },
+    { header: 'CUI', key: 'cui', width: 18 },
     { header: 'Género', key: 'genero', width: 12 },
     { header: 'Edad', key: 'edad', width: 10 },
+    { header: 'Fecha Nacimiento', key: 'fechaNacimiento', width: 18 },
+    { header: 'Teléfono Personal', key: 'telefonoPersonal', width: 18 },
     { header: 'Municipio', key: 'municipio', width: 25 },
-    { header: 'Expediente', key: 'expediente', width: 12 }
+    { header: 'Aldea', key: 'aldea', width: 25 },
+    { header: 'Dirección', key: 'direccion', width: 40 },
+    { header: 'N° Expediente', key: 'numeroExpediente', width: 20 },
+    { header: 'Contacto Emergencia', key: 'contactoEmergencia', width: 30 },
+    { header: 'Tel. Emergencia', key: 'telefonoEmergencia', width: 18 },
+    { header: 'Nombre Encargado', key: 'nombreEncargado', width: 30 },
+    { header: 'DPI Encargado', key: 'dpiEncargado', width: 18 },
+    { header: 'Tel. Encargado', key: 'telefonoEncargado', width: 18 }
   ];
 
   worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
@@ -417,24 +537,43 @@ function generarExcelPacientes(worksheet, datos) {
 
   datos.data.forEach(item => {
     const edad = calcularEdad(item.fechanacimiento);
+    const numeroExpediente = item.expedientes && item.expedientes.length > 0 
+      ? item.expedientes[0].numeroexpediente 
+      : 'Sin expediente';
+    
     worksheet.addRow({
       nombre: `${item.nombres} ${item.apellidos}`,
       cui: item.cui || 'N/A',
       genero: item.genero === 'M' ? 'Masculino' : 'Femenino',
       edad: `${edad} años`,
+      fechaNacimiento: new Date(item.fechanacimiento).toLocaleDateString('es-GT'),
+      telefonoPersonal: item.telefonopersonal || 'N/A',
       municipio: item.municipio || 'N/A',
-      expediente: item.tieneExpediente ? 'Sí' : 'No'
+      aldea: item.aldea || 'N/A',
+      direccion: item.direccion || 'N/A',
+      numeroExpediente: numeroExpediente,
+      contactoEmergencia: item.nombrecontactoemergencia || 'N/A',
+      telefonoEmergencia: item.telefonoemergencia || 'N/A',
+      nombreEncargado: item.nombreencargado || 'N/A',
+      dpiEncargado: item.dpiencargado || 'N/A',
+      telefonoEncargado: item.telefonoencargado || 'N/A'
     });
   });
 }
 
+// ACTUALIZADO: Excel Consultas con campos separados
 function generarExcelConsultas(worksheet, datos) {
   worksheet.columns = [
-    { header: 'Fecha', key: 'fecha', width: 15 },
+    { header: 'Fecha Consulta', key: 'fecha', width: 18 },
     { header: 'Paciente', key: 'paciente', width: 30 },
+    { header: 'F. Nacimiento Paciente', key: 'fechaNacPaciente', width: 20 },
     { header: 'Médico', key: 'medico', width: 30 },
-    { header: 'Motivo Consulta', key: 'motivo', width: 50 },
-    { header: 'Diagnóstico', key: 'diagnostico', width: 60 }
+    { header: 'Clínica', key: 'clinica', width: 30 },
+    { header: 'Recordatorio', key: 'recordatorio', width: 40 },
+    { header: 'Nota Consulta', key: 'notaConsulta', width: 40 },
+    { header: 'Motivo Consulta', key: 'motivoConsulta', width: 50 },
+    { header: 'Evolución', key: 'evolucion', width: 50 },
+    { header: 'Diagnóstico/Tratamiento', key: 'diagnostico', width: 60 }
   ];
 
   worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
@@ -448,14 +587,22 @@ function generarExcelConsultas(worksheet, datos) {
     const row = worksheet.addRow({
       fecha: new Date(item.fecha).toLocaleDateString('es-GT'),
       paciente: `${item.paciente?.nombres} ${item.paciente?.apellidos}`,
+      fechaNacPaciente: item.paciente?.fechanacimiento 
+        ? new Date(item.paciente.fechanacimiento).toLocaleDateString('es-GT') 
+        : 'N/A',
       medico: `${item.usuario?.nombres} ${item.usuario?.apellidos}`,
-      motivo: item.motivoconsulta || 'N/A',
+      clinica: item.usuario?.clinica?.nombreclinica || 'N/A',
+      recordatorio: item.recordatorio || 'N/A',
+      notaConsulta: item.notaconsulta || 'N/A',
+      motivoConsulta: item.motivoconsulta || 'N/A',
+      evolucion: item.evolucion || 'N/A',
       diagnostico: item.diagnosticotratamiento || 'Sin diagnóstico'
     });
     
-    // Habilitar wrap text para motivo y diagnóstico
-    row.getCell('motivo').alignment = { wrapText: true, vertical: 'top' };
-    row.getCell('diagnostico').alignment = { wrapText: true, vertical: 'top' };
+    // Habilitar wrap text para campos largos
+    ['recordatorio', 'notaConsulta', 'motivoConsulta', 'evolucion', 'diagnostico'].forEach(col => {
+      row.getCell(col).alignment = { wrapText: true, vertical: 'top' };
+    });
   });
 }
 
@@ -507,7 +654,6 @@ function generarExcelAgenda(worksheet, datos) {
     fgColor: { argb: 'FF4472C4' }
   };
 
-  // Función para formatear hora en Excel
   function formatearHoraExcel(hora) {
     if (!hora) return '';
     if (typeof hora === 'string') {
@@ -537,13 +683,15 @@ function generarExcelAgenda(worksheet, datos) {
   });
 }
 
+// ACTUALIZADO: Excel Referencias con usuario confirmador y número de expediente
 function generarExcelReferencias(worksheet, datos) {
   worksheet.columns = [
-    { header: 'Fecha', key: 'fecha', width: 15 },
+    { header: 'Fecha', key: 'fecha', width: 18 },
     { header: 'Paciente', key: 'paciente', width: 30 },
-    { header: 'De', key: 'de', width: 30 },
-    { header: 'Para', key: 'para', width: 30 },
-    { header: 'Clínica', key: 'clinica', width: 30 },
+    { header: 'N° Expediente', key: 'numeroExpediente', width: 20 },
+    { header: 'Enviado Por', key: 'de', width: 30 },
+    { header: 'Confirmado Por', key: 'para', width: 30 },
+    { header: 'Clínica Destino', key: 'clinica', width: 30 },
     { header: 'Estado', key: 'estado', width: 15 }
   ];
 
@@ -555,11 +703,15 @@ function generarExcelReferencias(worksheet, datos) {
   };
 
   datos.data.forEach(item => {
+    // Usuario que confirmó la referencia (confirmacion4)
+    const usuarioConfirmador = item.usuarioconfirma4 || 'Pendiente de confirmación';
+    
     worksheet.addRow({
       fecha: new Date(item.fechacreacion).toLocaleDateString('es-GT'),
       paciente: `${item.paciente?.nombres} ${item.paciente?.apellidos}`,
+      numeroExpediente: item.expediente?.numeroexpediente || 'Sin expediente',
       de: `${item.usuario?.nombres} ${item.usuario?.apellidos}`,
-      para: `${item.usuarioDestino?.nombres} ${item.usuarioDestino?.apellidos}`,
+      para: usuarioConfirmador,
       clinica: item.clinica?.nombreclinica || 'N/A',
       estado: item.confirmacion4 === 1 ? 'Completado' : 'Pendiente'
     });
@@ -709,6 +861,7 @@ const reporteriaService = {
     }
   },
 
+  // ACTUALIZADO: Incluir todos los campos del paciente
   async obtenerReportePacientes(filtros) {
     try {
       const { desde, hasta, genero, municipio, edadMin, edadMax, tipodiscapacidad, page, limit } = filtros;
@@ -716,7 +869,6 @@ const reporteriaService = {
 
       const whereClause = { estado: 1 };
 
-      // VALIDACIÓN DE FECHAS
       if (esFechaValida(desde) || esFechaValida(hasta)) {
         whereClause.fechacreacion = {};
         if (esFechaValida(desde)) whereClause.fechacreacion.gte = new Date(desde);
@@ -727,7 +879,6 @@ const reporteriaService = {
       if (municipio && municipio !== '') whereClause.municipio = { contains: municipio, mode: 'insensitive' };
       if (tipodiscapacidad && tipodiscapacidad !== '') whereClause.tipodiscapacidad = { contains: tipodiscapacidad, mode: 'insensitive' };
 
-      // VALIDACIÓN DE EDADES
       const edadMinNum = parseInt(edadMin);
       const edadMaxNum = parseInt(edadMax);
       
@@ -750,7 +901,13 @@ const reporteriaService = {
         prisma.paciente.findMany({
           where: whereClause,
           include: {
-            expedientes: { where: { estado: 1 }, select: { numeroexpediente: true, fechacreacion: true } }
+            expedientes: { 
+              where: { estado: 1 }, 
+              select: { 
+                numeroexpediente: true, 
+                fechacreacion: true 
+              } 
+            }
           },
           orderBy: { fechacreacion: 'desc' },
           skip,
@@ -786,6 +943,7 @@ const reporteriaService = {
     }
   },
 
+  // ACTUALIZADO: Incluir clínica y campos separados
   async obtenerReporteConsultas(filtros, usuario) {
     try {
       const { desde, hasta, medico, paciente, diagnostico, page, limit } = filtros;
@@ -801,7 +959,6 @@ const reporteriaService = {
 
       if (!esAdmin) whereClause.fkusuario = usuario.idusuario;
       
-      // VALIDACIÓN DE FECHAS
       if (esFechaValida(desde) || esFechaValida(hasta)) {
         whereClause.fecha = {};
         if (esFechaValida(desde)) whereClause.fecha.gte = new Date(desde);
@@ -819,8 +976,28 @@ const reporteriaService = {
         prisma.detallehistorialclinico.findMany({
           where: whereClause,
           include: {
-            paciente: { select: { idpaciente: true, nombres: true, apellidos: true, cui: true, fechanacimiento: true } },
-            usuario: { select: { idusuario: true, nombres: true, apellidos: true, profesion: true } }
+            paciente: { 
+              select: { 
+                idpaciente: true, 
+                nombres: true, 
+                apellidos: true, 
+                cui: true, 
+                fechanacimiento: true 
+              } 
+            },
+            usuario: { 
+              select: { 
+                idusuario: true, 
+                nombres: true, 
+                apellidos: true, 
+                profesion: true,
+                clinica: {
+                  select: {
+                    nombreclinica: true
+                  }
+                }
+              } 
+            }
           },
           orderBy: { fecha: 'desc' },
           skip,
@@ -944,7 +1121,6 @@ const reporteriaService = {
 
       if (!esAdmin) whereClause.fkusuario = usuario.idusuario;
       
-      // VALIDACIÓN DE FECHAS
       if (esFechaValida(desde) || esFechaValida(hasta)) {
         whereClause.fechaatencion = {};
         if (esFechaValida(desde)) whereClause.fechaatencion.gte = new Date(desde);
@@ -979,13 +1155,11 @@ const reporteriaService = {
         prisma.agenda.count({ where: whereClause })
       ]);
 
-      // FORMATEAR HORA ANTES DE ENVIAR AL FRONTEND (SIN CONVERSIÓN DE ZONA HORARIA)
       const citasFormateadas = citas.map(cita => {
         let horaFormateada = '';
         
         if (cita.horaatencion) {
           if (typeof cita.horaatencion === 'string') {
-            // Si ya es string, extraer solo HH:MM
             if (cita.horaatencion.includes(':')) {
               const partes = cita.horaatencion.split(':');
               horaFormateada = `${partes[0]}:${partes[1]}`;
@@ -993,7 +1167,6 @@ const reporteriaService = {
               horaFormateada = cita.horaatencion;
             }
           } else if (cita.horaatencion instanceof Date) {
-            // CRÍTICO: Usar UTC para evitar conversión de zona horaria
             const horas = cita.horaatencion.getUTCHours().toString().padStart(2, '0');
             const minutos = cita.horaatencion.getUTCMinutes().toString().padStart(2, '0');
             horaFormateada = `${horas}:${minutos}`;
@@ -1025,6 +1198,7 @@ const reporteriaService = {
     }
   },
 
+  // ACTUALIZADO: Incluir número de expediente y usuario confirmador
   async obtenerReporteReferencias(filtros, usuario) {
     try {
       const { tipo, estado, clinica, medico, desde, hasta, page, limit } = filtros;
@@ -1064,7 +1238,6 @@ const reporteriaService = {
         ];
       }
       
-      // VALIDACIÓN DE FECHAS
       if (esFechaValida(desde) || esFechaValida(hasta)) {
         whereClause.fechacreacion = {};
         if (esFechaValida(desde)) whereClause.fechacreacion.gte = new Date(desde);
@@ -1078,7 +1251,8 @@ const reporteriaService = {
             paciente: { select: { idpaciente: true, nombres: true, apellidos: true, cui: true } },
             clinica: { select: { idclinica: true, nombreclinica: true } },
             usuario: { select: { idusuario: true, nombres: true, apellidos: true, profesion: true } },
-            usuarioDestino: { select: { idusuario: true, nombres: true, apellidos: true, profesion: true } }
+            usuarioDestino: { select: { idusuario: true, nombres: true, apellidos: true, profesion: true } },
+            expediente: { select: { numeroexpediente: true } }
           },
           orderBy: { fechacreacion: 'desc' },
           skip,
@@ -1147,13 +1321,11 @@ const reporteriaService = {
         doc.on('end', () => resolve(Buffer.concat(chunks)));
         doc.on('error', reject);
 
-        // Header
         doc.fontSize(18).font('Helvetica-Bold').text(titulo, { align: 'center' });
         doc.moveDown(0.5);
         doc.fontSize(10).font('Helvetica').text(`Fecha: ${new Date().toLocaleDateString('es-GT')}`, { align: 'center' });
         doc.moveDown(1);
 
-        // Contenido
         if (tipoReporte === 'dashboard') {
           generarPDFDashboard(doc, datosReporte);
         } else {
