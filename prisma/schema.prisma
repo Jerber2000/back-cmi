@@ -31,14 +31,14 @@ model usuario {
   usuariomodificacion      String?                   @db.VarChar(100)
   fechamodificacion        DateTime?                 @db.Timestamp(6)
   estado                   Int?                      @default(1) @db.SmallInt
-  cambiarclave             Boolean                   @default(false)
+  cambiarclave             Boolean?                  @default(false)
   fkclinica                Int?
   agendas                  agenda[]
   detallesHistorialClinico detallehistorialclinico[]
   referidosComoOrigen      detallereferirpaciente[]  @relation("referir_usuario_origen")
   referidosComoDestino     detallereferirpaciente[]  @relation("referir_usuario_destino")
   inventariomedico         inventariomedico[]
-  clinica                  clinica?                  @relation(fields: [fkclinica], references: [idclinica], onDelete: Restrict, map: "fk_usuario_clinica")
+  clinica                  clinica?                  @relation(fields: [fkclinica], references: [idclinica], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_clinica")
   rol                      rol                       @relation(fields: [fkrol], references: [idrol], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_rol")
 }
 
@@ -69,7 +69,7 @@ model agenda {
   usuariomodificacion String?   @db.VarChar(100)
   fechamodificacion   DateTime? @db.Timestamp(6)
   estado              Int?      @default(1) @db.SmallInt
-  direccion           String?   @default("Dirección no especificada")
+  direccion           String?   @default("Dirección no especificada")
   paciente            paciente  @relation(fields: [fkpaciente], references: [idpaciente], onDelete: NoAction, onUpdate: NoAction, map: "fk_agenda_paciente")
   usuario             usuario   @relation(fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_agenda_usuario")
 }
@@ -133,7 +133,7 @@ model detallereferirpaciente {
   expediente           expediente @relation(fields: [fkexpediente], references: [idexpediente], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_expediente")
   paciente             paciente   @relation(fields: [fkpaciente], references: [idpaciente], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_paciente")
   usuario              usuario    @relation("referir_usuario_origen", fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_usuario")
-  usuarioDestino       usuario?   @relation("referir_usuario_destino", fields: [fkusuariodestino], references: [idusuario], onDelete: NoAction, onUpdate: NoAction)
+  usuarioDestino       usuario?   @relation("referir_usuario_destino", fields: [fkusuariodestino], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_usuariodestino")
 }
 
 model expediente {
@@ -233,4 +233,16 @@ model inventariomedico {
   fechamodificacion   DateTime? @db.Timestamp(6)
   estado              Int?      @default(1) @db.SmallInt
   usuario             usuario   @relation(fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_inventario_usuario")
+}
+
+model detalledocumento {
+  iddocumento         Int       @id @default(autoincrement())
+  nombredocumento     String    @db.VarChar(200)
+  descripcion         String?
+  rutadocumento       String
+  usuariocreacion     String    @db.VarChar(100)
+  fechacreacion       DateTime? @default(now()) @db.Timestamp(6)
+  usuariomodificacion String?   @db.VarChar(100)
+  fechamodificacion   DateTime? @db.Timestamp(6)
+  estado              Int?      @default(1) @db.SmallInt
 }

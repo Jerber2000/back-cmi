@@ -40,7 +40,6 @@ const usuarioRoute = require('./routes/usuarioRoutes');
 const pacienteRoutes = require('./routes/pacienteRoutes');
 const archivoRoutes = require('./routes/archivoRoutes');
 const { ServeFileController } = require('./controllers/serveFileController');
-
 const serveFileController = new ServeFileController();
 const expedienteRoutes = require('./routes/expedienteRoutes'); 
 const historialRoutes = require('./routes/historialMedico');
@@ -48,6 +47,7 @@ const agendaRoutes = require('./routes/agendaRoutes');
 const referirRoutes = require('./routes/referirRoutes'); 
 const inventarioMedico = require('./routes/inventariomedicoRoutes'); 
 const reporteriaRoutes = require('./routes/reporteriaRoutes');
+const documentoRoutes = require('./routes/documentoRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/pacientes', pacienteRoutes);
@@ -61,6 +61,7 @@ app.use('/api/agenda', agendaRoutes);
 app.use('/api/referir', referirRoutes);
 app.use('/api/inventario', inventarioMedico);
 app.use('/api/reporteria', reporteriaRoutes);
+app.use('/api/documentos', documentoRoutes);  // ← ✅ LÍNEA AGREGADA
 
 // Ruta raíz
 app.get('/', (req, res) => {
@@ -127,6 +128,14 @@ app.get('/', (req, res) => {
         referencias: 'GET /api/reporteria/referencias',
         generarPDF: 'POST /api/reporteria/generar-pdf',
         exportarExcel: 'POST /api/reporteria/exportar-excel'
+      },
+      documentos: {
+        listar: 'GET /api/documentos',
+        crear: 'POST /api/documentos',
+        obtener: 'GET /api/documentos/:id',
+        actualizar: 'PUT /api/documentos/:id',
+        eliminar: 'DELETE /api/documentos/:id',
+        cambiarEstado: 'PATCH /api/documentos/:id/estado'
       }
     }
   });
