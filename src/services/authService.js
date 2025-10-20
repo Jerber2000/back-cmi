@@ -12,6 +12,15 @@ class AuthService{
                 where: {
                     usuario: usuario_.toLowerCase().trim()
                 },
+                include: {
+                    rol: { 
+                        select: {
+                            idrol: true,
+                            nombre: true
+                        }
+                    }
+                }
+                /*
                 select:{
                     idusuario:      true,
                     usuario:        true,
@@ -24,7 +33,7 @@ class AuthService{
                     estado:         true,
                     clave:          true,
                     cambiarclave:   true
-                }
+                }*/
             });
 
             if(!usuario){
@@ -45,21 +54,31 @@ class AuthService{
 
             //Genera el token 
             const token = generarToken({
-                id:       usuario.idusuario,
-                usuario:  usuario.usuario,
-                nombre:   usuario.nombres,
-                apellido: usuario.apellidos,
-                rutafotoperfil: usuario.rutafotoperfil
+                id:             usuario.idusuario,
+                usuario:        usuario.usuario,
+                nombre:         usuario.nombres,
+                apellido:       usuario.apellidos,
+                rutafotoperfil: usuario.rutafotoperfil,
+                fkrol:          usuario.fkrol
             });
 
             //Retornar datos (sin la contraseña)
             const { clave: _, ...usuarioSinClave } = usuario;
             
             return {
-                usuario: usuarioSinClave,
+                usuario: {
+                    ...usuarioSinClave,
+                    rolNombre: usuario.rol.nombre
+                },
                 token,
                 cambiarclave: usuario.cambiarclave
             };
+
+            // return {
+            //     usuario: usuarioSinClave,
+            //     token,
+            //     cambiarclave: usuario.cambiarclave
+            // };
         }catch(error){
             console.error('Error en AuthService.login:', error.message);
             throw error;
@@ -136,7 +155,7 @@ class AuthService{
                 select: { cambiarclave: true }
             });
 
-            return usuario ? usuario.cambiarClave : false;
+            return usuario ? usuario.cambiarclave : false;
         } catch (error) {
             console.error('Error en AuthService.verificarCambioClave:', error.message);
             return false;

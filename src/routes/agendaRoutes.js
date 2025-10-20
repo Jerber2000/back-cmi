@@ -3,6 +3,7 @@ const router = express.Router();
 const autenticacion = require('../middlewares/auth');
 const { validarCambioClave } = require('../middlewares/validarCambioClave');
 const agendaController = require('../controllers/agendaController');
+const checkRole = require('../middlewares/checkRole');
 
 router.post(
     '/crearCita',
@@ -17,6 +18,7 @@ router.get(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
+    checkRole(1,2),
     agendaController.obtenerCitas
 );
 
