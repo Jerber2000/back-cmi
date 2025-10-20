@@ -16,6 +16,11 @@ router.use(verificarUsuarioEnBD);
 // RUTAS CRUD
 // ============================================================================
 
+// Obtener clínicas activas
+router.get('/clinicas',
+  referirController.obtenerClinicas
+);
+
 // POST /referir - Crear nuevo referido
 router.post('/',
   validarReferido.validarCreacion,

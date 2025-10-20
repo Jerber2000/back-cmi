@@ -9,16 +9,15 @@ const referirService = {
     try {
       const {
         fkusuario,
-        fkusuariodestino,
         fkpaciente,
         fkexpediente,
         fkclinica,
         comentario,
-        usuariocreacion,
-        rutadocumentoinicial 
+        usuariocreacion
+        // ❌ YA NO fkusuariodestino
       } = datos;
 
-      // Validar que el paciente exista
+      // Validar paciente
       const paciente = await prisma.paciente.findUnique({
         where: { idpaciente: fkpaciente, estado: 1 }
       });
@@ -27,7 +26,7 @@ const referirService = {
         throw new Error('Paciente no encontrado o inactivo');
       }
 
-      // Validar que el expediente exista y pertenezca al paciente
+      // Validar expediente
       const expediente = await prisma.expediente.findFirst({
         where: {
           idexpediente: fkexpediente,
@@ -40,7 +39,7 @@ const referirService = {
         throw new Error('Expediente no encontrado o no pertenece al paciente');
       }
 
-      // Validar que la clínica exista
+      // Validar clínica
       const clinica = await prisma.clinica.findUnique({
         where: { idclinica: fkclinica, estado: 1 }
       });
@@ -49,26 +48,26 @@ const referirService = {
         throw new Error('Clínica no encontrada o inactiva');
       }
 
-      // Validar que el usuario destino exista y sea médico
-      const usuarioDestino = await prisma.usuario.findUnique({
-        where: { idusuario: fkusuariodestino, estado: 1 },
-        include: { rol: true }
+      // ✅ Validar que existan usuarios asignados a esa clínica
+      const usuariosClinica = await prisma.usuario.count({
+        where: {
+          fkclinica: fkclinica,
+          estado: 1
+        }
       });
 
-      if (!usuarioDestino) {
-        throw new Error('Usuario destino no encontrado o inactivo');
+      if (usuariosClinica === 0) {
+        throw new Error(`No hay usuarios asignados a la clínica ${clinica.nombreclinica}`);
       }
 
-      // Crear el referido con confirmacion1 automática
+      // Crear referido
       const nuevoReferido = await prisma.detallereferirpaciente.create({
         data: {
           fkusuario,
-          fkusuariodestino,
           fkpaciente,
           fkexpediente,
           fkclinica,
           comentario,
-          rutadocumentoinicial: rutadocumentoinicial || null,
           confirmacion1: 1,
           usuarioconfirma1: usuariocreacion,
           confirmacion2: 0,
@@ -93,14 +92,6 @@ const referirService = {
             }
           },
           usuario: {
-            select: {
-              idusuario: true,
-              nombres: true,
-              apellidos: true,
-              profesion: true
-            }
-          },
-          usuarioDestino: {
             select: {
               idusuario: true,
               nombres: true,
@@ -135,56 +126,47 @@ const referirService = {
         include: { rol: true }
       });
 
-      const esAdmin = usuarioConRol.rol.nombre === 'Administrador';
+      const esAdmin = usuarioConRol?.rol?.nombre?.toLowerCase().includes('admin');
 
       switch (tipo) {
         case 'pendientes':
           if (esAdmin) {
-            // Admins ven los que les faltan aprobar
             whereClause.OR = [
               { confirmacion2: 0, confirmacion1: 1 },
               { confirmacion3: 0, confirmacion1: 1, confirmacion2: 1 }
             ];
           } else {
-            // Médicos ven los que les enviaron y falta su aprobación
-            whereClause.fkusuariodestino = usuario.idusuario;
+            // ✅ Usuario de la clínica ve pendientes de su clínica
+            whereClause.fkclinica = usuarioConRol.fkclinica;
             whereClause.confirmacion4 = 0;
-            whereClause.confirmacion3 = 1; // Ya pasó por admins
+            whereClause.confirmacion3 = 1;
           }
           break;
 
-        case 'enviados':
-          // Referidos que yo envié
-          whereClause.fkusuario = usuario.idusuario;
-          break;
-
         case 'recibidos':
-          // Referidos que me enviaron
-          whereClause.fkusuariodestino = usuario.idusuario;
+          // ✅ Referidos destinados a la clínica del usuario
+          whereClause.fkclinica = usuarioConRol.fkclinica;
           break;
 
         case 'completados':
-          // Todos con las 4 confirmaciones
           whereClause.confirmacion1 = 1;
           whereClause.confirmacion2 = 1;
           whereClause.confirmacion3 = 1;
           whereClause.confirmacion4 = 1;
           
           if (!esAdmin) {
-            // Médicos solo ven los suyos
             whereClause.OR = [
               { fkusuario: usuario.idusuario },
-              { fkusuariodestino: usuario.idusuario }
+              { fkclinica: usuarioConRol.fkclinica }  // ✅ Por clínica
             ];
           }
           break;
 
         default:
-          // Sin filtro específico, mostrar según rol
           if (!esAdmin) {
             whereClause.OR = [
               { fkusuario: usuario.idusuario },
-              { fkusuariodestino: usuario.idusuario }
+              { fkclinica: usuarioConRol.fkclinica }  // ✅ Por clínica
             ];
           }
       }
@@ -200,7 +182,6 @@ const referirService = {
         };
       }
 
-      // Ejecutar consulta con paginación
       const [referidos, total] = await Promise.all([
         prisma.detallereferirpaciente.findMany({
           where: whereClause,
@@ -221,14 +202,6 @@ const referirService = {
               }
             },
             usuario: {
-              select: {
-                idusuario: true,
-                nombres: true,
-                apellidos: true,
-                profesion: true
-              }
-            },
-            usuarioDestino: {
               select: {
                 idusuario: true,
                 nombres: true,
@@ -282,15 +255,6 @@ const referirService = {
               profesion: true,
               correo: true
             }
-          },
-          usuarioDestino: {
-            select: {
-              idusuario: true,
-              nombres: true,
-              apellidos: true,
-              profesion: true,
-              correo: true
-            }
           }
         }
       });
@@ -299,16 +263,16 @@ const referirService = {
         return null;
       }
 
-      // Verificar permisos (admin o involucrado en el referido)
+      // Verificar permisos
       const usuarioConRol = await prisma.usuario.findUnique({
         where: { idusuario: usuario.idusuario },
         include: { rol: true }
       });
 
-      const esAdmin = usuarioConRol.rol.nombre === 'Administrador';
+      const esAdmin = usuarioConRol?.rol?.nombre?.toLowerCase().includes('admin');
       const esInvolucrado = 
-        referido.fkusuario === usuario.idusuario || 
-        referido.fkusuariodestino === usuario.idusuario;
+      referido.fkusuario === usuario.idusuario || 
+      usuarioConRol.fkclinica === referido.fkclinica;
 
       if (!esAdmin && !esInvolucrado) {
         throw new Error('No tiene permisos para ver este referido');
@@ -323,192 +287,243 @@ const referirService = {
   },
 
   // Confirmar/aprobar referido
-  async confirmarReferido(id, usuario, comentarioAdicional) {
-    try {
-      // Obtener el referido actual
-      const referido = await prisma.detallereferirpaciente.findFirst({
-        where: {
-          idrefpaciente: id,
-          estado: 1
-        }
-      });
-
-      if (!referido) {
-        throw new Error('Referido no encontrado');
+async confirmarReferido(id, usuario, comentarioAdicional) {
+  try {
+    console.log('🚀 === INICIO confirmarReferido SERVICE ===');
+    console.log('📋 ID:', id);
+    console.log('👤 Usuario:', usuario);
+    console.log('💬 Comentario:', comentarioAdicional);
+    
+    console.log('🔍 Buscando referido...');
+    const referido = await prisma.detallereferirpaciente.findFirst({
+      where: {
+        idrefpaciente: id,
+        estado: 1
       }
+    });
 
-      // Verificar que no esté completado
-      if (referido.confirmacion4 === 1) {
-        throw new Error('Este referido ya fue completado');
-      }
+    console.log('📄 Referido encontrado:', {
+      idrefpaciente: referido?.idrefpaciente,
+      confirmacion1: referido?.confirmacion1,
+      confirmacion2: referido?.confirmacion2,
+      confirmacion3: referido?.confirmacion3,
+      confirmacion4: referido?.confirmacion4
+    });
 
-      const usuarioConRol = await prisma.usuario.findUnique({
-        where: { idusuario: usuario.idusuario },
-        include: { rol: true }
-      });
-
-      const esAdmin = usuarioConRol.rol.nombre === 'Administrador';
-      const usuarioNombre = usuario.usuario;
-      let campoActualizar = {};
-      let mensaje = '';
-
-      // Determinar qué confirmación corresponde
-      if (referido.confirmacion2 === 0 && referido.confirmacion1 === 1) {
-        // Confirmación 2 - Admin 1
-        if (!esAdmin) {
-          throw new Error('Solo administradores pueden aprobar en esta etapa');
-        }
-        campoActualizar = {
-          confirmacion2: 1,
-          usuarioconfirma2: usuarioNombre,
-          usuariomodificacion: usuarioNombre,
-          fechamodificacion: new Date()
-        };
-        mensaje = 'Aprobación 1 de administrador registrada';
-
-      } else if (referido.confirmacion3 === 0 && referido.confirmacion2 === 1) {
-        // Confirmación 3 - Admin 2
-        if (!esAdmin) {
-          throw new Error('Solo administradores pueden aprobar en esta etapa');
-        }
-        if (referido.usuarioconfirma2 === usuarioNombre) {
-          throw new Error('No puede aprobar dos veces el mismo referido');
-        }
-        campoActualizar = {
-          confirmacion3: 1,
-          usuarioconfirma3: usuarioNombre,
-          usuariomodificacion: usuarioNombre,
-          fechamodificacion: new Date()
-        };
-        mensaje = 'Aprobación 2 de administrador registrada';
-
-      } else if (referido.confirmacion4 === 0 && referido.confirmacion3 === 1) {
-        // Confirmación 4 - Médico destino
-        if (referido.fkusuariodestino !== usuario.idusuario) {
-          throw new Error('Solo el médico asignado puede aprobar esta etapa');
-        }
-        campoActualizar = {
-          confirmacion4: 1,
-          usuarioconfirma4: usuarioNombre,
-          usuariomodificacion: usuarioNombre,
-          fechamodificacion: new Date()
-        };
-        mensaje = 'Referido completado exitosamente';
-
-      } else {
-        throw new Error('No se puede aprobar en esta etapa');
-      }
-
-      // Actualizar comentario si se proporciona
-      if (comentarioAdicional) {
-        const comentarioActual = referido.comentario || '';
-        campoActualizar.comentario = comentarioActual 
-          ? `${comentarioActual}\n---\n${usuarioNombre}: ${comentarioAdicional}`
-          : comentarioAdicional;
-      }
-
-      // Ejecutar actualización
-      const referidoActualizado = await prisma.detallereferirpaciente.update({
-        where: { idrefpaciente: id },
-        data: campoActualizar,
-        include: {
-          paciente: true,
-          clinica: true,
-          usuario: {
-            select: {
-              nombres: true,
-              apellidos: true
-            }
-          },
-          usuarioDestino: {
-            select: {
-              nombres: true,
-              apellidos: true
-            }
-          }
-        }
-      });
-
-      return {
-        referido: referidoActualizado,
-        mensaje
-      };
-
-    } catch (error) {
-      console.error('Error en confirmarReferido service:', error);
-      throw error;
+    if (!referido) {
+      throw new Error('Referido no encontrado');
     }
-  },
 
-  // Actualizar referido (solo si no está completado)
-  async actualizarReferido(id, datos, usuario) {
-    try {
-      const referido = await prisma.detallereferirpaciente.findFirst({
-        where: {
-          idrefpaciente: id,
-          estado: 1
-        }
-      });
+    if (referido.confirmacion4 === 1) {
+      throw new Error('Este referido ya fue completado');
+    }
 
-      if (!referido) {
-        throw new Error('Referido no encontrado');
+    console.log('🔍 Buscando usuario con rol...');
+    const usuarioConRol = await prisma.usuario.findUnique({
+      where: { idusuario: usuario.idusuario },
+      include: { rol: true, clinica: true }
+    });
+
+    console.log('👤 Usuario con rol:', {
+      idusuario: usuarioConRol?.idusuario,
+      fkrol: usuarioConRol?.fkrol,
+      fkclinica: usuarioConRol?.fkclinica
+    });
+
+    const esAdmin = usuarioConRol.fkrol === 1;
+    const usuarioNombre = usuario.usuario;
+    let campoActualizar = {};
+    let mensaje = '';
+
+    // ✅ ETAPA 2: Admin aprueba
+    if (referido.confirmacion2 === 0 && referido.confirmacion1 === 1) {
+      console.log('📍 Procesando ETAPA 2...');
+      if (!esAdmin) {
+        throw new Error('❌ Solo administradores pueden aprobar en esta etapa');
       }
-
-      // Solo el creador puede modificar
-      const usuarioConRol = await prisma.usuario.findUnique({
-        where: { idusuario: usuario.idusuario },
-        include: { rol: true }
-      });
-
-      const esAdmin = usuarioConRol.rol.nombre === 'Administrador';
-
-      if (referido.fkusuario !== usuario.idusuario) {
-        if (!esAdmin) {
-          throw new Error('Solo el médico que creó el referido puede modificarlo');
-        }
-      }
-
-      // No se puede modificar si ya está completado
-      if (referido.confirmacion4 === 1) {
-        throw new Error('No se puede modificar un referido completado');
-      }
-
-      const datosActualizar = {
-        usuariomodificacion: usuario.usuario,
+      campoActualizar = {
+        confirmacion2: 1,
+        usuarioconfirma2: usuarioNombre,
+        usuariomodificacion: usuarioNombre,
         fechamodificacion: new Date()
       };
+      mensaje = '✅ Confirmación administrativa 1 registrada correctamente';
+      console.log('📝 Datos a actualizar:', campoActualizar);
 
-      if (datos.fkclinica) datosActualizar.fkclinica = datos.fkclinica;
-      if (datos.fkusuariodestino) datosActualizar.fkusuariodestino = datos.fkusuariodestino;
-      if (datos.comentario !== undefined) datosActualizar.comentario = datos.comentario;
-       if (datos.rutadocumentoinicial !== undefined) datosActualizar.rutadocumentoinicial = datos.rutadocumentoinicial;
-      if (datos.rutadocumentofinal !== undefined) datosActualizar.rutadocumentofinal = datos.rutadocumentofinal;
+    } 
+    // ✅ ETAPA 3: Otro admin aprueba
+    else if (referido.confirmacion3 === 0 && referido.confirmacion2 === 1) {
+      console.log('📍 Procesando ETAPA 3...');
+      if (!esAdmin) {
+        throw new Error('❌ Solo administradores pueden aprobar en esta etapa');
+      }
+      if (referido.usuarioconfirma2 === usuarioNombre) {
+        throw new Error('❌ No puede aprobar dos veces el mismo referido');
+      }
+      campoActualizar = {
+        confirmacion3: 1,
+        usuarioconfirma3: usuarioNombre,
+        usuariomodificacion: usuarioNombre,
+        fechamodificacion: new Date()
+      };
+      mensaje = '✅ Confirmación administrativa 2 registrada correctamente';
+      console.log('📝 Datos a actualizar:', campoActualizar);
 
+    } 
+    // ✅ ETAPA 4: Usuario de la clínica destino
+    else if (referido.confirmacion4 === 0 && referido.confirmacion3 === 1) {
+      console.log('📍 Procesando ETAPA 4...');
+      if (!referido.rutadocumentofinal) {
+        throw new Error('❌ Debe subir el documento final antes de aprobar');
+      }
 
-      const referidoActualizado = await prisma.detallereferirpaciente.update({
-        where: { idrefpaciente: id },
-        data: datosActualizar,
-        include: {
-          paciente: true,
-          clinica: true,
-          usuario: {
-            select: { nombres: true, apellidos: true }
-          },
-          usuarioDestino: {
-            select: { nombres: true, apellidos: true }
+      if (usuarioConRol.fkclinica !== referido.fkclinica) {
+        throw new Error('❌ Solo usuarios asignados a la clínica destino pueden aprobar esta etapa');
+      }
+      campoActualizar = {
+        confirmacion4: 1,
+        usuarioconfirma4: usuarioNombre,
+        usuariomodificacion: usuarioNombre,
+        fechamodificacion: new Date()
+      };
+      mensaje = '✅ Referido completado exitosamente';
+      console.log('📝 Datos a actualizar:', campoActualizar);
+
+    } else {
+      throw new Error('❌ No se puede aprobar en esta etapa');
+    }
+
+    if (comentarioAdicional) {
+      const comentarioActual = referido.comentario || '';
+      campoActualizar.comentario = comentarioActual 
+        ? `${comentarioActual}\n---\n${usuarioNombre}: ${comentarioAdicional}`
+        : comentarioAdicional;
+    }
+
+    console.log('💾 Actualizando referido en BD...');
+    const referidoActualizado = await prisma.detallereferirpaciente.update({
+      where: { idrefpaciente: id },
+      data: campoActualizar,
+      include: {
+        paciente: true,
+        clinica: true,
+        usuario: {
+          select: {
+            nombres: true,
+            apellidos: true
           }
         }
-      });
+      }
+    });
 
-      return referidoActualizado;
+    console.log('✅ Referido actualizado exitosamente');
+    return {
+      referido: referidoActualizado,
+      mensaje
+    };
 
-    } catch (error) {
-      console.error('Error en actualizarReferido service:', error);
-      throw error;
+  } catch (error) {
+    console.error('💥 ERROR en confirmarReferido service:', error);
+    throw error;
+  }
+},
+
+  // Actualizar referido
+async actualizarReferido(id, datos, usuario) {
+  try {
+    const referido = await prisma.detallereferirpaciente.findFirst({
+      where: {
+        idrefpaciente: id,
+        estado: 1
+      }
+    });
+
+    if (!referido) {
+      throw new Error('Referido no encontrado');
     }
-  },
 
-  // Cambiar estado (eliminado lógico)
+    const usuarioConRol = await prisma.usuario.findUnique({
+      where: { idusuario: usuario.idusuario },
+      include: { rol: true }
+    });
+
+    const esAdmin = usuarioConRol.fkrol === 1;
+    const esCreador = referido.fkusuario === usuario.idusuario;
+
+    // ✅ FILTRAR CAMPOS UNDEFINED ANTES DE VALIDAR
+    const datosLimpios = Object.fromEntries(
+      Object.entries(datos).filter(([_, valor]) => valor !== undefined)
+    );
+
+    console.log('🧹 Datos limpios:', datosLimpios);
+    console.log('🧹 Keys limpias:', Object.keys(datosLimpios));
+
+    // Verificar si solo está actualizando documento final en etapa 4
+    const esEtapa4 = referido.confirmacion3 === 1 && referido.confirmacion4 === 0;
+    const soloActualizaDocumentoFinal = datosLimpios.rutadocumentofinal !== undefined && 
+                                       Object.keys(datosLimpios).length === 1;
+
+    console.log('✅ esEtapa4:', esEtapa4);
+    console.log('✅ soloActualizaDocumentoFinal:', soloActualizaDocumentoFinal);
+
+    // Validar permisos según el tipo de actualización
+    if (esEtapa4 && soloActualizaDocumentoFinal) {
+      console.log('🎯 Permitiendo actualización de documento final en etapa 4');
+      
+      // En etapa 4, solo usuarios de la clínica destino pueden subir documento final
+      const perteneceClinicaDestino = usuarioConRol.fkclinica === referido.fkclinica;
+      
+      if (!perteneceClinicaDestino && !esAdmin) {
+        throw new Error('❌ Solo usuarios de la clínica destino pueden subir el documento final');
+      }
+    } else {
+      console.log('🔒 Validando permisos normales de actualización');
+      
+      // Para otras actualizaciones, validar permisos normales
+      if (!esCreador && !esAdmin) {
+        throw new Error('❌ Solo el creador o un administrador pueden modificar este referido');
+      }
+
+      if (referido.confirmacion4 === 1) {
+        throw new Error('❌ No se puede modificar un referido completado');
+      }
+    }
+
+    // Preparar datos para actualizar (usando datos originales, no limpios)
+    const datosActualizar = {
+      usuariomodificacion: usuario.usuario,
+      fechamodificacion: new Date()
+    };
+
+    if (datos.fkclinica !== undefined) datosActualizar.fkclinica = datos.fkclinica;
+    if (datos.comentario !== undefined) datosActualizar.comentario = datos.comentario;
+    if (datos.rutadocumentoinicial !== undefined) datosActualizar.rutadocumentoinicial = datos.rutadocumentoinicial;
+    if (datos.rutadocumentofinal !== undefined) datosActualizar.rutadocumentofinal = datos.rutadocumentofinal;
+
+    console.log('💾 Actualizando con:', datosActualizar);
+
+    const referidoActualizado = await prisma.detallereferirpaciente.update({
+      where: { idrefpaciente: id },
+      data: datosActualizar,
+      include: {
+        paciente: true,
+        clinica: true,
+        usuario: {
+          select: { nombres: true, apellidos: true }
+        }
+      }
+    });
+
+    console.log('✅ Referido actualizado exitosamente');
+    return referidoActualizado;
+
+  } catch (error) {
+    console.error('Error en actualizarReferido service:', error);
+    throw error;
+  }
+},
+
+  // Cambiar estado
   async cambiarEstado(id, nuevoEstado, usuario) {
     try {
       const referido = await prisma.detallereferirpaciente.findUnique({
@@ -519,13 +534,12 @@ const referirService = {
         throw new Error('Referido no encontrado');
       }
 
-      // Solo admin o el creador pueden cambiar estado
       const usuarioConRol = await prisma.usuario.findUnique({
         where: { idusuario: usuario.idusuario },
         include: { rol: true }
       });
 
-      const esAdmin = usuarioConRol.rol.nombre === 'Administrador';
+      const esAdmin = usuarioConRol?.rol?.nombre?.toLowerCase().includes('admin');
 
       if (!esAdmin && referido.fkusuario !== usuario.idusuario) {
         throw new Error('No tiene permisos para cambiar el estado');
@@ -563,13 +577,6 @@ const referirService = {
             }
           },
           usuario: {
-            select: {
-              nombres: true,
-              apellidos: true,
-              profesion: true
-            }
-          },
-          usuarioDestino: {
             select: {
               nombres: true,
               apellidos: true,
