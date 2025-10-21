@@ -28,14 +28,6 @@ async function obtenerRolesParaMensajes() {
  * Middleware para verificar si el usuario tiene uno de los roles permitidos (por ID)
  * @param {...number} idsRolesPermitidos - IDs de los roles que pueden acceder
  * @returns {Function} Middleware de Express
- * 
- * @example
- * // Solo DOCTOR (3) y ENFERMERA (4)
- * router.get('/pacientes', checkRole(3, 4), getPacientes);
- * 
- * @example
- * // Solo SUPERADMIN (1)
- * router.delete('/usuarios/:id', checkRole(1), deleteUsuario);
  */
 const checkRole = (...idsRolesPermitidos) => {
   return async (req, res, next) => {
@@ -64,7 +56,7 @@ const checkRole = (...idsRolesPermitidos) => {
 
         return res.status(403).json({
           success: false,
-          message: 'No tienes permisos para acceder a este recurso',
+          message: 'No tienes permisos para realizar esa acción',
           detalles: {
             tuRol: rolUsuario ? rolUsuario.nombre : `ID: ${fkrol}`,
             rolesPermitidos: nombresPermitidos
@@ -72,7 +64,7 @@ const checkRole = (...idsRolesPermitidos) => {
         });
       }
 
-      // ✅ Permiso concedido
+      // Permiso concedido
       next();
     } catch (error) {
       console.error('Error en checkRole:', error);

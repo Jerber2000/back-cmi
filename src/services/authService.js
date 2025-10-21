@@ -20,20 +20,6 @@ class AuthService{
                         }
                     }
                 }
-                /*
-                select:{
-                    idusuario:      true,
-                    usuario:        true,
-                    nombres:        true,
-                    apellidos:      true,
-                    puesto:         true,
-                    rutafotoperfil: true,
-                    fkrol:          true,
-                    fkclinica:      true,  // ✅ AGREGADO
-                    estado:         true,
-                    clave:          true,
-                    cambiarclave:   true
-                }*/
             });
 
             if(!usuario){
@@ -73,12 +59,6 @@ class AuthService{
                 token,
                 cambiarclave: usuario.cambiarclave
             };
-
-            // return {
-            //     usuario: usuarioSinClave,
-            //     token,
-            //     cambiarclave: usuario.cambiarclave
-            // };
         }catch(error){
             console.error('Error en AuthService.login:', error.message);
             throw error;

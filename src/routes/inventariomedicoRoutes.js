@@ -2,6 +2,7 @@
 const { Router } = require('express');
 const inventarioMedicoController = require('../controllers/inventarioMedicoController');
 const inventarioMiddleware = require('../middlewares/validationInventario');
+const checkRole = require('../middlewares/checkRole');
 
 const router = Router();
 
@@ -10,13 +11,15 @@ router.get('/', inventarioMedicoController.listarTodos);
 
 // GET - Obtener por ID
 router.get('/:id', 
-  inventarioMiddleware.validarId, 
+  inventarioMiddleware.validarId,
+  checkRole(1,5),
   inventarioMedicoController.obtenerPorId
 );
 
 // POST - Crear nuevo
 router.post('/', 
   inventarioMiddleware.validarCrear,
+  checkRole(1,5),
   inventarioMedicoController.crear
 );
 
@@ -24,6 +27,7 @@ router.post('/',
 router.put('/:id', 
   inventarioMiddleware.validarId,
   inventarioMiddleware.validarActualizar,
+  checkRole(1,5),
   inventarioMedicoController.actualizar
 );
 
@@ -31,6 +35,7 @@ router.put('/:id',
 router.put('/:id/estado', 
   inventarioMiddleware.validarId,
   inventarioMiddleware.validarCambiarEstado,
+  checkRole(1,5),
   inventarioMedicoController.cambiarEstado
 );
 

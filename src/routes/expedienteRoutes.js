@@ -4,6 +4,7 @@ const router = express.Router();
 const ExpedienteController = require('../controllers/expedienteController');
 const autenticacion = require('../middlewares/auth');
 const { validarExpediente, validarIdExpediente } = require('../middlewares/validaExpediente');
+const checkRole = require('../middlewares/checkRole');
 
 /**
  * Rutas para la gestión de expedientes médicos
@@ -13,27 +14,31 @@ const { validarExpediente, validarIdExpediente } = require('../middlewares/valid
 router.get('/', 
     autenticacion.validarToken, 
     autenticacion.verificarUsuarioEnBD, 
+    checkRole(1,2,5,6,7),
     ExpedienteController.obtenerTodosLosExpedientes
 );
 
 // GET /api/expedientes/disponibles - Obtener expedientes sin pacientes asignados
 router.get('/disponibles', 
     autenticacion.validarToken, 
-    autenticacion.verificarUsuarioEnBD, 
+    autenticacion.verificarUsuarioEnBD,
+    checkRole(1,2,5,6,7),
     ExpedienteController.obtenerExpedientesDisponibles
 );
 
 // GET /api/expedientes/generar-numero - Generar número de expediente automático
 router.get('/generar-numero', 
     autenticacion.validarToken, 
-    autenticacion.verificarUsuarioEnBD, 
+    autenticacion.verificarUsuarioEnBD,
+    checkRole(1,2,5,6,7),
     ExpedienteController.generarNumeroExpediente
 );
 
 // GET /api/expedientes/estadisticas - Obtener estadísticas de expedientes
 router.get('/estadisticas', 
     autenticacion.validarToken, 
-    autenticacion.verificarUsuarioEnBD, 
+    autenticacion.verificarUsuarioEnBD,
+    checkRole(1,2,5,6,7),
     ExpedienteController.obtenerEstadisticas
 );
 
@@ -42,6 +47,7 @@ router.get('/:id',
     autenticacion.validarToken, 
     autenticacion.verificarUsuarioEnBD, 
     validarIdExpediente,
+    checkRole(1,2,5,6,7),
     ExpedienteController.obtenerExpedientePorId
 );
 
@@ -50,6 +56,7 @@ router.post('/',
     autenticacion.validarToken, 
     autenticacion.verificarUsuarioEnBD, 
     validarExpediente,
+    checkRole(1,2,5,6,7),
     ExpedienteController.crearExpediente
 );
 
@@ -59,6 +66,7 @@ router.put('/:id',
     autenticacion.verificarUsuarioEnBD, 
     validarIdExpediente,
     validarExpediente,
+    checkRole(1,2,5,6,7),
     ExpedienteController.actualizarExpediente
 );
 
@@ -67,6 +75,7 @@ router.delete('/:id',
     autenticacion.validarToken, 
     autenticacion.verificarUsuarioEnBD, 
     validarIdExpediente,
+    checkRole(1,2,5,6,7),
     ExpedienteController.eliminarExpediente
 );
 

@@ -14,12 +14,14 @@ const { validarUsuarioCreacion, validarUsuarioActualizar } = require('../middlew
 const RolService = require('../services/rolService');
 const authService = require('../services/authService');
 const clinicaService = require('../services/clinicaService');
+const checkRole = require('../middlewares/checkRole');
 
 router.get(
     '/buscarUsuarios',
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
+    checkRole(1,5),
     obtenerUsuarios
 );
 
@@ -28,6 +30,7 @@ router.get(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
+    checkRole(1,2,3,4,5,6,7),
     obtenerUsuarioPorId
 );
 
@@ -45,6 +48,7 @@ router.post(
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
     validarUsuarioCreacion,
+    checkRole(1,5),
     crearUsuario
 );
 
@@ -54,6 +58,7 @@ router.put(
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
     validarUsuarioActualizar,
+    checkRole(1,2,3,4,5,6,7),
     actuarlizarUsuario
 );
 
@@ -62,12 +67,14 @@ router.delete(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
+    checkRole(1,5),
     eliminarUsuario
 );
 
 router.get('/roles',
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
+    checkRole(1,5),
     async (req, res) => {
         try{
             const roles = await RolService.consultarRol();
@@ -83,6 +90,7 @@ router.get(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
+    checkRole(1,5),
     async (req, res) => {
         try{
             const clinicas = await clinicaService.consultarClinica();

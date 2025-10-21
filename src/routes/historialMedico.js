@@ -12,6 +12,7 @@ const {
     validarHistorialId,
     validarSubirArchivos
 } = require('../middlewares/validacionHistorialMedico');
+const checkRole = require('../middlewares/checkRole');
 
 // ✅ CAMBIO 2: Crear middleware genérico para historial médico
 const uploadHistorial = fileService.createGenericMiddleware(['image', 'document'], 5);
@@ -25,24 +26,28 @@ router.use(verificarUsuarioEnBD);
 // Obtener historial completo de un paciente
 router.get('/paciente/:idpaciente', 
     validarPacienteId,
+    checkRole(1,2,5,6,7),
     historialController.obtenerHistorialPorPaciente
 );
 
 // Obtener info básica del paciente  
 router.get('/info-paciente/:idpaciente', 
     validarPacienteId,
+    checkRole(1,2,5,6,7),
     historialController.obtenerInfoPaciente
 );
 
 // Crear nueva sesión
 router.post('/crear-sesion', 
     validarCrearSesion,
+    checkRole(1,2,5,6,7),
     historialController.crearSesion
 );
 
 // Actualizar sesión
 router.put('/actualizar-sesion/:idhistorial', 
     validarActualizarSesion,
+    checkRole(1,2,5,6,7),
     historialController.actualizarSesion
 );
 
@@ -50,24 +55,28 @@ router.put('/actualizar-sesion/:idhistorial',
 // Subir archivos para historial
 router.post('/subir-archivos/:idpaciente',
     validarSubirArchivos,
-    uploadHistorial.array('archivos', 5), // ✅ CAMBIO AQUÍ
+    uploadHistorial.array('archivos', 5),
+    checkRole(1,2,5,6,7),
     historialController.subirArchivos
 );
 
 // Actualizar archivos de sesión
 router.put('/sesion/:idhistorial/archivos',
     validarHistorialId,
+    checkRole(1,2,5,6,7),
     historialController.actualizarSesionConArchivos
 );
 
 router.delete('/eliminar-sesion/:idhistorial',
     validarHistorialId,
+    checkRole(1,2,5,6,7),
     historialController.eliminarSesion
 );
 
 // Obtener archivos de sesión específica
 router.get('/sesion/:idhistorial/archivos',
     validarHistorialId,
+    checkRole(1,2,5,6,7),
     historialController.obtenerArchivosSesion
 );
 
