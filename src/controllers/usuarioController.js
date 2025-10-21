@@ -40,24 +40,23 @@ const obtenerUsuarioPorId = async (req, res) => {
 };
 
 const obtenerUsuarioPorRol = async (req, res) => {
-    try{
+    try {
         const { rol } = req.params;
         
         const resultado = await usuarioService.obtenerUsuarioPorRol(rol);
-
-        if(resultado.success){
-            return res.status(200).json(resultado);
-        }else{
+        
+        if (!resultado.success) {
             return res.status(404).json(resultado);
         }
-    }catch(error){
+        
+        return res.status(200).json(resultado);
+    } catch (error) {
         return res.status(500).json({
             success: false,
-            message: 'Error interno del servidor',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            message: 'Error interno del servidor'
         });
     }
-};
+}
 
 //Creacion nuevo usuario
 const crearUsuario = async (req, res) => {

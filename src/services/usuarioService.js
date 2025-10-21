@@ -96,42 +96,63 @@ class UsuarioService {
         }
     }
 
-    async obtenerUsuarioPorRol(rol){
-        try{
-            if(!rol || isNaN(parseInt(rol))){
-                return{
+    async obtenerUsuarioPorRol(roles) {
+        try {
+            // Validar que roles exista
+            if (!roles) {
+                return {
                     success: false,
-                    message: 'Rol invalido'
+                    message: 'Roles inválidos'
+                };
+            }
+
+            // Convertir a array si viene como string (ej: "2,6,7")
+            let rolesArray;
+            if (typeof roles === 'string') {
+                rolesArray = roles.split(',').map(r => parseInt(r.trim()));
+            } else if (Array.isArray(roles)) {
+                rolesArray = roles.map(r => parseInt(r));
+            } else {
+                rolesArray = [parseInt(roles)];
+            }
+
+            // Validar que todos los valores sean números válidos
+            if (rolesArray.some(r => isNaN(r))) {
+                return {
+                    success: false,
+                    message: 'Uno o más roles son inválidos'
                 };
             }
 
             const usuarioPorRol = await prisma.usuario.findMany({
-                select:{
+                select: {
                     idusuario: true,
-                    nombres:   true,
-                    apellidos: true
+                    nombres: true,
+                    apellidos: true,
+                    fkrol: true // Opcional: para saber qué rol tiene cada usuario
                 },
-                where:{
-                    fkrol: parseInt(rol)
+                where: {
+                    fkrol: {
+                        in: rolesArray // Usa el operador 'in' de Prisma
+                    }
                 },
-                orderBy:{
+                orderBy: {
                     usuario: 'asc'
                 }
             });
 
-            if(usuarioPorRol.length === 0){
-                console.log('Array vacío');
-                return{
+            if (usuarioPorRol.length === 0) {
+                return {
                     success: false,
-                    message: 'No se encontraron usuarios con ese rol'
+                    message: 'No se encontraron usuarios con esos roles'
                 };
             }
-            
-            return{
+
+            return {
                 success: true,
                 data: usuarioPorRol
-            }
-        }catch(error){
+            };
+        } catch (error) {
             console.error("Error en usuarioService al consultar por rol: ", error);
             throw error;
         }
