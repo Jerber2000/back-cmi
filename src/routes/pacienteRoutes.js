@@ -14,7 +14,7 @@ const checkRole = require('../middlewares/checkRole');
 router.get('/', 
     autenticacion.validarToken, 
     autenticacion.verificarUsuarioEnBD,
-    checkRole(1,2,3,5,6,7),
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
     PacienteController.obtenerTodosLosPacientes
 );
 
@@ -22,7 +22,7 @@ router.get('/',
 router.get('/disponibles', 
     autenticacion.validarToken, 
     autenticacion.verificarUsuarioEnBD,
-    checkRole(1,2,3,5,6,7),
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
     PacienteController.obtenerPacientesDisponibles
 );
 
@@ -30,14 +30,14 @@ router.get('/disponibles',
 router.get('/estadisticas', 
     autenticacion.validarToken, 
     autenticacion.verificarUsuarioEnBD,
-    checkRole(1,2,3,5,6,7),
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
     PacienteController.obtenerEstadisticas
 );
 
 router.get('/obtenerListado',
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
-    checkRole(1,2,3,5,6,7),
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
     PacienteController.listadoPacientes
 )
 
@@ -46,7 +46,7 @@ router.get('/:id',
     autenticacion.validarToken, 
     autenticacion.verificarUsuarioEnBD, 
     validarIdPaciente,
-    checkRole(1,2,3,5,6,7),
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
     PacienteController.obtenerPacientePorId
 );
 
@@ -55,7 +55,7 @@ router.post('/',
     autenticacion.validarToken, 
     autenticacion.verificarUsuarioEnBD, 
     validarPaciente,
-    checkRole(1,2,3,5,6,7),
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
     PacienteController.crearPaciente
 );
 
@@ -65,7 +65,7 @@ router.put('/:id',
     autenticacion.verificarUsuarioEnBD, 
     validarIdPaciente,
     validarActualizacionPaciente,
-    checkRole(1,2,3,5,6,7),
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
     PacienteController.actualizarPaciente
 );
 
@@ -74,7 +74,7 @@ router.delete('/:id',
     autenticacion.validarToken, 
     autenticacion.verificarUsuarioEnBD, 
     validarIdPaciente,
-    checkRole(1,2,3,5,6,7),
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
     PacienteController.eliminarPaciente
 );
 

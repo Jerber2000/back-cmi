@@ -10,7 +10,7 @@ router.post(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
-    checkRole(1,4,5), // adminitrador, recepcionista, sistemas
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
     agendaController.crearCita
 );
 
@@ -19,7 +19,7 @@ router.get(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
-    checkRole(1,2,4,5,6,7), // admin, medico-general,recepcionista,sistemas,fisioterapia, psicologo
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
     agendaController.obtenerCitas
 );
 
@@ -28,7 +28,7 @@ router.get(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave, 
-    checkRole(1,4,5), // admin,recepcionista,sistemas
+    checkRole(1,5,8), // admin,sistemas,auxiliar-admon
     agendaController.obtenerCitasConTransporte
 );
 
@@ -37,7 +37,7 @@ router.put(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
-    checkRole(1,4,5), // admin, recepcionista, sistema
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
     agendaController.actualizarCita
 );
 
@@ -46,7 +46,7 @@ router.put(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
-    checkRole(1,4,5), // admin, recepcionista,sistemas
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
     agendaController.eliminarCita
 );
 

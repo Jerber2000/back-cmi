@@ -26,28 +26,28 @@ router.use(verificarUsuarioEnBD);
 // Obtener historial completo de un paciente
 router.get('/paciente/:idpaciente', 
     validarPacienteId,
-    checkRole(1,2,5,6,7),
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
     historialController.obtenerHistorialPorPaciente
 );
 
 // Obtener info básica del paciente  
 router.get('/info-paciente/:idpaciente', 
     validarPacienteId,
-    checkRole(1,2,5,6,7),
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
     historialController.obtenerInfoPaciente
 );
 
 // Crear nueva sesión
 router.post('/crear-sesion', 
     validarCrearSesion,
-    checkRole(1,2,5,6,7),
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
     historialController.crearSesion
 );
 
 // Actualizar sesión
 router.put('/actualizar-sesion/:idhistorial', 
     validarActualizarSesion,
-    checkRole(1,2,5,6,7),
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
     historialController.actualizarSesion
 );
 
@@ -56,27 +56,27 @@ router.put('/actualizar-sesion/:idhistorial',
 router.post('/subir-archivos/:idpaciente',
     validarSubirArchivos,
     uploadHistorial.array('archivos', 5),
-    checkRole(1,2,5,6,7),
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
     historialController.subirArchivos
 );
 
 // Actualizar archivos de sesión
 router.put('/sesion/:idhistorial/archivos',
     validarHistorialId,
-    checkRole(1,2,5,6,7),
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
     historialController.actualizarSesionConArchivos
 );
 
 router.delete('/eliminar-sesion/:idhistorial',
     validarHistorialId,
-    checkRole(1,2,5,6,7),
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
     historialController.eliminarSesion
 );
 
 // Obtener archivos de sesión específica
 router.get('/sesion/:idhistorial/archivos',
     validarHistorialId,
-    checkRole(1,2,5,6,7),
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
     historialController.obtenerArchivosSesion
 );
 

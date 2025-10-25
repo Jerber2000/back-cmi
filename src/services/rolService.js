@@ -11,6 +11,9 @@ class RolService{
                 },
                 where:{
                     estado: 1
+                },
+                orderBy:{
+                    nombre: 'asc'
                 }
             });
 

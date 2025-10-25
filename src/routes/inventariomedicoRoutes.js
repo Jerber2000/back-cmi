@@ -4,10 +4,7 @@ const inventarioMedicoController = require('../controllers/inventarioMedicoContr
 const inventarioMiddleware = require('../middlewares/validationInventario');
 const autenticacion = require('../middlewares/auth');
 const { validarCambioClave } = require('../middlewares/validarCambioClave');
-
-// ← IMPORTAR el controller y middleware de salidas
-const salidasInventarioController = require('../controllers/salidasInventarioController');
-const salidasMiddleware = require('../middlewares/validacionSalidas');
+const checkRole = require('../middlewares/checkRole');
 
 const router = Router();
 
@@ -17,6 +14,7 @@ router.get(
   autenticacion.validarToken,
   autenticacion.verificarUsuarioEnBD,
   validarCambioClave,
+  checkRole(1,5,10),
   inventarioMedicoController.listarTodos
 );
 
@@ -32,6 +30,7 @@ router.put(
   validarCambioClave,
   inventarioMiddleware.validarId,
   inventarioMiddleware.validarCambiarEstado,
+  checkRole(1,5,10),
   inventarioMedicoController.cambiarEstado
 );
 
@@ -44,6 +43,7 @@ router.get(
   autenticacion.verificarUsuarioEnBD,
   validarCambioClave,
   inventarioMiddleware.validarId,
+  checkRole(1,5,10),
   inventarioMedicoController.obtenerPorId
 );
 
@@ -54,6 +54,7 @@ router.post(
   autenticacion.verificarUsuarioEnBD,
   validarCambioClave,
   inventarioMiddleware.validarCrear,
+  checkRole(1,5,10),
   inventarioMedicoController.crear
 );
 
@@ -65,6 +66,7 @@ router.put(
   validarCambioClave,
   inventarioMiddleware.validarId,
   inventarioMiddleware.validarActualizar,
+  checkRole(1,5,10),
   inventarioMedicoController.actualizar
 );
 

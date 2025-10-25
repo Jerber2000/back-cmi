@@ -4,6 +4,7 @@ const salidasInventarioController = require('../controllers/salidasInventarioCon
 const salidasMiddleware = require('../middlewares/validacionSalidas');
 const autenticacion = require('../middlewares/auth');
 const { validarCambioClave } = require('../middlewares/validarCambioClave');
+const checkRole = require('../middlewares/checkRole');
 
 const router = Router();
 
@@ -15,6 +16,7 @@ router.get(
   autenticacion.validarToken,
   autenticacion.verificarUsuarioEnBD,
   validarCambioClave,
+  checkRole(1,5,10),
   salidasInventarioController.obtenerEstadisticas
 );
 
@@ -25,6 +27,7 @@ router.get(
   autenticacion.verificarUsuarioEnBD,
   validarCambioClave,
   salidasMiddleware.validarIdMedicamento,
+  checkRole(1,5,10),
   salidasInventarioController.obtenerPorMedicamento
 );
 
@@ -36,6 +39,7 @@ router.get(
   autenticacion.validarToken,
   autenticacion.verificarUsuarioEnBD,
   validarCambioClave,
+  checkRole(1,5,10),
   salidasInventarioController.listarTodas
 );
 
@@ -46,6 +50,7 @@ router.get(
   autenticacion.verificarUsuarioEnBD,
   validarCambioClave,
   salidasMiddleware.validarId,
+  checkRole(1,5,10),
   salidasInventarioController.obtenerPorId
 );
 
@@ -56,6 +61,7 @@ router.post(
   autenticacion.verificarUsuarioEnBD,
   validarCambioClave,
   salidasMiddleware.validarCrear,
+  checkRole(1,5,10),
   salidasInventarioController.crear
 );
 
@@ -67,6 +73,7 @@ router.put(
   validarCambioClave,
   salidasMiddleware.validarId,
   salidasMiddleware.validarAnular,
+  checkRole(1,5,10),
   salidasInventarioController.anular
 );
 
