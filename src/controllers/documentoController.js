@@ -6,23 +6,29 @@ class DocumentoController {
 
   async listarDocumentos(req, res) {
     try {
-      const { estado, busqueda } = req.query;
+      const { estado, busqueda, fkclinica } = req.query;
       
-      const documentos = await documentoService.listarDocumentos({ 
+      const resultado = await documentoService.listarDocumentos({ 
         estado, 
-        busqueda 
+        busqueda,
+        fkclinica 
       });
 
-      res.json({
-        success: true,
-        data: documentos,
-        total: documentos.length
-      });
+      if (resultado.success) {
+        res.status(200).json({
+          success: true,
+          data: resultado.data,
+          total: resultado.data.length
+        });
+      } else {
+        res.status(400).json(resultado);
+      }
     } catch (error) {
-      console.error('Error en DocumentoController.listarDocumentos:', error);
+      console.error('Error en DocumentoController.listarDocumentos:', error.message);
       res.status(500).json({
         success: false,
-        message: error.message || 'Error al listar documentos'
+        message: 'Error interno del servidor',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   }
@@ -31,51 +37,72 @@ class DocumentoController {
     try {
       const { id } = req.params;
       
-      const documento = await documentoService.obtenerDocumento(id);
+      const resultado = await documentoService.obtenerDocumento(id);
 
-      if (documento.rutadocumento) {
-        const fileName = path.basename(documento.rutadocumento);
-        documento.urlPublica = `${process.env.API_URL || 'http://localhost:3000'}/api/files/${fileName}`;
+      if (resultado.success) {
+        // Agregar URL pública si tiene archivo
+        if (resultado.data.rutadocumento) {
+          const fileName = path.basename(resultado.data.rutadocumento);
+          resultado.data.urlPublica = `${process.env.API_URL}/api/files/${fileName}`;
+        }
+
+        res.status(200).json(resultado);
+      } else {
+        res.status(400).json(resultado);
       }
-
-      res.json({
-        success: true,
-        data: documento
-      });
     } catch (error) {
-      console.error('Error en DocumentoController.obtenerDocumento:', error);
+      console.error('Error en DocumentoController.obtenerDocumento:', error.message);
       const statusCode = error.message === 'Documento no encontrado' ? 404 : 500;
       res.status(statusCode).json({
         success: false,
-        message: error.message
+        message: error.message || 'Error interno del servidor',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   }
 
   async crearDocumento(req, res) {
     try {
-      const { nombredocumento, descripcion } = req.body;
+      const { nombredocumento, descripcion, fkclinica } = req.body;
       const archivo = req.file;
       const usuariocreacion = req.usuario.usuario || req.usuario.nombres;
 
-      const nuevoDocumento = await documentoService.crearDocumento({
+      // Validar que venga el archivo
+      if (!archivo) {
+        return res.status(400).json({
+          success: false,
+          message: 'Debe adjuntar un archivo'
+        });
+      }
+
+      // Crear documento en BD (sin ruta aún)
+      const resultado = await documentoService.crearDocumento({
         nombredocumento,
         descripcion,
+        fkclinica,
         usuariocreacion
       });
 
+      // Si no se pudo crear el documento, retornar error
+      if (!resultado.success) {
+        return res.status(400).json(resultado);
+      }
+
+      // Subir archivo físico
       const rutasArchivos = await fileService.uploadFiles('documentos', {
         documento: archivo
       });
 
+      // Actualizar ruta del documento en BD
       const documentoActualizado = await documentoService.actualizarRutaDocumento(
-        nuevoDocumento.iddocumento,
+        resultado.data.iddocumento,
         rutasArchivos.documento,
         usuariocreacion
       );
 
+      // Agregar URL pública
       const fileName = path.basename(documentoActualizado.rutadocumento);
-      documentoActualizado.urlPublica = `${process.env.API_URL || 'http://localhost:3000'}/api/files/${fileName}`;
+      documentoActualizado.urlPublica = `${process.env.API_URL}/api/files/${fileName}`;
 
       res.status(201).json({
         success: true,
@@ -84,10 +111,11 @@ class DocumentoController {
       });
 
     } catch (error) {
-      console.error('Error en DocumentoController.crearDocumento:', error);
+      console.error('Error en DocumentoController.crearDocumento:', error.message);
       res.status(500).json({
         success: false,
-        message: error.message || 'Error al crear documento'
+        message: 'Error interno del servidor',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   }
@@ -95,61 +123,70 @@ class DocumentoController {
   async actualizarDocumento(req, res) {
     try {
       const { id } = req.params;
-      const { nombredocumento, descripcion } = req.body;
+      const { nombredocumento, descripcion, fkclinica } = req.body;
       const archivoNuevo = req.file;
       const usuariomodificacion = req.usuario.usuario || req.usuario.nombres;
 
-      const documentoActualizado = await documentoService.actualizarDocumento(id, {
+      // Actualizar datos básicos del documento
+      const resultado = await documentoService.actualizarDocumento(id, {
         nombredocumento,
         descripcion,
+        fkclinica,
         usuariomodificacion
       });
 
+      if (!resultado.success) {
+        return res.status(400).json(resultado);
+      }
+
+      // Si viene archivo nuevo, reemplazar el anterior
       if (archivoNuevo) {
-        if (documentoActualizado.rutadocumento) {
+        // Eliminar archivo anterior si existe
+        if (resultado.data.rutadocumento) {
           try {
-            await fileService.deleteFile(documentoActualizado.rutadocumento);
+            await fileService.deleteFile(resultado.data.rutadocumento);
           } catch (error) {
             console.warn('No se pudo eliminar archivo anterior:', error.message);
           }
         }
 
+        // Subir nuevo archivo
         const rutasArchivos = await fileService.uploadFiles('documentos', {
           documento: archivoNuevo
         });
 
+        // Actualizar ruta en BD
         const documentoConNuevaRuta = await documentoService.actualizarRutaDocumento(
           id,
           rutasArchivos.documento,
           usuariomodificacion
         );
 
+        // Agregar URL pública
         const fileName = path.basename(documentoConNuevaRuta.rutadocumento);
-        documentoConNuevaRuta.urlPublica = `${process.env.API_URL || 'http://localhost:3000'}/api/files/${fileName}`;
+        documentoConNuevaRuta.urlPublica = `${process.env.API_URL}/api/files/${fileName}`;
 
-        return res.json({
+        return res.status(200).json({
           success: true,
           message: 'Documento actualizado exitosamente',
           data: documentoConNuevaRuta
         });
       }
 
-      if (documentoActualizado.rutadocumento) {
-        const fileName = path.basename(documentoActualizado.rutadocumento);
-        documentoActualizado.urlPublica = `${process.env.API_URL || 'http://localhost:3000'}/api/files/${fileName}`;
+      // Si no hay archivo nuevo, solo agregar URL pública si existe archivo
+      if (resultado.data.rutadocumento) {
+        const fileName = path.basename(resultado.data.rutadocumento);
+        resultado.data.urlPublica = `${process.env.API_URL}/api/files/${fileName}`;
       }
 
-      res.json({
-        success: true,
-        message: 'Documento actualizado exitosamente',
-        data: documentoActualizado
-      });
+      res.status(200).json(resultado);
 
     } catch (error) {
-      console.error('Error en DocumentoController.actualizarDocumento:', error);
+      console.error('Error en DocumentoController.actualizarDocumento:', error.message);
       res.status(500).json({
         success: false,
-        message: error.message || 'Error al actualizar documento'
+        message: 'Error interno del servidor',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   }
@@ -159,28 +196,37 @@ class DocumentoController {
       const { id } = req.params;
       const usuariomodificacion = req.usuario.usuario || req.usuario.nombres;
 
-      const documento = await documentoService.obtenerDocumento(id);
+      // Obtener documento para tener la ruta del archivo
+      const documentoResult = await documentoService.obtenerDocumento(id);
 
-      if (documento.rutadocumento) {
+      if (!documentoResult.success) {
+        return res.status(404).json(documentoResult);
+      }
+
+      // Eliminar archivo físico si existe
+      if (documentoResult.data.rutadocumento) {
         try {
-          await fileService.deleteFile(documento.rutadocumento);
+          await fileService.deleteFile(documentoResult.data.rutadocumento);
         } catch (error) {
           console.warn('No se pudo eliminar archivo físico:', error.message);
         }
       }
 
-      await documentoService.eliminarDocumento(id, usuariomodificacion);
+      // Soft delete en BD
+      const resultado = await documentoService.eliminarDocumento(id, usuariomodificacion);
 
-      res.json({
-        success: true,
-        message: 'Documento eliminado exitosamente'
-      });
+      if (resultado.success) {
+        res.status(200).json(resultado);
+      } else {
+        res.status(400).json(resultado);
+      }
 
     } catch (error) {
-      console.error('Error en DocumentoController.eliminarDocumento:', error);
+      console.error('Error en DocumentoController.eliminarDocumento:', error.message);
       res.status(500).json({
         success: false,
-        message: error.message || 'Error al eliminar documento'
+        message: 'Error interno del servidor',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   }
@@ -191,23 +237,24 @@ class DocumentoController {
       const { estado } = req.body;
       const usuariomodificacion = req.usuario.usuario || req.usuario.nombres;
 
-      const documentoActualizado = await documentoService.cambiarEstado(
+      const resultado = await documentoService.cambiarEstado(
         id,
         estado,
         usuariomodificacion
       );
 
-      res.json({
-        success: true,
-        message: 'Estado actualizado exitosamente',
-        data: documentoActualizado
-      });
+      if (resultado.success) {
+        res.status(200).json(resultado);
+      } else {
+        res.status(400).json(resultado);
+      }
 
     } catch (error) {
-      console.error('Error en DocumentoController.cambiarEstado:', error);
+      console.error('Error en DocumentoController.cambiarEstado:', error.message);
       res.status(500).json({
         success: false,
-        message: error.message || 'Error al cambiar estado'
+        message: 'Error interno del servidor',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   }

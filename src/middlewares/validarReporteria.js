@@ -299,6 +299,64 @@ const validarReporteria = {
     }
   },
 
+  validarFiltrosSalidas: (req, res, next) => {
+    try {
+      const { desde, hasta, estado, medicamento, usuario, page, limit } = req.query;
+
+      const errores = [];
+
+      // Validar fechas
+      if (desde && !isValidDate(desde)) {
+        errores.push('Formato de fecha "desde" inválido. Use YYYY-MM-DD');
+      }
+      if (hasta && !isValidDate(hasta)) {
+        errores.push('Formato de fecha "hasta" inválido. Use YYYY-MM-DD');
+      }
+      if (desde && hasta && new Date(desde) > new Date(hasta)) {
+        errores.push('La fecha "desde" no puede ser mayor que "hasta"');
+      }
+
+      // Validar estado
+      if (estado && !['activas', 'anuladas', 'todas'].includes(estado.toLowerCase())) {
+        errores.push('estado debe ser: activas, anuladas o todas');
+      }
+
+      // Validar IDs
+      if (medicamento && isNaN(medicamento)) {
+        errores.push('El ID de medicamento debe ser un número');
+      }
+      if (usuario && isNaN(usuario)) {
+        errores.push('El ID de usuario debe ser un número');
+      }
+
+      // Validar paginación
+      if (page && (isNaN(page) || parseInt(page) < 1)) {
+        errores.push('page debe ser un número mayor a 0');
+      }
+      if (limit && (isNaN(limit) || parseInt(limit) < 1 || parseInt(limit) > 10000)) {
+        errores.push('limit debe estar entre 1 y 10000');
+      }
+
+      if (errores.length > 0) {
+        return res.status(400).json({
+          ok: false,
+          mensaje: 'Errores de validación',
+          errores
+        });
+      }
+
+      next();
+
+    } catch (error) {
+      console.error('Error en validarFiltrosSalidas:', error);
+      return res.status(500).json({
+        ok: false,
+        mensaje: 'Error en validación de filtros',
+        error: error.message
+      });
+    }
+  },
+
   // Validar generación de PDF
   validarGeneracionPDF: (req, res, next) => {
     try {

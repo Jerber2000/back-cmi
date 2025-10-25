@@ -826,6 +826,32 @@ const reporteriaService = {
         })
       ]);
 
+      // 🆕 NUEVO - SALIDAS DE INVENTARIO
+      const hace30Dias = new Date();
+      hace30Dias.setDate(hace30Dias.getDate() - 30);
+
+      const totalMesSalidas = await prisma.salidasinventario.count({
+        where: {
+          fechacreacion: { gte: hace30Dias }
+        }
+      });
+
+      const unidadesMes = await prisma.salidasinventario.aggregate({
+        where: {
+          fechacreacion: { gte: hace30Dias },
+          estado: 1
+        },
+        _sum: { cantidad: true }
+      });
+
+      const activasSalidas = await prisma.salidasinventario.count({
+        where: { estado: 1 }
+      });
+
+      const anuladasSalidas = await prisma.salidasinventario.count({
+        where: { estado: 0 }
+      });
+
       return {
         pacientes: {
           total: totalPacientes,
@@ -852,6 +878,12 @@ const reporteriaService = {
           recibidas,
           pendientes,
           completadas
+        },
+        salidas: {
+          totalMes: totalMesSalidas,
+          totalUnidadesMes: unidadesMes._sum.cantidad || 0,
+          activas: activasSalidas,
+          anuladas: anuladasSalidas
         }
       };
 
@@ -1395,7 +1427,188 @@ const reporteriaService = {
       console.error('Error en exportarExcel service:', error);
       throw error;
     }
+  },
+  // =====================================================
+// 🆕 AGREGAR ESTO AL FINAL DE reporteriaService.js
+// =====================================================
+
+/**
+ * Obtener datos de salidas para el dashboard (últimos 30 días)
+ */
+async obtenerDatosSalidasDashboard() {
+  try {
+    const hace30Dias = new Date();
+    hace30Dias.setDate(hace30Dias.getDate() - 30);
+
+    // Total de salidas del mes
+    const totalMes = await prisma.salidasinventario.count({
+      where: {
+        fechacreacion: { gte: hace30Dias }
+      }
+    });
+
+    // Total unidades despachadas del mes (solo activas)
+    const unidadesMes = await prisma.salidasinventario.aggregate({
+      where: {
+        fechacreacion: { gte: hace30Dias },
+        estado: 1
+      },
+      _sum: { cantidad: true }
+    });
+
+    // Totales generales
+    const activas = await prisma.salidasinventario.count({
+      where: { estado: 1 }
+    });
+
+    const anuladas = await prisma.salidasinventario.count({
+      where: { estado: 0 }
+    });
+
+    return {
+      totalMes,
+      totalUnidadesMes: unidadesMes._sum.cantidad || 0,
+      activas,
+      anuladas
+    };
+
+  } catch (error) {
+    console.error('Error en obtenerDatosSalidasDashboard:', error);
+    throw new Error(`Error al obtener datos de salidas para dashboard: ${error.message}`);
   }
+},
+
+/**
+ * Obtener reporte completo de salidas con filtros
+ */
+async obtenerReporteSalidas(filtros, usuario) {
+  try {
+    const {
+      desde,
+      hasta,
+      estado, // 'activas' | 'anuladas' | 'todas'
+      medicamento,
+      usuarioFiltro,
+      motivo,
+      destino,
+      page = 1,
+      limit = 10
+    } = filtros;
+
+    // Construir WHERE clause
+    const where = {};
+
+    // Filtro por fechas
+    if (desde || hasta) {
+      where.fechasalida = {};
+      if (desde) where.fechasalida.gte = new Date(desde);
+      if (hasta) where.fechasalida.lte = new Date(hasta);
+    }
+
+    // Filtro por estado
+    if (estado === 'activas') {
+      where.estado = 1;
+    } else if (estado === 'anuladas') {
+      where.estado = 0;
+    }
+
+    // Filtro por medicamento
+    if (medicamento) {
+      where.fkmedicina = parseInt(medicamento);
+    }
+
+    // Filtro por usuario
+    if (usuarioFiltro) {
+      where.fkusuario = parseInt(usuarioFiltro);
+    }
+
+    // Filtro por motivo
+    if (motivo) {
+      where.motivo = {
+        contains: motivo,
+        mode: 'insensitive'
+      };
+    }
+
+    // Filtro por destino
+    if (destino) {
+      where.destino = {
+        contains: destino,
+        mode: 'insensitive'
+      };
+    }
+
+    // Paginación
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const take = parseInt(limit);
+
+    // Obtener salidas
+    const [salidas, total] = await Promise.all([
+      prisma.salidasinventario.findMany({
+        where,
+        include: {
+          medicamento: {
+            select: {
+              idmedicina: true,
+              nombre: true,
+              codigoproducto: true,
+              unidades: true,
+              precio: true
+            }
+          },
+          usuario: {
+            select: {
+              idusuario: true,
+              nombres: true,
+              apellidos: true,
+              profesion: true
+            }
+          }
+        },
+        orderBy: { fechacreacion: 'desc' },
+        skip,
+        take
+      }),
+      prisma.salidasinventario.count({ where })
+    ]);
+
+    // Calcular resumen
+    const estadisticas = await prisma.salidasinventario.aggregate({
+      where,
+      _count: { idsalida: true },
+      _sum: { cantidad: true }
+    });
+
+    const activas = await prisma.salidasinventario.count({
+      where: { ...where, estado: 1 }
+    });
+
+    const anuladas = await prisma.salidasinventario.count({
+      where: { ...where, estado: 0 }
+    });
+
+    return {
+      data: salidas,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / parseInt(limit))
+      },
+      resumen: {
+        totalSalidas: estadisticas._count.idsalida || 0,
+        activas,
+        anuladas,
+        totalUnidadesDespachadas: estadisticas._sum.cantidad || 0
+      }
+    };
+
+  } catch (error) {
+    console.error('Error en obtenerReporteSalidas:', error);
+    throw new Error(`Error al obtener reporte de salidas: ${error.message}`);
+  }
+}
+  
 };
 
 module.exports = reporteriaService;

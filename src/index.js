@@ -48,6 +48,7 @@ const referirRoutes = require('./routes/referirRoutes');
 const inventarioMedico = require('./routes/inventariomedicoRoutes'); 
 const reporteriaRoutes = require('./routes/reporteriaRoutes');
 const documentoRoutes = require('./routes/documentoRoutes');
+const salidasInventarioRoutes = require('./routes/salidasInventarioRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/pacientes', pacienteRoutes);
@@ -60,8 +61,9 @@ app.use('/api/historial', historialRoutes);
 app.use('/api/agenda', agendaRoutes);
 app.use('/api/referir', referirRoutes);
 app.use('/api/inventario', inventarioMedico);
+app.use('/api/salidas', salidasInventarioRoutes);
 app.use('/api/reporteria', reporteriaRoutes);
-app.use('/api/documentos', documentoRoutes);  // ← ✅ LÍNEA AGREGADA
+app.use('/api/documentos', documentoRoutes);  
 
 // Ruta raíz
 app.get('/', (req, res) => {
@@ -136,6 +138,14 @@ app.get('/', (req, res) => {
         actualizar: 'PUT /api/documentos/:id',
         eliminar: 'DELETE /api/documentos/:id',
         cambiarEstado: 'PATCH /api/documentos/:id/estado'
+      },
+      salidas: {
+        listar: 'GET /api/inventario/salidas',
+        obtener: 'GET /api/inventario/salidas/:id',
+        crear: 'POST /api/inventario/salidas',
+        anular: 'PUT /api/inventario/salidas/:id/anular',
+        historialMedicamento: 'GET /api/salidas/medicamento/:idmedicina',
+        estadisticas: 'GET /api/inventario/salidas/estadisticas'
       }
     }
   });
