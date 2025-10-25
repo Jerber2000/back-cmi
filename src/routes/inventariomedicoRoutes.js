@@ -2,41 +2,70 @@
 const { Router } = require('express');
 const inventarioMedicoController = require('../controllers/inventarioMedicoController');
 const inventarioMiddleware = require('../middlewares/validationInventario');
-const checkRole = require('../middlewares/checkRole');
+const autenticacion = require('../middlewares/auth');
+const { validarCambioClave } = require('../middlewares/validarCambioClave');
+
+// ← IMPORTAR el controller y middleware de salidas
+const salidasInventarioController = require('../controllers/salidasInventarioController');
+const salidasMiddleware = require('../middlewares/validacionSalidas');
 
 const router = Router();
 
 // GET - Listar todos
-router.get('/', inventarioMedicoController.listarTodos);
+router.get(
+  '/',
+  autenticacion.validarToken,
+  autenticacion.verificarUsuarioEnBD,
+  validarCambioClave,
+  inventarioMedicoController.listarTodos
+);
+
+// ===== RUTAS ESPECÍFICAS PRIMERO =====
+
+
+// PUT - Cambiar estado (activo/inactivo)
+// ⚠️ También debe ir antes de /:id
+router.put(
+  '/:id/estado',
+  autenticacion.validarToken,
+  autenticacion.verificarUsuarioEnBD,
+  validarCambioClave,
+  inventarioMiddleware.validarId,
+  inventarioMiddleware.validarCambiarEstado,
+  inventarioMedicoController.cambiarEstado
+);
+
+// ===== RUTAS GENÉRICAS AL FINAL =====
 
 // GET - Obtener por ID
-router.get('/:id', 
+router.get(
+  '/:id',
+  autenticacion.validarToken,
+  autenticacion.verificarUsuarioEnBD,
+  validarCambioClave,
   inventarioMiddleware.validarId,
-  checkRole(1,5),
   inventarioMedicoController.obtenerPorId
 );
 
 // POST - Crear nuevo
-router.post('/', 
+router.post(
+  '/',
+  autenticacion.validarToken,
+  autenticacion.verificarUsuarioEnBD,
+  validarCambioClave,
   inventarioMiddleware.validarCrear,
-  checkRole(1,5),
   inventarioMedicoController.crear
 );
 
 // PUT - Actualizar
-router.put('/:id', 
+router.put(
+  '/:id',
+  autenticacion.validarToken,
+  autenticacion.verificarUsuarioEnBD,
+  validarCambioClave,
   inventarioMiddleware.validarId,
   inventarioMiddleware.validarActualizar,
-  checkRole(1,5),
   inventarioMedicoController.actualizar
-);
-
-// PATCH - Cambiar estado (activo/inactivo)
-router.put('/:id/estado', 
-  inventarioMiddleware.validarId,
-  inventarioMiddleware.validarCambiarEstado,
-  checkRole(1,5),
-  inventarioMedicoController.cambiarEstado
 );
 
 module.exports = router;

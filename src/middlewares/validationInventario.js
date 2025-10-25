@@ -26,7 +26,7 @@ class InventarioMiddleware {
 
   // Validar datos al CREAR
   validarCrear(req, res, next) {
-    const { fkusuario, nombre, usuariocreacion } = req.body;
+    const { fkusuario, nombre, codigoproducto, usuariocreacion } = req.body;
     const errores = [];
 
     // Campos obligatorios
@@ -46,12 +46,22 @@ class InventarioMiddleware {
       errores.push('El campo usuariocreacion es obligatorio');
     }
 
+    // Validación de código de producto (opcional pero con formato)
+    if (codigoproducto) {
+      if (codigoproducto.trim() === '') {
+        errores.push('El código de producto no puede estar vacío');
+      }
+      if (codigoproducto.length > 50) {
+        errores.push('El código de producto no puede exceder 50 caracteres');
+      }
+    }
+
     // Validaciones opcionales
-    if (req.body.unidades && req.body.unidades < 0) {
+    if (req.body.unidades !== undefined && req.body.unidades < 0) {
       errores.push('Las unidades no pueden ser negativas');
     }
 
-    if (req.body.precio && req.body.precio < 0) {
+    if (req.body.precio !== undefined && req.body.precio < 0) {
       errores.push('El precio no puede ser negativo');
     }
 
@@ -68,7 +78,7 @@ class InventarioMiddleware {
 
   // Validar datos al ACTUALIZAR
   validarActualizar(req, res, next) {
-    const { nombre, usuariomodificacion } = req.body;
+    const { nombre, codigoproducto, usuariomodificacion } = req.body;
     const errores = [];
 
     if (!nombre || nombre.trim() === '') {
@@ -81,6 +91,16 @@ class InventarioMiddleware {
 
     if (!usuariomodificacion || usuariomodificacion.trim() === '') {
       errores.push('El campo usuariomodificacion es obligatorio');
+    }
+
+    // Validación de código de producto (opcional pero con formato)
+    if (codigoproducto !== undefined && codigoproducto !== null) {
+      if (codigoproducto.trim() === '') {
+        errores.push('El código de producto no puede estar vacío');
+      }
+      if (codigoproducto.length > 50) {
+        errores.push('El código de producto no puede exceder 50 caracteres');
+      }
     }
 
     if (req.body.unidades !== undefined && req.body.unidades < 0) {

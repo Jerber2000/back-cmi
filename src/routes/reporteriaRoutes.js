@@ -52,6 +52,13 @@ router.get('/referencias',
   reporteriaController.obtenerReporteReferencias
 );
 
+// GET /api/reporteria/salidas - Reporte de salidas
+router.get('/salidas',
+  validarReporteria.validarFiltrosSalidas,
+  checkRole(1,5),
+  reporteriaController.obtenerReporteSalidas
+);
+
 // POST /api/reporteria/generar-pdf - Generar PDF de cualquier reporte
 router.post('/generar-pdf',
   validarReporteria.validarGeneracionPDF,

@@ -13,9 +13,11 @@ class InventarioMedicoController {
         total: medicamentos.length
       });
     } catch (error) {
+      console.error('Error en InventarioMedicoController.listarTodos:', error.message);
       return res.status(500).json({
         success: false,
-        message: error.message
+        message: 'Error interno del servidor',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   }
@@ -31,10 +33,12 @@ class InventarioMedicoController {
         data: medicamento
       });
     } catch (error) {
+      console.error('Error en InventarioMedicoController.obtenerPorId:', error.message);
       const statusCode = error.message.includes('no encontrado') ? 404 : 500;
       return res.status(statusCode).json({
         success: false,
-        message: error.message
+        message: error.message,
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   }
@@ -50,9 +54,15 @@ class InventarioMedicoController {
         data: nuevoMedicamento
       });
     } catch (error) {
-      return res.status(500).json({
+      console.error('Error en InventarioMedicoController.crear:', error.message);
+      
+      // Manejo especial para errores de validación
+      const statusCode = error.message.includes('ya está registrado') ? 400 : 500;
+      
+      return res.status(statusCode).json({
         success: false,
-        message: error.message
+        message: error.message,
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   }
@@ -69,15 +79,25 @@ class InventarioMedicoController {
         data: medicamentoActualizado
       });
     } catch (error) {
-      const statusCode = error.message.includes('no encontrado') ? 404 : 500;
+      console.error('Error en InventarioMedicoController.actualizar:', error.message);
+      
+      // Determinar código de estado apropiado
+      let statusCode = 500;
+      if (error.message.includes('no encontrado')) {
+        statusCode = 404;
+      } else if (error.message.includes('ya está registrado')) {
+        statusCode = 400;
+      }
+      
       return res.status(statusCode).json({
         success: false,
-        message: error.message
+        message: error.message,
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   }
 
-  // PATCH /api/inventario/:id/estado - Cambiar estado
+  // PUT /api/inventario/:id/estado - Cambiar estado
   async cambiarEstado(req, res) {
     try {
       const { id } = req.params;
@@ -98,10 +118,12 @@ class InventarioMedicoController {
         data: resultado
       });
     } catch (error) {
+      console.error('Error en InventarioMedicoController.cambiarEstado:', error.message);
       const statusCode = error.message.includes('no encontrado') ? 404 : 500;
       return res.status(statusCode).json({
         success: false,
-        message: error.message
+        message: error.message,
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   }

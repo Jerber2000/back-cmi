@@ -58,9 +58,21 @@ class InventarioMedicoService {
   // Crear un nuevo medicamento
   async crear(data) {
     try {
+      // Validar que código de producto no exista si se proporciona
+      if (data.codigoproducto) {
+        const existeCodigo = await prisma.inventariomedico.findUnique({
+          where: { codigoproducto: data.codigoproducto }
+        });
+
+        if (existeCodigo) {
+          throw new Error('El código de producto ya está registrado');
+        }
+      }
+
       const nuevoMedicamento = await prisma.inventariomedico.create({
         data: {
           fkusuario: data.fkusuario,
+          codigoproducto: data.codigoproducto || null,
           nombre: data.nombre,
           descripcion: data.descripcion || null,
           unidades: data.unidades || 0,
@@ -93,9 +105,26 @@ class InventarioMedicoService {
       // Verificar que existe
       await this.obtenerPorId(id);
 
+      // Validar código de producto si se actualiza
+      if (data.codigoproducto) {
+        const existeCodigo = await prisma.inventariomedico.findFirst({
+          where: {
+            codigoproducto: data.codigoproducto,
+            NOT: {
+              idmedicina: parseInt(id)
+            }
+          }
+        });
+
+        if (existeCodigo) {
+          throw new Error('El código de producto ya está registrado en otro medicamento');
+        }
+      }
+
       const medicamentoActualizado = await prisma.inventariomedico.update({
         where: { idmedicina: parseInt(id) },
         data: {
+          codigoproducto: data.codigoproducto !== undefined ? data.codigoproducto : undefined,
           nombre: data.nombre,
           descripcion: data.descripcion,
           unidades: data.unidades,
@@ -144,6 +173,25 @@ class InventarioMedicoService {
       };
     } catch (error) {
       throw new Error(`Error al cambiar estado: ${error.message}`);
+    }
+  }
+
+  // Validar disponibilidad de unidades (útil para salidas)
+  async validarDisponibilidad(idmedicina, cantidadSolicitada) {
+    try {
+      const medicamento = await this.obtenerPorId(idmedicina);
+      
+      if (medicamento.estado === 0) {
+        throw new Error('El medicamento está inactivo');
+      }
+
+      if (medicamento.unidades < cantidadSolicitada) {
+        throw new Error(`Stock insuficiente. Disponible: ${medicamento.unidades}, Solicitado: ${cantidadSolicitada}`);
+      }
+
+      return true;
+    } catch (error) {
+      throw error;
     }
   }
 }

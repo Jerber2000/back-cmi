@@ -8,6 +8,7 @@ const reporteriaController = {
     try {
       const usuario = req.usuario;
 
+      // ✅ Llama al método único del service
       const dashboard = await reporteriaService.obtenerDashboard(usuario);
 
       return res.status(200).json({
@@ -66,6 +67,54 @@ const reporteriaController = {
       return res.status(500).json({
         ok: false,
         mensaje: 'Error al obtener reporte de pacientes',
+        error: error.message
+      });
+    }
+  },
+
+  // GET /api/reporteria/salidas - Reporte de salidas de inventario
+  async obtenerReporteSalidas(req, res) {
+    try {
+      const {
+        desde,
+        hasta,
+        estado,
+        medicamento,
+        usuario: usuarioFiltro,
+        motivo,
+        destino,
+        page = 1,
+        limit = 10
+      } = req.query;
+
+      const usuario = req.usuario;
+
+      const filtros = {
+        desde,
+        hasta,
+        estado,
+        medicamento: medicamento ? parseInt(medicamento) : null,
+        usuarioFiltro: usuarioFiltro ? parseInt(usuarioFiltro) : null,
+        motivo,
+        destino,
+        page: parseInt(page),
+        limit: parseInt(limit)
+      };
+
+      const reporte = await reporteriaService.obtenerReporteSalidas(filtros, usuario);
+
+      return res.status(200).json({
+        ok: true,
+        data: reporte.data,
+        pagination: reporte.pagination,
+        resumen: reporte.resumen
+      });
+
+    } catch (error) {
+      console.error('Error en obtenerReporteSalidas:', error);
+      return res.status(500).json({
+        ok: false,
+        mensaje: 'Error al obtener reporte de salidas',
         error: error.message
       });
     }
