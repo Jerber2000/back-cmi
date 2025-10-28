@@ -86,6 +86,7 @@ model clinica {
   detallereferirpaciente detallereferirpaciente[]
   usuario                usuario[]
   detalledocumento       detalledocumento[]
+  pacientes              paciente[]  
 }
 
 model detallehistorialclinico {
@@ -213,10 +214,12 @@ model paciente {
   usuariomodificacion      String?                   @db.VarChar(100)
   fechamodificacion        DateTime?                 @db.Timestamp(6)
   estado                   Int?                      @default(1) @db.SmallInt
+  fkclinica                Int?
   agenda                   agenda[]
   detallehistorialclinico  detallehistorialclinico[]
   detallereferirpaciente   detallereferirpaciente[]
   expedientes              expediente[]
+  clinica                  clinica?                  @relation(fields: [fkclinica], references: [idclinica], onDelete: NoAction, onUpdate: NoAction, map: "fk_paciente_clinica")
 }
 
 model inventariomedico {
