@@ -79,7 +79,7 @@ class InventarioMedicoService {
           precio: data.precio || null,
           observaciones: data.observaciones || null,
           fechaingreso: data.fechaingreso ? new Date(data.fechaingreso) : null,
-          fechaegreso: data.fechaegreso ? new Date(data.fechaegreso) : null,
+          fechavencimiento: data.fechavencimiento ? new Date(data.fechavencimiento) : null,
           usuariocreacion: data.usuariocreacion,
           estado: 1
         },
@@ -131,7 +131,7 @@ class InventarioMedicoService {
           precio: data.precio,
           observaciones: data.observaciones,
           fechaingreso: data.fechaingreso ? new Date(data.fechaingreso) : undefined,
-          fechaegreso: data.fechaegreso ? new Date(data.fechaegreso) : undefined,
+           fechavencimiento: data.fechavencimiento ? new Date(data.fechavencimiento) : undefined,
           usuariomodificacion: data.usuariomodificacion,
           fechamodificacion: new Date()
         },
