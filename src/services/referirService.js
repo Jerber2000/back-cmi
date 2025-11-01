@@ -371,56 +371,70 @@ async confirmarReferido(id, usuario, comentarioAdicional) {
 
     } 
     // ✅ ETAPA 4: Usuario de la clínica destino
-    else if (referido.confirmacion4 === 0 && referido.confirmacion3 === 1) {
-      console.log('📍 Procesando ETAPA 4...');
-      if (!referido.rutadocumentofinal) {
-        throw new Error('❌ Debe subir el documento final antes de aprobar');
-      }
-
-      if (usuarioConRol.fkclinica !== referido.fkclinica) {
-        throw new Error('❌ Solo usuarios asignados a la clínica destino pueden aprobar esta etapa');
-      }
-      campoActualizar = {
-        confirmacion4: 1,
-        usuarioconfirma4: usuarioNombre,
-        usuariomodificacion: usuarioNombre,
-        fechamodificacion: new Date()
-      };
-      mensaje = '✅ Referido completado exitosamente';
-      console.log('📝 Datos a actualizar:', campoActualizar);
-
-    } else {
-      throw new Error('❌ No se puede aprobar en esta etapa');
+  else if (referido.confirmacion4 === 0 && referido.confirmacion3 === 1) {
+    console.log('📍 Procesando ETAPA 4...');
+    if (!referido.rutadocumentofinal) {
+      throw new Error('❌ Debe subir el documento final antes de aprobar');
     }
 
-    if (comentarioAdicional) {
-      const comentarioActual = referido.comentario || '';
-      campoActualizar.comentario = comentarioActual 
-        ? `${comentarioActual}\n---\n${usuarioNombre}: ${comentarioAdicional}`
-        : comentarioAdicional;
+    if (usuarioConRol.fkclinica !== referido.fkclinica) {
+      throw new Error('❌ Solo usuarios asignados a la clínica destino pueden aprobar esta etapa');
     }
+    campoActualizar = {
+      confirmacion4: 1,
+      usuarioconfirma4: usuarioNombre,
+      usuariomodificacion: usuarioNombre,
+      fechamodificacion: new Date()
+    };
+    mensaje = '✅ Referido completado exitosamente. Paciente transferido a nueva clínica.';
+    console.log('📝 Datos a actualizar:', campoActualizar);
 
-    console.log('💾 Actualizando referido en BD...');
-    const referidoActualizado = await prisma.detallereferirpaciente.update({
-      where: { idrefpaciente: id },
-      data: campoActualizar,
-      include: {
-        paciente: true,
-        clinica: true,
-        usuario: {
-          select: {
-            nombres: true,
-            apellidos: true
-          }
+  } else {
+    throw new Error('❌ No se puede aprobar en esta etapa');
+  }
+
+  if (comentarioAdicional) {
+    const comentarioActual = referido.comentario || '';
+    campoActualizar.comentario = comentarioActual 
+      ? `${comentarioActual}\n---\n${usuarioNombre}: ${comentarioAdicional}`
+      : comentarioAdicional;
+  }
+
+  console.log('💾 Actualizando referido en BD...');
+  const referidoActualizado = await prisma.detallereferirpaciente.update({
+    where: { idrefpaciente: id },
+    data: campoActualizar,
+    include: {
+      paciente: true,
+      clinica: true,
+      usuario: {
+        select: {
+          nombres: true,
+          apellidos: true
         }
       }
-    });
+    }
+  });
 
-    console.log('✅ Referido actualizado exitosamente');
-    return {
-      referido: referidoActualizado,
-      mensaje
-    };
+  // ✅ NUEVO: Si se completó el referido (confirmacion4), actualizar la clínica del paciente
+  if (referidoActualizado.confirmacion4 === 1) {
+    console.log('🏥 Transfiriendo paciente a nueva clínica...');
+    await prisma.paciente.update({
+      where: { idpaciente: referidoActualizado.fkpaciente },
+      data: {
+        fkclinica: referidoActualizado.fkclinica,
+        usuariomodificacion: usuarioNombre,
+        fechamodificacion: new Date()
+      }
+    });
+    console.log('✅ Paciente transferido exitosamente a clínica:', referidoActualizado.clinica.nombreclinica);
+  }
+
+  console.log('✅ Referido actualizado exitosamente');
+  return {
+    referido: referidoActualizado,
+    mensaje
+  };
 
   } catch (error) {
     console.error('💥 ERROR en confirmarReferido service:', error);
