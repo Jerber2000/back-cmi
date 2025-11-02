@@ -74,6 +74,12 @@ const validarPaciente = [
         .isIn(['M', 'F'])
         .withMessage('El género debe ser M (Masculino) o F (Femenino)'),
 
+    // ✅ NUEVA VALIDACIÓN: Clínica (opcional)
+    body('fkclinica')
+        .optional({ nullable: true, checkFalsy: true })
+        .isInt({ min: 1 })
+        .withMessage('El ID de clínica debe ser un número entero válido'),
+
     // Información médica
     body('tipoconsulta')
         .optional({ nullable: true, checkFalsy: true })
@@ -212,6 +218,12 @@ const validarActualizacionPaciente = [
         .optional()
         .isIn(['M', 'F'])
         .withMessage('El género debe ser M (Masculino) o F (Femenino)'),
+
+    // ✅ NUEVA VALIDACIÓN: Clínica (opcional en actualización)
+    body('fkclinica')
+        .optional({ nullable: true, checkFalsy: true })
+        .isInt({ min: 1 })
+        .withMessage('El ID de clínica debe ser un número entero válido'),
 
     // El resto de campos mantienen las mismas validaciones que en creación
     body('tipoconsulta')

@@ -38,7 +38,7 @@ model usuario {
   referidosComoOrigen      detallereferirpaciente[]  @relation("referir_usuario_origen")
   referidosComoDestino     detallereferirpaciente[]  @relation("referir_usuario_destino")
   inventariomedico         inventariomedico[]
-  salidasinventario   salidasinventario[]
+  salidasinventario        salidasinventario[]
   clinica                  clinica?                  @relation(fields: [fkclinica], references: [idclinica], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_clinica")
   rol                      rol                       @relation(fields: [fkrol], references: [idrol], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_rol")
 }
@@ -83,9 +83,10 @@ model clinica {
   usuariomodificacion    String?                  @db.VarChar(100)
   fechamodificacion      DateTime?                @db.Timestamp(6)
   estado                 Int?                     @default(1) @db.SmallInt
-  detallereferirpaciente detallereferirpaciente[]
-  usuario                usuario[]
   detalledocumento       detalledocumento[]
+  detallereferirpaciente detallereferirpaciente[]
+  pacientes              paciente[]
+  usuario                usuario[]
 }
 
 model detallehistorialclinico {
@@ -213,49 +214,52 @@ model paciente {
   usuariomodificacion      String?                   @db.VarChar(100)
   fechamodificacion        DateTime?                 @db.Timestamp(6)
   estado                   Int?                      @default(1) @db.SmallInt
+  fkclinica                Int?
   agenda                   agenda[]
   detallehistorialclinico  detallehistorialclinico[]
   detallereferirpaciente   detallereferirpaciente[]
   expedientes              expediente[]
+  clinica                  clinica?                  @relation(fields: [fkclinica], references: [idclinica], onDelete: NoAction, onUpdate: NoAction, map: "fk_paciente_clinica")
+
+  @@index([fkclinica], map: "idx_paciente_fkclinica")
 }
 
 model inventariomedico {
-  idmedicina          Int       @id @default(autoincrement())
+  idmedicina          Int                 @id @default(autoincrement())
   fkusuario           Int
-  codigoproducto      String?             @unique @db.VarChar(50)
-  nombre              String    @db.VarChar(200)
+  nombre              String              @db.VarChar(200)
   descripcion         String?
-  unidades            Int?      @default(0)
-  precio              Decimal?  @db.Decimal(10, 2)
+  unidades            Int?                @default(0)
+  precio              Decimal?            @db.Decimal(10, 2)
   observaciones       String?
-  fechaingreso        DateTime? @db.Date
-  fechaegreso         DateTime? @db.Date
-  usuariocreacion     String    @db.VarChar(100)
-  fechacreacion       DateTime? @default(now()) @db.Timestamp(6)
-  usuariomodificacion String?   @db.VarChar(100)
-  fechamodificacion   DateTime? @db.Timestamp(6)
-  estado              Int?      @default(1) @db.SmallInt
+  fechaingreso        DateTime?           @db.Date
+  fechavencimiento    DateTime?           @db.Date
+  usuariocreacion     String              @db.VarChar(100)
+  fechacreacion       DateTime?           @default(now()) @db.Timestamp(6)
+  usuariomodificacion String?             @db.VarChar(100)
+  fechamodificacion   DateTime?           @db.Timestamp(6)
+  estado              Int?                @default(1) @db.SmallInt
+  codigoproducto      String?             @unique @db.VarChar(50)
+  usuario             usuario             @relation(fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_inventario_usuario")
   salidas             salidasinventario[]
-  usuario             usuario   @relation(fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_inventario_usuario")
 }
 
 model salidasinventario {
-  idsalida            Int               @id @default(autoincrement())
+  idsalida            Int              @id @default(autoincrement())
   fkmedicina          Int
   fkusuario           Int
   cantidad            Int
-  motivo              String?           @db.VarChar(200)
-  destino             String?           @db.VarChar(200)
+  motivo              String?          @db.VarChar(200)
+  destino             String?          @db.VarChar(200)
   observaciones       String?
-  fechasalida         DateTime          @db.Date
-  usuariocreacion     String            @db.VarChar(100)
-  fechacreacion       DateTime?         @default(now()) @db.Timestamp(6)
-  usuariomodificacion String?           @db.VarChar(100)
-  fechamodificacion   DateTime?         @db.Timestamp(6)
-  estado              Int?              @default(1) @db.SmallInt
-  
-  medicamento         inventariomedico  @relation(fields: [fkmedicina], references: [idmedicina], onDelete: NoAction, onUpdate: NoAction, map: "fk_salida_medicina")
-  usuario             usuario           @relation(fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_salida_usuario")
+  fechasalida         DateTime         @db.Date
+  usuariocreacion     String           @db.VarChar(100)
+  fechacreacion       DateTime?        @default(now()) @db.Timestamp(6)
+  usuariomodificacion String?          @db.VarChar(100)
+  fechamodificacion   DateTime?        @db.Timestamp(6)
+  estado              Int?             @default(1) @db.SmallInt
+  medicamento         inventariomedico @relation(fields: [fkmedicina], references: [idmedicina], onDelete: NoAction, onUpdate: NoAction, map: "fk_salida_medicina")
+  usuario             usuario          @relation(fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_salida_usuario")
 }
 
 model detalledocumento {
@@ -268,6 +272,6 @@ model detalledocumento {
   usuariomodificacion String?   @db.VarChar(100)
   fechamodificacion   DateTime? @db.Timestamp(6)
   estado              Int?      @default(1) @db.SmallInt
-  fkclinica Int?
-  clinica   clinica?  @relation(fields: [fkclinica], references: [idclinica], onDelete: NoAction, onUpdate: NoAction, map: "fk_detalledocumento_clinica")
+  fkclinica           Int?
+  clinica             clinica?  @relation(fields: [fkclinica], references: [idclinica], onDelete: NoAction, onUpdate: NoAction, map: "fk_detalledocumento_clinica")
 }
