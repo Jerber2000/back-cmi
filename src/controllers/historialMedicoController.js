@@ -1,67 +1,28 @@
-// controllers/historialMedicoController.js - VERSIÓN COMPLETA CON MEJORAS
-const { PrismaClient } = require('../generated/prisma');
+// controllers/historialMedicoController.js
+const historialService = require('../services/historialMedicoService');
 const { fileService } = require('../services/fileService');
-const prisma = new PrismaClient();
 
 class HistorialMedicoController {
 
-  // Obtener historial de un paciente
+  /**
+   * Obtiene historial de un paciente
+   */
   async obtenerHistorialPorPaciente(req, res) {
     try {
       const { idpaciente } = req.params;
-      console.log('🔍 Obteniendo historial para paciente ID:', idpaciente);
+      console.log('🔍 Controller: Obteniendo historial para paciente ID:', idpaciente);
       
-      // ✅ VALIDAR QUE EL PACIENTE EXISTA PRIMERO
-      const pacienteExiste = await prisma.paciente.findUnique({
-        where: { idpaciente: parseInt(idpaciente) }
-      });
+      const resultado = await historialService.obtenerHistorialPorPaciente(idpaciente);
 
-      if (!pacienteExiste) {
-        return res.status(404).json({
-          success: false,
-          message: 'Paciente no encontrado'
-        });
+      if (!resultado.success) {
+        return res.status(404).json(resultado);
       }
-      
-      const historial = await prisma.detallehistorialclinico.findMany({
-        where: { 
-          fkpaciente: parseInt(idpaciente),
-          estado: 1
-        },
-        include: {
-          usuario: {
-            select: {
-              nombres: true,
-              apellidos: true,
-              puesto: true
-            }
-          },
-          paciente: {
-            select: {
-              nombres: true,
-              apellidos: true,
-              expedientes: {
-                select: {
-                  numeroexpediente: true
-                }
-              }
-            }
-          }
-        },
-        orderBy: { fechacreacion: 'desc' }
-      });
-      
-      console.log('✅ Registros encontrados:', historial.length);
 
-      return res.status(200).json({
-        success: true,
-        message: 'Historial obtenido correctamente',
-        data: historial,
-        total: historial.length
-      });
+      console.log(`✅ Controller: ${resultado.total} registros encontrados`);
+      return res.status(200).json(resultado);
 
     } catch (error) {
-      console.error('❌ Error al obtener historial:', error);
+      console.error('❌ Controller: Error al obtener historial:', error);
       return res.status(500).json({
         success: false,
         message: 'Error al obtener historial médico',
@@ -70,49 +31,25 @@ class HistorialMedicoController {
     }
   }
 
-  // Obtener info básica del paciente
+  /**
+   * Obtiene info básica del paciente
+   */
   async obtenerInfoPaciente(req, res) {
     try {
       const { idpaciente } = req.params;
-      console.log('🔍 Obteniendo info del paciente ID:', idpaciente);
+      console.log('🔍 Controller: Obteniendo info del paciente ID:', idpaciente);
 
-      const paciente = await prisma.paciente.findUnique({
-        where: { idpaciente: parseInt(idpaciente) },
-        select: {
-          idpaciente: true,
-          nombres: true,
-          apellidos: true,
-          cui: true,
-          rutafotoperfil: true,
-          telefono: true,
-          email: true,
-          fechanacimiento: true,
-          expedientes: {
-            select: {
-              numeroexpediente: true,
-              fechacreacion: true
-            }
-          }
-        }
-      });
+      const resultado = await historialService.obtenerInfoPaciente(idpaciente);
 
-      if (!paciente) {
-        return res.status(404).json({
-          success: false,
-          message: 'Paciente no encontrado'
-        });
+      if (!resultado.success) {
+        return res.status(404).json(resultado);
       }
 
-      console.log('✅ Paciente encontrado:', paciente.nombres, paciente.apellidos);
-
-      return res.status(200).json({
-        success: true,
-        message: 'Información del paciente obtenida correctamente',
-        data: paciente
-      });
+      console.log('✅ Controller: Paciente encontrado');
+      return res.status(200).json(resultado);
 
     } catch (error) {
-      console.error('❌ Error al obtener paciente:', error);
+      console.error('❌ Controller: Error al obtener paciente:', error);
       return res.status(500).json({
         success: false,
         message: 'Error al obtener información del paciente',
@@ -121,86 +58,27 @@ class HistorialMedicoController {
     }
   }
 
-  // Crear nueva sesión
+  /**
+   * Crea nueva sesión
+   */
   async crearSesion(req, res) {
     try {
-      const { 
-        fkpaciente, 
-        fkusuario, 
-        fecha,
-        recordatorio,
-        notaconsulta,
-        motivoconsulta,
-        evolucion,
-        diagnosticotratamiento
-      } = req.body;
+      const datos = req.body;
+      const usuarioCreador = req.usuario?.usuario || req.usuario?.nombres || 'Sistema';
 
-      console.log('🆕 Creando nueva sesión para paciente:', fkpaciente);
+      console.log('🆕 Controller: Creando nueva sesión para paciente:', datos.fkpaciente);
 
-      // ✅ VALIDAR QUE EL PACIENTE Y USUARIO EXISTAN
-      const [pacienteExiste, usuarioExiste] = await Promise.all([
-        prisma.paciente.findUnique({ where: { idpaciente: parseInt(fkpaciente) }}),
-        prisma.usuario.findUnique({ where: { idusuario: parseInt(fkusuario) }})
-      ]);
+      const resultado = await historialService.crearSesion(datos, usuarioCreador);
 
-      if (!pacienteExiste) {
-        return res.status(404).json({
-          success: false,
-          message: 'Paciente no encontrado'
-        });
+      if (!resultado.success) {
+        return res.status(400).json(resultado);
       }
 
-      if (!usuarioExiste) {
-        return res.status(404).json({
-          success: false,
-          message: 'Usuario no encontrado'
-        });
-      }
-
-      const usuariocreacion = req.usuario?.usuario || req.usuario?.nombres || 'Sistema';
-
-      const nuevaSesion = await prisma.detallehistorialclinico.create({
-        data: {
-          fkpaciente: parseInt(fkpaciente),
-          fkusuario: parseInt(fkusuario),
-          fecha: new Date(fecha),
-          recordatorio: recordatorio || null,
-          notaconsulta: notaconsulta || null,
-          motivoconsulta,
-          evolucion: evolucion || null,
-          diagnosticotratamiento: diagnosticotratamiento || null,
-          rutahistorialclinico: null,
-          usuariocreacion,
-          fechacreacion: new Date(),
-          estado: 1
-        },
-        include: {
-          usuario: {
-            select: {
-              nombres: true,
-              apellidos: true,
-              puesto: true
-            }
-          },
-          paciente: {
-            select: {
-              nombres: true,
-              apellidos: true
-            }
-          }
-        }
-      });
-
-      console.log('✅ Sesión creada con ID:', nuevaSesion.idhistorial);
-
-      return res.status(201).json({
-        success: true,
-        message: 'Sesión de historial creada correctamente',
-        data: nuevaSesion
-      });
+      console.log('✅ Controller: Sesión creada con ID:', resultado.data.idhistorial);
+      return res.status(201).json(resultado);
 
     } catch (error) {
-      console.error('❌ Error al crear sesión:', error);
+      console.error('❌ Controller: Error al crear sesión:', error);
       return res.status(500).json({
         success: false,
         message: 'Error al crear sesión de historial médico',
@@ -209,72 +87,32 @@ class HistorialMedicoController {
     }
   }
 
-  // Actualizar sesión
+  /**
+   * Actualiza sesión existente
+   */
   async actualizarSesion(req, res) {
     try {
       const { idhistorial } = req.params;
-      const { 
-        recordatorio,
-        notaconsulta,
-        motivoconsulta,
-        evolucion,
-        diagnosticotratamiento
-      } = req.body;
+      const datos = req.body;
+      const usuarioModificador = req.usuario?.usuario || req.usuario?.nombres || 'Sistema';
 
-      console.log('🔄 Actualizando sesión ID:', idhistorial);
+      console.log('🔄 Controller: Actualizando sesión ID:', idhistorial);
 
-      // ✅ VERIFICAR QUE LA SESIÓN EXISTA
-      const sesionExiste = await prisma.detallehistorialclinico.findUnique({
-        where: { idhistorial: parseInt(idhistorial) }
-      });
+      const resultado = await historialService.actualizarSesion(
+        idhistorial, 
+        datos, 
+        usuarioModificador
+      );
 
-      if (!sesionExiste) {
-        return res.status(404).json({
-          success: false,
-          message: 'Sesión de historial no encontrada'
-        });
+      if (!resultado.success) {
+        return res.status(404).json(resultado);
       }
 
-      const usuariomodificacion = req.usuario?.usuario || req.usuario?.nombres || 'Sistema';
-
-      const sesionActualizada = await prisma.detallehistorialclinico.update({
-        where: { idhistorial: parseInt(idhistorial) },
-        data: {
-          recordatorio,
-          notaconsulta,
-          motivoconsulta,
-          evolucion,
-          diagnosticotratamiento,
-          usuariomodificacion,
-          fechamodificacion: new Date()
-        },
-        include: {
-          usuario: {
-            select: {
-              nombres: true,
-              apellidos: true,
-              puesto: true
-            }
-          },
-          paciente: {
-            select: {
-              nombres: true,
-              apellidos: true
-            }
-          }
-        }
-      });
-
-      console.log('✅ Sesión actualizada correctamente');
-
-      return res.status(200).json({
-        success: true,
-        message: 'Sesión actualizada correctamente',
-        data: sesionActualizada
-      });
+      console.log('✅ Controller: Sesión actualizada correctamente');
+      return res.status(200).json(resultado);
 
     } catch (error) {
-      console.error('❌ Error al actualizar sesión:', error);
+      console.error('❌ Controller: Error al actualizar sesión:', error);
       return res.status(500).json({
         success: false,
         message: 'Error al actualizar sesión',
@@ -283,43 +121,27 @@ class HistorialMedicoController {
     }
   }
 
-  // ✅ NUEVO: Eliminar sesión
+  /**
+   * Elimina sesión
+   */
   async eliminarSesion(req, res) {
     try {
       const { idhistorial } = req.params;
-      console.log('🗑️ Eliminando sesión ID:', idhistorial);
+      const usuarioModificador = req.usuario?.usuario || 'Sistema';
 
-      // Verificar que la sesión existe
-      const sesionExiste = await prisma.detallehistorialclinico.findUnique({
-        where: { idhistorial: parseInt(idhistorial) }
-      });
+      console.log('🗑️ Controller: Eliminando sesión ID:', idhistorial);
 
-      if (!sesionExiste) {
-        return res.status(404).json({
-          success: false,
-          message: 'Sesión no encontrada'
-        });
+      const resultado = await historialService.eliminarSesion(idhistorial, usuarioModificador);
+
+      if (!resultado.success) {
+        return res.status(404).json(resultado);
       }
 
-      // Eliminar físicamente o marcar como eliminado
-      await prisma.detallehistorialclinico.update({
-        where: { idhistorial: parseInt(idhistorial) },
-        data: {
-          estado: 0, // Marcar como eliminado en lugar de borrar físicamente
-          usuariomodificacion: req.usuario?.usuario || 'Sistema',
-          fechamodificacion: new Date()
-        }
-      });
-
-      console.log('✅ Sesión eliminada correctamente');
-
-      return res.status(200).json({
-        success: true,
-        message: 'Sesión eliminada correctamente'
-      });
+      console.log('✅ Controller: Sesión eliminada correctamente');
+      return res.status(200).json(resultado);
 
     } catch (error) {
-      console.error('❌ Error al eliminar sesión:', error);
+      console.error('❌ Controller: Error al eliminar sesión:', error);
       return res.status(500).json({
         success: false,
         message: 'Error al eliminar sesión',
@@ -328,44 +150,32 @@ class HistorialMedicoController {
     }
   }
 
-  // Actualizar sesión con archivos
+  /**
+   * Actualiza ruta de archivos de una sesión
+   */
   async actualizarSesionConArchivos(req, res) {
     try {
       const { idhistorial } = req.params;
       const { rutaarchivos } = req.body;
+      const usuarioModificador = req.usuario?.usuario || req.usuario?.nombres || 'Sistema';
 
-      console.log('🔄 Actualizando archivos para sesión ID:', idhistorial);
+      console.log('🔄 Controller: Actualizando archivos para sesión ID:', idhistorial);
 
-      const sesionExiste = await prisma.detallehistorialclinico.findUnique({
-        where: { idhistorial: parseInt(idhistorial) }
-      });
+      const resultado = await historialService.actualizarRutaArchivos(
+        idhistorial, 
+        rutaarchivos, 
+        usuarioModificador
+      );
 
-      if (!sesionExiste) {
-        return res.status(404).json({
-          success: false,
-          message: 'Sesión no encontrada'
-        });
+      if (!resultado.success) {
+        return res.status(404).json(resultado);
       }
 
-      const usuariomodificacion = req.usuario?.usuario || req.usuario?.nombres || 'Sistema';
-
-      const sesionActualizada = await prisma.detallehistorialclinico.update({
-        where: { idhistorial: parseInt(idhistorial) },
-        data: {
-          rutahistorialclinico: rutaarchivos,
-          usuariomodificacion,
-          fechamodificacion: new Date()
-        }
-      });
-
-      return res.status(200).json({
-        success: true,
-        message: 'Archivos de sesión actualizados correctamente',
-        data: sesionActualizada
-      });
+      console.log('✅ Controller: Archivos actualizados correctamente');
+      return res.status(200).json(resultado);
 
     } catch (error) {
-      console.error('❌ Error al actualizar archivos de sesión:', error);
+      console.error('❌ Controller: Error al actualizar archivos de sesión:', error);
       return res.status(500).json({
         success: false,
         message: 'Error al actualizar archivos',
@@ -374,94 +184,42 @@ class HistorialMedicoController {
     }
   }
 
-  // Obtener archivos de una sesión específica
-async obtenerArchivosSesion(req, res) {
-  try {
-    const { idhistorial } = req.params;
-    console.log('📎 Obteniendo archivos para sesión ID:', idhistorial);
+  /**
+   * Obtiene archivos de una sesión específica
+   */
+  async obtenerArchivosSesion(req, res) {
+    try {
+      const { idhistorial } = req.params;
+      console.log('📎 Controller: Obteniendo archivos para sesión ID:', idhistorial);
 
-    const sesion = await prisma.detallehistorialclinico.findUnique({
-      where: { idhistorial: parseInt(idhistorial) },
-      select: {
-        rutahistorialclinico: true
+      const resultado = await historialService.obtenerArchivosSesion(idhistorial);
+
+      if (!resultado.success) {
+        return res.status(404).json(resultado);
       }
-    });
 
-    if (!sesion) {
-      return res.status(404).json({
+      console.log(`✅ Controller: ${resultado.total} archivos encontrados`);
+      return res.status(200).json(resultado);
+
+    } catch (error) {
+      console.error('❌ Controller: Error al obtener archivos:', error);
+      return res.status(500).json({
         success: false,
-        message: 'Sesión no encontrada'
+        message: 'Error al obtener archivos',
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno'
       });
     }
-
-    let archivos = [];
-    
-    if (sesion.rutahistorialclinico) {
-      try {
-        // Si las rutas están como string separado por comas
-        if (typeof sesion.rutahistorialclinico === 'string') {
-          const rutas = sesion.rutahistorialclinico.split(',').filter(r => r.trim());
-          
-          archivos = rutas.map(ruta => {
-            const rutaLimpia = ruta.trim();
-            const nombreArchivo = rutaLimpia.split('/').pop();
-            const esImagen = /\.(jpg|jpeg|png|gif|webp)$/i.test(nombreArchivo);
-            
-            return {
-              id: Date.now() + Math.random(), // ID único temporal
-              nombre: nombreArchivo,
-              nombreOriginal: nombreArchivo,
-              ruta: rutaLimpia,
-              rutaServicio: rutaLimpia,
-              url: `/api/files/${nombreArchivo}`, // URL para descargar
-              tipo: esImagen ? 'imagen' : 'documento',
-              categoria: esImagen ? 'imagen' : 'documento'
-            };
-          });
-        } else {
-          // Si ya está como JSON
-          archivos = JSON.parse(sesion.rutahistorialclinico);
-        }
-        
-      } catch (parseError) {
-        console.error('Error parseando rutas de archivos:', parseError);
-        // Si falla el parsing, intentar como string simple
-        archivos = [{
-          id: Date.now(),
-          nombre: sesion.rutahistorialclinico.split('/').pop(),
-          ruta: sesion.rutahistorialclinico,
-          rutaServicio: sesion.rutahistorialclinico,
-          url: `/api/files/${sesion.rutahistorialclinico.split('/').pop()}`
-        }];
-      }
-    }
-
-    console.log(`✅ ${archivos.length} archivos encontrados para la sesión`);
-
-    return res.status(200).json({
-      success: true,
-      message: 'Archivos obtenidos correctamente',
-      data: archivos,
-      total: archivos.length
-    });
-
-  } catch (error) {
-    console.error('❌ Error al obtener archivos:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error al obtener archivos',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno'
-    });
   }
-}
 
-  // ✅ MEJORADO: Subir archivos para historial médico usando fileService
+  /**
+   * Sube archivos para historial médico
+   */
   async subirArchivos(req, res) {
     try {
       const { idpaciente } = req.params;
       const files = req.files;
 
-      console.log('📎 Subiendo archivos para paciente:', idpaciente);
+      console.log('📎 Controller: Subiendo archivos para paciente:', idpaciente);
 
       if (!files || files.length === 0) {
         return res.status(400).json({
@@ -470,11 +228,9 @@ async obtenerArchivosSesion(req, res) {
         });
       }
 
-      // ✅ VERIFICAR QUE EL PACIENTE EXISTA
-      const pacienteExiste = await prisma.paciente.findUnique({
-        where: { idpaciente: parseInt(idpaciente) }
-      });
-
+      // Verificar que el paciente existe usando el service
+      const pacienteExiste = await historialService.validarPacienteExiste(idpaciente);
+      
       if (!pacienteExiste) {
         return res.status(404).json({
           success: false,
@@ -513,7 +269,7 @@ async obtenerArchivosSesion(req, res) {
         }
       }
 
-      console.log(`✅ ${archivosSubidos.length} de ${files.length} archivos subidos correctamente`);
+      console.log(`✅ Controller: ${archivosSubidos.length} de ${files.length} archivos subidos`);
 
       return res.status(201).json({
         success: true,
@@ -527,7 +283,7 @@ async obtenerArchivosSesion(req, res) {
       });
 
     } catch (error) {
-      console.error('❌ Error al subir archivos:', error);
+      console.error('❌ Controller: Error al subir archivos:', error);
       return res.status(500).json({
         success: false,
         message: 'Error al subir archivos',
