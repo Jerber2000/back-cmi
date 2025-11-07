@@ -25,3 +25,9 @@ tmp/
 # Archivos de debugging
 *.tsbuildinfo
 .eslintcache
+
+# Archivos locales del servidor (no versionar)
+server.js
+src/environments/environment.ts
+src/environments/environment.prod.ts
+src/environments/environment.development.ts
