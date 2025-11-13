@@ -39,6 +39,25 @@ const obtenerUsuarioPorId = async (req, res) => {
     }
 };
 
+const obtenerUsuarioPorRol = async (req, res) => {
+    try {
+        const { rol } = req.params;
+        
+        const resultado = await usuarioService.obtenerUsuarioPorRol(rol);
+        
+        if (!resultado.success) {
+            return res.status(404).json(resultado);
+        }
+        
+        return res.status(200).json(resultado);
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor'
+        });
+    }
+}
+
 //Creacion nuevo usuario
 const crearUsuario = async (req, res) => {
     try{
@@ -150,6 +169,7 @@ const actualizarPerfil = async (req, res) => {
 module.exports = {
     obtenerUsuarios,
     obtenerUsuarioPorId,
+    obtenerUsuarioPorRol,
     crearUsuario,
     actuarlizarUsuario,
     eliminarUsuario,

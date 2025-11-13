@@ -1,4 +1,4 @@
-//se importa la funcion de vericar token
+//middlewares/auth.js
 const { verificarToken } = require('../utils/jwt');
 const { PrismaClient } = require('../generated/prisma');
 
@@ -7,8 +7,8 @@ const prisma = new PrismaClient();
 const validarToken = (req, res, next) => {
     const authHeader = req.header('Authorization');
     const token = authHeader && authHeader.startsWith('Bearer ')
-        ?authHeader.slice(7)
-        :null;
+        ? authHeader.slice(7)
+        : null;
 
     if(!token){
         return res.status(401).json({
@@ -49,13 +49,15 @@ const verificarUsuarioEnBD = async (req, res, next) => {
                 estado: 1
             },
             select:{
-                idusuario: true,
-                usuario:   true,
-                correo:    true,
-                nombres:   true,
-                apellidos: true,
-                fkrol:     true,
-                estado:    true
+                idusuario:    true,
+                usuario:      true,
+                correo:       true,
+                nombres:      true,
+                apellidos:    true,
+                fkrol:        true,
+                fkclinica:    true,  // ✅ AGREGADO
+                estado:       true,
+                cambiarclave: true
             }
         });
 
@@ -81,22 +83,6 @@ const verificarUsuarioEnBD = async (req, res, next) => {
         });
     }
 };
-
-// Middleware para verificar si el usuario puede acceder a su propio perfil
-// const autorizarUsuario = (req, res, next) => {
-//     const { id } = req.params;
-//     const usuarioId = req.usuario.id;
-
-//     // Permitir acceso solo si es el mismo usuario o si es admin (puedes agregar lógica de roles)
-//     if (parseInt(id) !== usuarioId) {
-//         return res.status(403).json({
-//             success: false,
-//             message: 'No tienes permisos para acceder a este recurso'
-//         });
-//     }
-
-//     next();
-// };
 
 module.exports = {
   validarToken,
