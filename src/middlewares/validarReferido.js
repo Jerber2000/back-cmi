@@ -184,7 +184,7 @@ validarPermisoConfirmar: async (req, res, next) => {
       rol: usuarioConRol?.rol
     });
 
-    const esAdmin = usuarioConRol.fkrol === 1;
+    const esAdmin = usuarioConRol.fkrol === 1 || usuarioConRol.fkrol === 8;
     console.log('🔑 Es Admin:', esAdmin);
 
     // ✅ ETAPA 2: Admin aprueba
@@ -291,7 +291,7 @@ validarPermisoActualizar: async (req, res, next) => {
       include: { rol: true }
     });
 
-    const esAdmin = usuarioConRol.fkrol === 1;
+    const esAdmin = usuarioConRol.fkrol === 1 || usuarioConRol.fkrol === 8;
     const esCreador = referido.fkusuario === usuario.idusuario;
 
     // ✅ NUEVO: Permitir subir documento final en etapa 4

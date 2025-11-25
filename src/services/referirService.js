@@ -330,7 +330,7 @@ async confirmarReferido(id, usuario, comentarioAdicional) {
       fkclinica: usuarioConRol?.fkclinica
     });
 
-    const esAdmin = usuarioConRol.fkrol === 1;
+    const esAdmin = usuarioConRol.fkrol === 1 || usuarioConRol.fkrol === 8;
     const usuarioNombre = usuario.usuario;
     let campoActualizar = {};
     let mensaje = '';
@@ -461,7 +461,7 @@ async actualizarReferido(id, datos, usuario) {
       include: { rol: true }
     });
 
-    const esAdmin = usuarioConRol.fkrol === 1;
+    const esAdmin = usuarioConRol.fkrol === 1 || usuarioConRol.fkrol === 8;
     const esCreador = referido.fkusuario === usuario.idusuario;
 
     // ✅ FILTRAR CAMPOS UNDEFINED ANTES DE VALIDAR

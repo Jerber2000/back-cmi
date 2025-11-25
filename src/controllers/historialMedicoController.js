@@ -65,10 +65,18 @@ class HistorialMedicoController {
     try {
       const datos = req.body;
       const usuarioCreador = req.usuario?.usuario || req.usuario?.nombres || 'Sistema';
+      
+      // ✅ Obtener fkclinica del usuario autenticado
+      const fkclinicaUsuario = req.usuario?.fkclinica || null;
 
       console.log('🆕 Controller: Creando nueva sesión para paciente:', datos.fkpaciente);
+      console.log('🏥 Controller: fkclinica del usuario autenticado:', fkclinicaUsuario);
 
-      const resultado = await historialService.crearSesion(datos, usuarioCreador);
+      // ✅ Pasar fkclinica del usuario al service
+      const resultado = await historialService.crearSesion(
+        { ...datos, fkclinicaUsuario }, 
+        usuarioCreador
+      );
 
       if (!resultado.success) {
         return res.status(400).json(resultado);

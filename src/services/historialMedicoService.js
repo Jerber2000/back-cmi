@@ -6,10 +6,10 @@ class HistorialMedicoService {
 
   /**
    * Obtiene el historial completo de un paciente
+   * ✅ CAMBIO: Incluir clínica en la respuesta
    */
   async obtenerHistorialPorPaciente(idpaciente) {
     try {
-      // Validar que el paciente exista
       const pacienteExiste = await prisma.paciente.findUnique({
         where: { idpaciente: parseInt(idpaciente) }
       });
@@ -45,6 +45,12 @@ class HistorialMedicoService {
                 }
               }
             }
+          },
+          clinica: {  // ✅ AGREGAR ESTA RELACIÓN
+            select: {
+              idclinica: true,
+              nombreclinica: true
+            }
           }
         },
         orderBy: { fechacreacion: 'desc' }
@@ -63,8 +69,10 @@ class HistorialMedicoService {
     }
   }
 
-  /**
+
+    /**
    * Obtiene información básica del paciente
+   * ✅ CAMBIO: Incluir genero y fkclinica
    */
   async obtenerInfoPaciente(idpaciente) {
     try {
@@ -75,6 +83,8 @@ class HistorialMedicoService {
           nombres: true,
           apellidos: true,
           cui: true,
+          genero: true,  // ✅ AGREGAR
+          fkclinica: true,  // ✅ AGREGAR
           rutafotoperfil: true,
           telefonopersonal: true,
           fechanacimiento: true,
@@ -107,59 +117,115 @@ class HistorialMedicoService {
     }
   }
 
-  /**
-   * Crea una nueva sesión de historial
-   */
-  async crearSesion(datos, usuarioCreador) {
-    try {
-      const { 
-        fkpaciente, 
-        fkusuario, 
-        fecha,
-        recordatorio,
-        notaconsulta,
+/**
+ * Crea una nueva sesión de historial
+ */
+async crearSesion(datos, usuarioCreador) {
+  try {
+    const { 
+      fkpaciente, 
+      fkusuario,
+      fkclinica,
+      fkclinicaUsuario,
+      fecha,
+      recordatorio,
+      notaconsulta,
+      motivoconsulta,
+      evolucion,
+      diagnosticotratamiento
+    } = datos;
+
+    // Validar que el paciente y usuario existan
+    const [pacienteExiste, usuarioExiste] = await Promise.all([
+      prisma.paciente.findUnique({ where: { idpaciente: parseInt(fkpaciente) }}),
+      prisma.usuario.findUnique({ where: { idusuario: parseInt(fkusuario) }})
+    ]);
+
+    if (!pacienteExiste) {
+      return {
+        success: false,
+        message: 'Paciente no encontrado',
+        data: null
+      };
+    }
+
+    if (!usuarioExiste) {
+      return {
+        success: false,
+        message: 'Usuario no encontrado',
+        data: null
+      };
+    }
+
+    // Prioridad: usuario autenticado > request > paciente
+    const clinicaId = fkclinicaUsuario || fkclinica || pacienteExiste.fkclinica || null;
+    
+    console.log('🏥 Service: Usando fkclinica:', clinicaId);
+
+    const nuevaSesion = await prisma.detallehistorialclinico.create({
+      data: {
+        fkpaciente: parseInt(fkpaciente),
+        fkusuario: parseInt(fkusuario),
+        fkclinica: clinicaId,
+        fecha: new Date(fecha),
+        recordatorio: recordatorio || null,
+        notaconsulta: notaconsulta || null,
         motivoconsulta,
-        evolucion,
-        diagnosticotratamiento
-      } = datos;
-
-      // Validar que el paciente y usuario existan
-      const [pacienteExiste, usuarioExiste] = await Promise.all([
-        prisma.paciente.findUnique({ where: { idpaciente: parseInt(fkpaciente) }}),
-        prisma.usuario.findUnique({ where: { idusuario: parseInt(fkusuario) }})
-      ]);
-
-      if (!pacienteExiste) {
-        return {
-          success: false,
-          message: 'Paciente no encontrado',
-          data: null
-        };
-      }
-
-      if (!usuarioExiste) {
-        return {
-          success: false,
-          message: 'Usuario no encontrado',
-          data: null
-        };
-      }
-
-      const nuevaSesion = await prisma.detallehistorialclinico.create({
-        data: {
-          fkpaciente: parseInt(fkpaciente),
-          fkusuario: parseInt(fkusuario),
-          fecha: new Date(fecha),
-          recordatorio: recordatorio || null,
-          notaconsulta: notaconsulta || null,
-          motivoconsulta,
-          evolucion: evolucion || null,
-          diagnosticotratamiento: diagnosticotratamiento || null,
-          rutahistorialclinico: null,
-          usuariocreacion: usuarioCreador,
-          fechacreacion: new Date(),
-          estado: 1
+        evolucion: evolucion || null,
+        diagnosticotratamiento: diagnosticotratamiento || null,
+        rutahistorialclinico: null,
+        usuariocreacion: usuarioCreador,
+        fechacreacion: new Date(),
+        estado: 1
+      },
+      include: {
+        usuario: {
+          select: {
+            nombres: true,
+            apellidos: true,
+            puesto: true
+          }
         },
+        paciente: {
+          select: {
+            nombres: true,
+            apellidos: true
+          }
+        },
+        clinica: {
+          select: {
+            idclinica: true,
+            nombreclinica: true
+          }
+        }
+      }
+    });
+
+    return {
+      success: true,
+      message: 'Sesión de historial creada correctamente',
+      data: nuevaSesion
+    };
+
+  } catch (error) {
+    console.error('Error en crearSesion (service):', error);
+    throw error;
+  }
+}
+
+  /**
+   * ✅ NUEVO MÉTODO: Obtiene historial filtrado por clínica
+   */
+  async obtenerHistorialPorClinica(fkclinica, filtros = {}) {
+    try {
+      const where = {
+        fkclinica: parseInt(fkclinica),
+        estado: 1,
+        ...filtros
+      };
+
+      const historial = await prisma.detallehistorialclinico.findMany({
+        where,
         include: {
           usuario: {
             select: {
@@ -170,21 +236,31 @@ class HistorialMedicoService {
           },
           paciente: {
             select: {
+              idpaciente: true,
               nombres: true,
-              apellidos: true
+              apellidos: true,
+              cui: true
+            }
+          },
+          clinica: {
+            select: {
+              idclinica: true,
+              nombreclinica: true
             }
           }
-        }
+        },
+        orderBy: { fechacreacion: 'desc' }
       });
 
       return {
         success: true,
-        message: 'Sesión de historial creada correctamente',
-        data: nuevaSesion
+        message: 'Historial por clínica obtenido correctamente',
+        data: historial,
+        total: historial.length
       };
 
     } catch (error) {
-      console.error('Error en crearSesion (service):', error);
+      console.error('Error en obtenerHistorialPorClinica (service):', error);
       throw error;
     }
   }
