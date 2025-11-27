@@ -1,10 +1,11 @@
 //middlewares/auth.js
 const { verificarToken } = require('../utils/jwt');
 const { PrismaClient } = require('../generated/prisma');
+const authService = require('../services/authService');
 
 const prisma = new PrismaClient();
 
-const validarToken = (req, res, next) => {
+const validarToken = async (req, res, next) => {
     const authHeader = req.header('Authorization');
     const token = authHeader && authHeader.startsWith('Bearer ')
         ? authHeader.slice(7)
@@ -19,6 +20,21 @@ const validarToken = (req, res, next) => {
 
     try{
         const decoded = verificarToken(token);
+        
+        // ✅ VERIFICAR si el timestamp del token coincide con el guardado en BD
+        const sesionValida = await authService.verificarSesionActiva(
+            decoded.id, 
+            decoded.timestamp
+        );
+        
+        if (!sesionValida) {
+            return res.status(401).json({
+                success: false,
+                message: 'Tu sesión fue cerrada porque iniciaste sesión en otro dispositivo',
+                sessionCerrada: true
+            });
+        }
+        
         req.usuario = decoded;
         next(); 
     }catch(error){
@@ -55,7 +71,7 @@ const verificarUsuarioEnBD = async (req, res, next) => {
                 nombres:      true,
                 apellidos:    true,
                 fkrol:        true,
-                fkclinica:    true,  // ✅ AGREGADO
+                fkclinica:    true,
                 estado:       true,
                 cambiarclave: true
             }

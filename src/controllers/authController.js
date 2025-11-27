@@ -25,7 +25,13 @@ const login = async (req, res) => {
         console.error('Error en AuthController.login:', error.message);
 
         let statusCode = 500;
-        if(error.message === 'Credenciales inválidas'){
+        let message = error.message;
+        
+        // ✅ MANEJO ESPECÍFICO PARA SESIÓN ACTIVA
+        if(error.message.includes('Ya tienes una sesión activa')){
+            statusCode = 409; // Conflict
+            message = error.message;
+        } else if(error.message === 'Credenciales inválidas'){
             statusCode = 401;
         } else if(error.message.includes('inactivo')){
             statusCode = 403; 
@@ -33,23 +39,44 @@ const login = async (req, res) => {
 
         res.status(statusCode).json({
             success: false,
-            message: error.message
+            message: message,
+            sessionActiva: error.message.includes('Ya tienes una sesión activa')
         });
     }
 };
 
 const logout = async (req, res) => {
-    res.status(200).json({
-        success: true,
-        message: 'Logout exitoso. Elimine el token del cliente.'
-    });
+    try {
+        // Obtener ID del usuario del token
+        const idusuario = req.usuario?.id || req.usuario?.idusuario;
+        
+        if (idusuario) {
+            // ✅ Limpiar el timestamp de la BD
+            await authService.cerrarSesion(idusuario);
+            
+            res.status(200).json({
+                success: true,
+                message: 'Logout exitoso. Sesión cerrada correctamente.'
+            });
+        } else {
+            res.status(200).json({
+                success: true,
+                message: 'Logout exitoso.'
+            });
+        }
+    } catch (error) {
+        console.error('Error en AuthController.logout:', error.message);
+        res.status(500).json({
+            success: false,
+            message: 'Error al cerrar sesión'
+        });
+    }
 };
 
 const RecuperarClave = async (req, res) => {
     try{
         const { correo } = req.body;
 
-        // Validar que el correo sea proporcionado
         if (!correo) {
             return res.status(400).json({
                 success: false,
@@ -57,7 +84,6 @@ const RecuperarClave = async (req, res) => {
             });
         }
 
-        // Validar formato básico del correo
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(correo)) {
             return res.status(400).json({
@@ -76,7 +102,6 @@ const RecuperarClave = async (req, res) => {
     } catch(error) {
         console.error('Error en AuthController.RecuperarClave:', error.message);
         
-        // Manejo específico de errores basado en el mensaje
         let statusCode = 500;
         let message = 'Error interno del servidor';
         
@@ -99,7 +124,6 @@ const CambiarClaveTemporal = async (req, res) => {
     try {
         const { usuario, claveActual, claveNueva, confirmarClave } = req.body;
 
-        // Validar que las claves nuevas coincidan
         if (claveNueva !== confirmarClave) {
             return res.status(400).json({
                 success: false,
@@ -107,7 +131,6 @@ const CambiarClaveTemporal = async (req, res) => {
             });
         }
 
-        // Cambiar la contraseña usando el authService
         const resultado = await authService.cambiarClaveObligatoria(usuario, claveActual, claveNueva);
 
         res.status(200).json({

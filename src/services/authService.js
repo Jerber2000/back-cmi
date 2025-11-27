@@ -38,18 +38,54 @@ class AuthService{
                 throw new Error('Credenciales inválidas');
             }
 
-            //Genera el token 
+            // ✅ VERIFICAR SI YA HAY UNA SESIÓN ACTIVA
+            if (usuario.last_login_timestamp) {
+                const timestampBD = Number(usuario.last_login_timestamp);
+                const ahora = Date.now();
+                const tiempoTranscurrido = ahora - timestampBD;
+                
+                // Tiempo de expiración en milisegundos (8 horas = 28800000 ms)
+                const horasExpiracion = parseInt(process.env.JWT_EXPIRES_IN) || 3;
+                const TIEMPO_EXPIRACION = horasExpiracion * 60 * 60 * 1000;
+                
+                // Si la sesión aún no ha expirado, bloquear el login
+                if (tiempoTranscurrido < TIEMPO_EXPIRACION) {
+                    const tiempoRestante = TIEMPO_EXPIRACION - tiempoTranscurrido;
+                    const horasRestantes = Math.floor(tiempoRestante / (60 * 60 * 1000));
+                    const minutosRestantes = Math.floor((tiempoRestante % (60 * 60 * 1000)) / (60 * 1000));
+                    
+                    throw new Error(
+                        `Ya tienes una sesión activa en otro dispositivo. ` +
+                        `Por favor, cierra sesión en el otro dispositivo`
+                    );
+                }
+            }
+
+            // ✅ GENERAR TIMESTAMP ÚNICO para esta sesión
+            const timestamp = Date.now();
+
+            //Genera el token con el timestamp
             const token = generarToken({
                 id:             usuario.idusuario,
                 usuario:        usuario.usuario,
                 nombre:         usuario.nombres,
                 apellido:       usuario.apellidos,
                 rutafotoperfil: usuario.rutafotoperfil,
-                fkrol:          usuario.fkrol
+                fkrol:          usuario.fkrol,
+                timestamp:      timestamp  // ← Timestamp único de esta sesión
             });
 
-            //Retornar datos (sin la contraseña)
-            const { clave: _, ...usuarioSinClave } = usuario;
+            // ✅ GUARDAR el timestamp en la base de datos
+            // Esto invalida cualquier token anterior
+            await prisma.usuario.update({
+                where: { idusuario: usuario.idusuario },
+                data: { 
+                    last_login_timestamp: BigInt(timestamp)
+                }
+            });
+
+            //Retornar datos (sin la contraseña y sin el timestamp que es BigInt)
+            const { clave: _, last_login_timestamp, ...usuarioSinClave } = usuario;
             
             return {
                 usuario: {
@@ -62,6 +98,37 @@ class AuthService{
         }catch(error){
             console.error('Error en AuthService.login:', error.message);
             throw error;
+        }
+    }
+
+    // ✅ NUEVO: Verificar si el timestamp del token coincide con el guardado en BD
+    async verificarSesionActiva(idusuario_, timestamp_) {
+        try {
+            const usuario = await prisma.usuario.findUnique({
+                where: { idusuario: idusuario_ },
+                select: { 
+                    last_login_timestamp: true,
+                    estado: true 
+                }
+            });
+
+            if (!usuario || !usuario.estado) {
+                return false;
+            }
+
+            // Comparar timestamps (convertir BigInt a Number para comparación)
+            const timestampBD = usuario.last_login_timestamp 
+                ? Number(usuario.last_login_timestamp) 
+                : null;
+
+            if (!timestampBD || timestampBD !== timestamp_) {
+                return false; // Token desactualizado o no existe
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Error en AuthService.verificarSesionActiva:', error.message);
+            return false;
         }
     }
 
@@ -138,6 +205,22 @@ class AuthService{
             return usuario ? usuario.cambiarclave : false;
         } catch (error) {
             console.error('Error en AuthService.verificarCambioClave:', error.message);
+            return false;
+        }
+    }
+
+    // ✅ NUEVO: Cerrar sesión (limpiar timestamp)
+    async cerrarSesion(idusuario_) {
+        try {
+            await prisma.usuario.update({
+                where: { idusuario: idusuario_ },
+                data: {
+                    last_login_timestamp: null
+                }
+            });
+            return true;
+        } catch (error) {
+            console.error('Error en AuthService.cerrarSesion:', error.message);
             return false;
         }
     }

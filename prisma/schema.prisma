@@ -34,6 +34,7 @@ model usuario {
   cambiarclave             Boolean?                  @default(false)
   fkclinica                Int?
   agendas                  agenda[]
+  last_login_timestamp BigInt?
   detallesHistorialClinico detallehistorialclinico[]
   referidosComoOrigen      detallereferirpaciente[]  @relation("referir_usuario_origen")
   referidosComoDestino     detallereferirpaciente[]  @relation("referir_usuario_destino")

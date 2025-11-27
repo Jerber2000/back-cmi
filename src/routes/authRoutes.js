@@ -15,6 +15,7 @@ router.post('/login',
 );
 
 router.post('/logout',
+  validarToken,
   authController.logout
 );
 
