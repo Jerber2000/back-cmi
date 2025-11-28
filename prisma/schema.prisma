@@ -34,6 +34,7 @@ model usuario {
   cambiarclave             Boolean?                  @default(false)
   fkclinica                Int?
   agendas                  agenda[]
+  last_login_timestamp BigInt?
   detallesHistorialClinico detallehistorialclinico[]
   referidosComoOrigen      detallereferirpaciente[]  @relation("referir_usuario_origen")
   referidosComoDestino     detallereferirpaciente[]  @relation("referir_usuario_destino")
@@ -87,12 +88,14 @@ model clinica {
   detallereferirpaciente detallereferirpaciente[]
   pacientes              paciente[]
   usuario                usuario[]
+  historiales            detallehistorialclinico[]
 }
 
 model detallehistorialclinico {
   idhistorial            Int       @id @default(autoincrement())
   fkpaciente             Int
   fkusuario              Int
+  fkclinica              Int?
   fecha                  DateTime  @db.Date
   recordatorio           String?
   notaconsulta           String?
@@ -107,6 +110,9 @@ model detallehistorialclinico {
   rutahistorialclinico   String?
   paciente               paciente  @relation(fields: [fkpaciente], references: [idpaciente], onDelete: NoAction, onUpdate: NoAction, map: "fk_historial_paciente")
   usuario                usuario   @relation(fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_historial_usuario")
+  clinica                clinica?  @relation(fields: [fkclinica], references: [idclinica], onDelete: NoAction, onUpdate: NoAction, map: "fk_historial_clinica")
+
+  @@index([fkclinica], map: "idx_historialclinico_fkclinica")
 }
 
 model detallereferirpaciente {

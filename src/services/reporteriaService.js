@@ -344,7 +344,7 @@ function generarTablaInventarioPDF(doc, datos) {
       (item.unidades || 0).toString(),
       `Q${(item.precio || 0).toFixed(2)}`,
       item.fechaingreso ? new Date(item.fechaingreso).toLocaleDateString('es-GT') : 'N/A',
-      item.fechaegreso ? new Date(item.fechaegreso).toLocaleDateString('es-GT') : 'N/A',
+      item.fechavencimiento ? new Date(item.fechavencimiento).toLocaleDateString('es-GT') : 'N/A',
       item.estado === 1 ? 'Activo' : 'Inactivo'
     ];
 
@@ -631,7 +631,7 @@ function generarExcelInventario(worksheet, datos) {
       unidades: item.unidades,
       precio: `Q${item.precio.toFixed(2)}`,
       fechaIngreso: new Date(item.fechaingreso).toLocaleDateString('es-GT'),
-      fechaVencimiento: item.fechaegreso ? new Date(item.fechaegreso).toLocaleDateString('es-GT') : 'N/A',
+      fechaVencimiento: item.fechavencimiento ? new Date(item.fechavencimiento).toLocaleDateString('es-GT') : 'N/A',
       estado: item.estado === 1 ? 'Activo' : 'Inactivo'
     });
   });
@@ -766,7 +766,7 @@ const reporteriaService = {
         prisma.inventariomedico.count({
           where: {
             estado: 1,
-            fechaegreso: {
+            fechavencimiento: {
               lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
             }
           }
@@ -1079,7 +1079,7 @@ const reporteriaService = {
       
       if (!isNaN(diasVencer)) {
         const fechaLimite = new Date(Date.now() + diasVencer * 24 * 60 * 60 * 1000);
-        whereClause.fechaegreso = { lte: fechaLimite };
+        whereClause.fechavencimiento = { lte: fechaLimite };
       }
       
       if (!isNaN(usuarioNum)) whereClause.fkusuario = usuarioNum;
@@ -1098,13 +1098,13 @@ const reporteriaService = {
       const alertas = {
         stockBajo: medicamentos.filter(m => m.unidades <= 10 && m.estado === 1),
         proximosVencer: medicamentos.filter(m => {
-          if (!m.fechaegreso || m.estado === 0) return false;
-          const diasRestantes = Math.ceil((new Date(m.fechaegreso) - new Date()) / (1000 * 60 * 60 * 24));
+          if (!m.fechavencimiento || m.estado === 0) return false;
+          const diasRestantes = Math.ceil((new Date(m.fechavencimiento) - new Date()) / (1000 * 60 * 60 * 24));
           return diasRestantes <= 30 && diasRestantes >= 0;
         }),
         vencidos: medicamentos.filter(m => {
-          if (!m.fechaegreso) return false;
-          return new Date(m.fechaegreso) < new Date();
+          if (!m.fechavencimiento) return false;
+          return new Date(m.fechavencimiento) < new Date();
         })
       };
 

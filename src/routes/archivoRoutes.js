@@ -38,37 +38,6 @@ router.post('/:entidad/subirArchivos', uploadAmbos.fields([
 });
 
 // ========================================
-// RUTAS DE COMPATIBILIDAD (OPCIONAL)
-// Para mantener funcionando el código existente
-// ========================================
-
-// Rutas específicas para usuarios (mantienen compatibilidad)
-// router.post('/subirFoto', uploadFoto.single('foto'), (req, res) => {
-//   // Agregar entidad por defecto para compatibilidad
-//   req.params.entidad = 'usuarios';
-//   archivoController.subirFoto(req, res);
-// });
-
-// router.post('/subirDocumento', uploadDocumento.single('documento'), (req, res) => {
-//   req.params.entidad = 'usuarios';
-//   archivoController.subirDocumento(req, res);
-// });
-
-// router.post('/subirArchivos', uploadAmbos.fields([
-//   { name: 'foto', maxCount: 1 },
-//   { name: 'documento', maxCount: 1 }
-// ]), (req, res) => {
-//   req.params.entidad = 'usuarios';
-//   archivoController.subirArchivos(req, res);
-// });
-
-// // Ruta alternativa genérica para /file (si la necesitas)
-// router.post('/file', uploadFoto.single('foto'), (req, res) => {
-//   req.params.entidad = 'usuarios'; // Default
-//   archivoController.subirFoto(req, res);
-// });
-
-// ========================================
 // RUTAS COMUNES
 // ========================================
 
