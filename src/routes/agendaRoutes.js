@@ -28,7 +28,7 @@ router.get(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave, 
-    checkRole(1,5,8), // admin,sistemas,auxiliar-admon
+    checkRole(1,4,8), // admin,sistemas,auxiliar-admon
     agendaController.obtenerCitasConTransporte
 );
 
@@ -48,6 +48,43 @@ router.put(
     validarCambioClave,
     checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
     agendaController.eliminarCita
+);
+
+// Rutas para citas recurrentes
+router.post(
+    '/crearCitaRecurrente',
+    autenticacion.validarToken,
+    autenticacion.verificarUsuarioEnBD,
+    validarCambioClave,
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+    agendaController.crearCitaRecurrente
+);
+
+router.put(
+    '/cancelarCitaRecurrente/:id',
+    autenticacion.validarToken,
+    autenticacion.verificarUsuarioEnBD,
+    validarCambioClave,
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+    agendaController.cancelarCitaRecurrente
+);
+
+router.put(
+    '/cancelarSerieCompleta/:id',
+    autenticacion.validarToken,
+    autenticacion.verificarUsuarioEnBD,
+    validarCambioClave,
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+    agendaController.cancelarSerieCompleta
+);
+
+router.get(
+    '/detallesSerieRecurrente/:id',
+    autenticacion.validarToken,
+    autenticacion.verificarUsuarioEnBD,
+    validarCambioClave,
+    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+    agendaController.obtenerDetallesSerieRecurrente
 );
 
 module.exports = router;

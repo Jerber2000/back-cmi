@@ -20,7 +20,7 @@ router.get(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
-    checkRole(1,5,8),
+    checkRole(1,4,7),
     obtenerUsuarios
 );
 
@@ -47,7 +47,7 @@ router.post(
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
     validarUsuarioCreacion,
-    checkRole(1,5,8),
+    checkRole(1,4,8),
     crearUsuario
 );
 
@@ -66,7 +66,7 @@ router.delete(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
-    checkRole(1,5,8),
+    checkRole(1,4,8),
     eliminarUsuario
 );
 

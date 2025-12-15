@@ -5,11 +5,7 @@ const crearCita = async (req, res) => {
         const citaData = req.body;
         const resultado = await agendaService.crearCita(citaData);
 
-        if(resultado.success){
-            res.status(201).json(resultado);
-        }else{
-            res.status(400).json(resultado);
-        }
+        res.status(200).json(resultado);
     }catch(error){
         res.status(500).json({
             success: false,
@@ -22,12 +18,7 @@ const crearCita = async (req, res) => {
 const obtenerCitas = async (req, res) => {
     try{
         const resultado = await agendaService.obtenerCitas();
-
-        if(resultado.success){
-            res.status(200).json(resultado);
-        }else{
-            res.status(400).json(resultado);
-        }
+        res.status(200).json(resultado);
     }catch(error){
         res.status(500).json({
             success: false,
@@ -39,19 +30,16 @@ const obtenerCitas = async (req, res) => {
 
 const obtenerCitasConTransporte = async (req, res) => {
     try {
-        // Obtener la fecha del query param o usar fecha actual
         const { fecha } = req.query;
         
-        // Validar formato de fecha si se proporciona
         if (fecha && !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-            return res.status(400).json({
+            return res.status(200).json({
                 success: false,
                 message: 'Formato de fecha inválido. Use YYYY-MM-DD'
             });
         }
 
         const resultado = await agendaService.obtenerCitasConTransporte(fecha);
-        
         return res.status(200).json(resultado);
     } catch (error) {
         return res.status(500).json({
@@ -68,12 +56,7 @@ const actualizarCita = async (req, res) => {
         const citaData = req.body;
         
         const resultado = await agendaService.actualizarCita(id, citaData);
-
-        if(resultado.success){
-            res.status(200).json(resultado);
-        }else{
-            res.status(400).json(resultado);
-        }
+        res.status(200).json(resultado);
     }catch(error){
         res.status(500).json({
             success: false,
@@ -89,13 +72,68 @@ const eliminarCita = async (req, res) => {
         const { usuariomodificacion } = req.body;
         
         const resultado = await agendaService.eliminarCita(id, usuariomodificacion);
-
-        if(resultado.success){
-            res.status(200).json(resultado);
-        }else{
-            res.status(400).json(resultado);
-        }
+        res.status(200).json(resultado);
     }catch(error){
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
+const crearCitaRecurrente = async (req, res) => {
+    try {
+        const datosRecurrentes = req.body;
+        const resultado = await agendaService.crearCitaRecurrente(datosRecurrentes);
+        res.status(200).json(resultado);
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
+const cancelarCitaRecurrente = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { usuariomodificacion } = req.body;
+        
+        const resultado = await agendaService.cancelarCitaRecurrente(id, usuariomodificacion);
+        res.status(200).json(resultado);
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
+const cancelarSerieCompleta = async (req, res) => {
+    try {
+        const { id } = req.params; // idagenda_recurrente
+        const { usuariomodificacion } = req.body;
+        
+        const resultado = await agendaService.cancelarSerieCompleta(id, usuariomodificacion);
+        res.status(200).json(resultado);
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
+const obtenerDetallesSerieRecurrente = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const resultado = await agendaService.obtenerDetallesSerieRecurrente(id);
+        res.status(200).json(resultado);
+    } catch (error) {
         res.status(500).json({
             success: false,
             message: 'Error interno del servidor',
@@ -109,5 +147,9 @@ module.exports = {
     obtenerCitas,
     obtenerCitasConTransporte,
     actualizarCita,
-    eliminarCita
+    eliminarCita,
+    crearCitaRecurrente,
+    cancelarCitaRecurrente,
+    cancelarSerieCompleta,
+    obtenerDetallesSerieRecurrente
 };

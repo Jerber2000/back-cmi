@@ -20,7 +20,11 @@ class DocumentoService {
         };
       }
 
-      if (fkclinica) {
+      if (fkclinica && 
+          fkclinica !== '0' && 
+          fkclinica !== 0 && 
+          fkclinica !== 'null' && 
+          fkclinica !== 'undefined') {
         where.fkclinica = parseInt(fkclinica);
       }
 

@@ -8,87 +8,87 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model usuario {
-  idusuario                Int                       @id @default(autoincrement())
-  fkrol                    Int
-  usuario                  String                    @unique @db.VarChar(20)
-  clave                    String                    @db.VarChar(255)
-  nombres                  String                    @db.VarChar(100)
-  apellidos                String                    @db.VarChar(100)
-  fechanacimiento          DateTime                  @db.Date
-  correo                   String                    @unique @db.VarChar(150)
-  puesto                   String?                   @db.VarChar(100)
-  profesion                String?                   @db.VarChar(100)
-  telinstitucional         String?                   @db.VarChar(20)
-  extension                String?                   @db.VarChar(10)
-  telefonopersonal         String?                   @db.VarChar(20)
-  nombrecontactoemergencia String?                   @db.VarChar(150)
-  telefonoemergencia       String?                   @db.VarChar(20)
-  rutafotoperfil           String?
-  observaciones            String?
-  usuariocreacion          String                    @db.VarChar(100)
-  fechacreacion            DateTime?                 @default(now()) @db.Timestamp(6)
-  usuariomodificacion      String?                   @db.VarChar(100)
-  fechamodificacion        DateTime?                 @db.Timestamp(6)
-  estado                   Int?                      @default(1) @db.SmallInt
-  cambiarclave             Boolean?                  @default(false)
-  fkclinica                Int?
-  agendas                  agenda[]
-  last_login_timestamp BigInt?
-  detallesHistorialClinico detallehistorialclinico[]
-  referidosComoOrigen      detallereferirpaciente[]  @relation("referir_usuario_origen")
-  referidosComoDestino     detallereferirpaciente[]  @relation("referir_usuario_destino")
-  inventariomedico         inventariomedico[]
-  salidasinventario        salidasinventario[]
-  clinica                  clinica?                  @relation(fields: [fkclinica], references: [idclinica], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_clinica")
-  rol                      rol                       @relation(fields: [fkrol], references: [idrol], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_rol")
-}
-
-model rol {
-  idrol               Int       @id @default(autoincrement())
-  nombre              String    @db.VarChar(100)
-  descripcion         String?
-  usuariocreacion     String    @db.VarChar(100)
-  fechacreacion       DateTime? @default(now()) @db.Timestamp(6)
-  usuariomodificacion String?   @db.VarChar(100)
-  fechamodificacion   DateTime? @db.Timestamp(6)
-  estado              Int?      @default(1) @db.SmallInt
-  usuario             usuario[]
-}
-
 model agenda {
-  idagenda            Int       @id @default(autoincrement())
+  idagenda            Int                @id @default(autoincrement())
   fkusuario           Int
   fkpaciente          Int
-  fechaatencion       DateTime  @db.Date
+  fechaatencion       DateTime           @db.Date
+  horaatencion        DateTime           @db.Time(6)
+  comentario          String?
+  transporte          Int?               @default(0) @db.SmallInt
+  fechatransporte     DateTime?          @db.Date
+  horariotransporte   DateTime?          @db.Time(6)
+  usuariocreacion     String             @db.VarChar(100)
+  fechacreacion       DateTime?          @default(now()) @db.Timestamp(6)
+  usuariomodificacion String?            @db.VarChar(100)
+  fechamodificacion   DateTime?          @db.Timestamp(6)
+  estado              Int?               @default(1) @db.SmallInt
+  direccion           String?            @default("Dirección no especificada")
+  fkagenda_recurrente Int?
+  es_recurrente       Boolean?           @default(false)
+  paciente            paciente           @relation(fields: [fkpaciente], references: [idpaciente], onDelete: NoAction, onUpdate: NoAction, map: "fk_agenda_paciente")
+  agenda_recurrente   agenda_recurrente? @relation(fields: [fkagenda_recurrente], references: [idagenda_recurrente], onDelete: NoAction, onUpdate: NoAction, map: "fk_agenda_recurrente")
+  usuario             usuario            @relation(fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_agenda_usuario")
+
+  @@index([fkagenda_recurrente], map: "idx_agenda_recurrente")
+}
+
+model agenda_recurrente {
+  idagenda_recurrente Int       @id @default(autoincrement())
+  fkusuario           Int
+  fkpaciente          Int
   horaatencion        DateTime  @db.Time(6)
   comentario          String?
   transporte          Int?      @default(0) @db.SmallInt
   fechatransporte     DateTime? @db.Date
   horariotransporte   DateTime? @db.Time(6)
+  direccion           String?   @db.VarChar(255)
+  tipo_recurrencia    String    @db.VarChar(20)
+  intervalo           Int?      @default(1)
+  dias_semana         String?   @db.VarChar(50)
+  fecha_inicio        DateTime  @db.Date
+  fecha_fin           DateTime? @db.Date
+  numero_ocurrencias  Int?
   usuariocreacion     String    @db.VarChar(100)
   fechacreacion       DateTime? @default(now()) @db.Timestamp(6)
   usuariomodificacion String?   @db.VarChar(100)
   fechamodificacion   DateTime? @db.Timestamp(6)
   estado              Int?      @default(1) @db.SmallInt
-  direccion           String?   @default("Dirección no especificada")
-  paciente            paciente  @relation(fields: [fkpaciente], references: [idpaciente], onDelete: NoAction, onUpdate: NoAction, map: "fk_agenda_paciente")
-  usuario             usuario   @relation(fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_agenda_usuario")
+  agenda              agenda[]
+  paciente            paciente  @relation(fields: [fkpaciente], references: [idpaciente], onDelete: NoAction, onUpdate: NoAction, map: "fk_agenda_recurrente_paciente")
+  usuario             usuario   @relation(fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_agenda_recurrente_usuario")
+
+  @@index([fecha_inicio, fecha_fin], map: "idx_agenda_recurrente_fecha")
+  @@index([fkpaciente], map: "idx_agenda_recurrente_paciente")
 }
 
 model clinica {
-  idclinica              Int                      @id @default(autoincrement())
-  nombreclinica          String                   @db.VarChar(200)
-  usuariocreacion        String                   @db.VarChar(100)
-  fechacreacion          DateTime?                @default(now()) @db.Timestamp(6)
-  usuariomodificacion    String?                  @db.VarChar(100)
-  fechamodificacion      DateTime?                @db.Timestamp(6)
-  estado                 Int?                     @default(1) @db.SmallInt
-  detalledocumento       detalledocumento[]
-  detallereferirpaciente detallereferirpaciente[]
-  pacientes              paciente[]
-  usuario                usuario[]
-  historiales            detallehistorialclinico[]
+  idclinica               Int                       @id @default(autoincrement())
+  nombreclinica           String                    @db.VarChar(200)
+  usuariocreacion         String                    @db.VarChar(100)
+  fechacreacion           DateTime?                 @default(now()) @db.Timestamp(6)
+  usuariomodificacion     String?                   @db.VarChar(100)
+  fechamodificacion       DateTime?                 @db.Timestamp(6)
+  estado                  Int?                      @default(1) @db.SmallInt
+  detalledocumento        detalledocumento[]
+  detallehistorialclinico detallehistorialclinico[]
+  detallereferirpaciente  detallereferirpaciente[]
+  paciente                paciente[]
+  usuario                 usuario[]
+}
+
+model detalledocumento {
+  iddocumento         Int       @id @default(autoincrement())
+  nombredocumento     String    @db.VarChar(200)
+  descripcion         String?
+  rutadocumento       String
+  usuariocreacion     String    @db.VarChar(100)
+  fechacreacion       DateTime? @default(now()) @db.Timestamp(6)
+  usuariomodificacion String?   @db.VarChar(100)
+  fechamodificacion   DateTime? @db.Timestamp(6)
+  estado              Int?      @default(1) @db.SmallInt
+  fkclinica           Int?
+  clinica             clinica?  @relation(fields: [fkclinica], references: [idclinica], onDelete: NoAction, onUpdate: NoAction, map: "fk_detalledocumento_clinica")
 }
 
 model detallehistorialclinico {
@@ -194,6 +194,27 @@ model expediente {
   @@index([fkpaciente], map: "idx_expediente_fkpaciente")
 }
 
+model inventariomedico {
+  idmedicina          Int                 @id @default(autoincrement())
+  fkusuario           Int
+  nombre              String              @db.VarChar(200)
+  descripcion         String?
+  unidades            Int?                @default(0)
+  precio              Decimal?            @db.Decimal(10, 2)
+  observaciones       String?
+  fechaingreso        DateTime?           @db.Date
+  fechavencimiento    DateTime?           @db.Date
+  usuariocreacion     String              @db.VarChar(100)
+  fechacreacion       DateTime?           @default(now()) @db.Timestamp(6)
+  usuariomodificacion String?             @db.VarChar(100)
+  fechamodificacion   DateTime?           @db.Timestamp(6)
+  estado              Int?                @default(1) @db.SmallInt
+  codigoproducto      String?             @unique @db.VarChar(50)
+  usuario             usuario             @relation(fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_inventario_usuario")
+  salidas             salidasinventario[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model paciente {
   idpaciente               Int                       @id @default(autoincrement())
   nombres                  String                    @db.VarChar(100)
@@ -222,6 +243,7 @@ model paciente {
   estado                   Int?                      @default(1) @db.SmallInt
   fkclinica                Int?
   agenda                   agenda[]
+  agenda_recurrente        agenda_recurrente[]
   detallehistorialclinico  detallehistorialclinico[]
   detallereferirpaciente   detallereferirpaciente[]
   expedientes              expediente[]
@@ -230,24 +252,16 @@ model paciente {
   @@index([fkclinica], map: "idx_paciente_fkclinica")
 }
 
-model inventariomedico {
-  idmedicina          Int                 @id @default(autoincrement())
-  fkusuario           Int
-  nombre              String              @db.VarChar(200)
+model rol {
+  idrol               Int       @id @default(autoincrement())
+  nombre              String    @db.VarChar(100)
   descripcion         String?
-  unidades            Int?                @default(0)
-  precio              Decimal?            @db.Decimal(10, 2)
-  observaciones       String?
-  fechaingreso        DateTime?           @db.Date
-  fechavencimiento    DateTime?           @db.Date
-  usuariocreacion     String              @db.VarChar(100)
-  fechacreacion       DateTime?           @default(now()) @db.Timestamp(6)
-  usuariomodificacion String?             @db.VarChar(100)
-  fechamodificacion   DateTime?           @db.Timestamp(6)
-  estado              Int?                @default(1) @db.SmallInt
-  codigoproducto      String?             @unique @db.VarChar(50)
-  usuario             usuario             @relation(fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_inventario_usuario")
-  salidas             salidasinventario[]
+  usuariocreacion     String    @db.VarChar(100)
+  fechacreacion       DateTime? @default(now()) @db.Timestamp(6)
+  usuariomodificacion String?   @db.VarChar(100)
+  fechamodificacion   DateTime? @db.Timestamp(6)
+  estado              Int?      @default(1) @db.SmallInt
+  usuario             usuario[]
 }
 
 model salidasinventario {
@@ -268,16 +282,39 @@ model salidasinventario {
   usuario             usuario          @relation(fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_salida_usuario")
 }
 
-model detalledocumento {
-  iddocumento         Int       @id @default(autoincrement())
-  nombredocumento     String    @db.VarChar(200)
-  descripcion         String?
-  rutadocumento       String
-  usuariocreacion     String    @db.VarChar(100)
-  fechacreacion       DateTime? @default(now()) @db.Timestamp(6)
-  usuariomodificacion String?   @db.VarChar(100)
-  fechamodificacion   DateTime? @db.Timestamp(6)
-  estado              Int?      @default(1) @db.SmallInt
-  fkclinica           Int?
-  clinica             clinica?  @relation(fields: [fkclinica], references: [idclinica], onDelete: NoAction, onUpdate: NoAction, map: "fk_detalledocumento_clinica")
+model usuario {
+  idusuario                Int                       @id @default(autoincrement())
+  fkrol                    Int
+  usuario                  String                    @unique @db.VarChar(20)
+  clave                    String                    @db.VarChar(255)
+  nombres                  String                    @db.VarChar(100)
+  apellidos                String                    @db.VarChar(100)
+  fechanacimiento          DateTime                  @db.Date
+  correo                   String                    @unique @db.VarChar(150)
+  puesto                   String?                   @db.VarChar(100)
+  profesion                String?                   @db.VarChar(100)
+  telinstitucional         String?                   @db.VarChar(20)
+  extension                String?                   @db.VarChar(10)
+  telefonopersonal         String?                   @db.VarChar(20)
+  nombrecontactoemergencia String?                   @db.VarChar(150)
+  telefonoemergencia       String?                   @db.VarChar(20)
+  rutafotoperfil           String?
+  observaciones            String?
+  usuariocreacion          String                    @db.VarChar(100)
+  fechacreacion            DateTime?                 @default(now()) @db.Timestamp(6)
+  usuariomodificacion      String?                   @db.VarChar(100)
+  fechamodificacion        DateTime?                 @db.Timestamp(6)
+  estado                   Int?                      @default(1) @db.SmallInt
+  cambiarclave             Boolean?                  @default(false)
+  last_login_timestamp     BigInt?
+  fkclinica                Int?
+  agendas                  agenda[]
+  agenda_recurrente        agenda_recurrente[]
+  detallesHistorialClinico detallehistorialclinico[]
+  referidosComoOrigen      detallereferirpaciente[]  @relation("referir_usuario_origen")
+  referidosComoDestino     detallereferirpaciente[]  @relation("referir_usuario_destino")
+  inventariomedico         inventariomedico[]
+  salidasinventario        salidasinventario[]
+  clinica                  clinica?                  @relation(fields: [fkclinica], references: [idclinica], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_clinica")
+  rol                      rol                       @relation(fields: [fkrol], references: [idrol], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_rol")
 }

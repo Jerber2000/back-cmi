@@ -63,7 +63,6 @@ class UsuarioService {
 
     async obtenerUsuarioPorId(idusuario){
         try{
-
             if(!idusuario || isNaN(parseInt(idusuario))){
                 return {
                     success: false,
@@ -86,9 +85,16 @@ class UsuarioService {
 
             const { clave: _, ...usuarioSinClave } = usuarioPorId;
 
+            // Convertir BigInt a Number usando JSON
+            const usuarioSerializable = JSON.parse(
+                JSON.stringify(usuarioSinClave, (key, value) =>
+                    typeof value === 'bigint' ? Number(value) : value
+                )
+            );
+
             return{
                 success: true,
-                data: usuarioSinClave
+                data: usuarioSerializable
             }
         }catch(error){
             console.error("Error en usuarioService al consultar usuario especifico: ", error.message);
@@ -129,11 +135,11 @@ class UsuarioService {
                     idusuario: true,
                     nombres: true,
                     apellidos: true,
-                    fkrol: true // Opcional: para saber qué rol tiene cada usuario
+                    fkrol: true
                 },
                 where: {
                     fkrol: {
-                        in: rolesArray // Usa el operador 'in' de Prisma
+                        in: rolesArray
                     }
                 },
                 orderBy: {
@@ -148,9 +154,16 @@ class UsuarioService {
                 };
             }
 
+            // Convertir BigInt a Number usando JSON
+            const usuariosSerializables = JSON.parse(
+                JSON.stringify(usuarioPorRol, (key, value) =>
+                    typeof value === 'bigint' ? Number(value) : value
+                )
+            );
+
             return {
                 success: true,
-                data: usuarioPorRol
+                data: usuariosSerializables
             };
         } catch (error) {
             console.error("Error en usuarioService al consultar por rol: ", error);
