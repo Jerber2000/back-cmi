@@ -1,7 +1,5 @@
-const { PrismaClient } = require('../generated/prisma');
+const { prisma } = require('../config/prisma');
 const clinicaService = require('./clinicaService');
-
-const prisma = new PrismaClient();
 
 class DocumentoService {
   

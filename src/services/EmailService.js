@@ -1,8 +1,6 @@
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
-const { PrismaClient } = require('../generated/prisma');
-
-const prisma = new PrismaClient();
+const { prisma } = require('../config/prisma');
 
 const transporte = nodemailer.createTransport({
     host: 'smtp.gmail.com',

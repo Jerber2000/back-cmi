@@ -1,8 +1,6 @@
 const bcrypt = require('bcryptjs');
-const { PrismaClient } = require('../generated/prisma');
+const { prisma } = require('../config/prisma');
 const { generarToken } = require('../utils/jwt');
-
-const prisma = new PrismaClient();
 
 class AuthService{
     async login(usuario_, clave_){

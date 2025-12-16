@@ -14,7 +14,7 @@ router.get(
   autenticacion.validarToken,
   autenticacion.verificarUsuarioEnBD,
   validarCambioClave,
-  checkRole(1,5,10),
+  checkRole(1,4,7,9),
   inventarioMedicoController.listarTodos
 );
 
@@ -30,7 +30,7 @@ router.put(
   validarCambioClave,
   inventarioMiddleware.validarId,
   inventarioMiddleware.validarCambiarEstado,
-  checkRole(1,5,10),
+  checkRole(1,4,7,9),
   inventarioMedicoController.cambiarEstado
 );
 
@@ -43,7 +43,7 @@ router.get(
   autenticacion.verificarUsuarioEnBD,
   validarCambioClave,
   inventarioMiddleware.validarId,
-  checkRole(1,5,10),
+  checkRole(1,4,7,9),
   inventarioMedicoController.obtenerPorId
 );
 
@@ -54,7 +54,7 @@ router.post(
   autenticacion.verificarUsuarioEnBD,
   validarCambioClave,
   inventarioMiddleware.validarCrear,
-  checkRole(1,5,10),
+  checkRole(1,4,7,9),
   inventarioMedicoController.crear
 );
 
@@ -66,7 +66,7 @@ router.put(
   validarCambioClave,
   inventarioMiddleware.validarId,
   inventarioMiddleware.validarActualizar,
-  checkRole(1,5,10),
+  checkRole(1,4,7,9),
   inventarioMedicoController.actualizar
 );
 

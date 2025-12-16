@@ -1,8 +1,6 @@
-const { PrismaClient } = require('../generated/prisma');
+const { prisma } = require('../config/prisma');
 const bcrypt = require('bcryptjs');
 const { DateTime } = require("luxon");
-
-const prisma = new PrismaClient();
 
 class UsuarioService {
 

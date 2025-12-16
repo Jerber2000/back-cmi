@@ -1,6 +1,5 @@
-// src/services/inventariomedicoService.js
-const { PrismaClient } = require('../generated/prisma');
-const prisma = new PrismaClient();
+
+const { prisma } = require('../config/prisma');
 
 class InventarioMedicoService {
   // Listar TODOS los medicamentos (activos e inactivos)

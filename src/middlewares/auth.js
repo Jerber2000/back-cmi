@@ -1,9 +1,7 @@
-//middlewares/auth.js
-const { verificarToken } = require('../utils/jwt');
-const { PrismaClient } = require('../generated/prisma');
-const authService = require('../services/authService');
 
-const prisma = new PrismaClient();
+const { verificarToken } = require('../utils/jwt');
+const { prisma } = require('../config/prisma');
+const authService = require('../services/authService');
 
 const validarToken = async (req, res, next) => {
     const authHeader = req.header('Authorization');

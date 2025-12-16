@@ -1,6 +1,5 @@
-// middlewares/checkRole.js
-const { PrismaClient } = require('../generated/prisma');
-const prisma = new PrismaClient();
+
+const { prisma } = require('../config/prisma');
 
 // Cache para mensajes de error legibles
 let rolesCache = null;

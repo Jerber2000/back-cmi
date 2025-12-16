@@ -1,5 +1,5 @@
-const { PrismaClient } = require('../generated/prisma');
-const prisma = new PrismaClient();
+
+const { prisma } = require('../config/prisma');
 
 class RolService{
     async consultarRol(){

@@ -16,7 +16,7 @@ router.get(
   autenticacion.validarToken,
   autenticacion.verificarUsuarioEnBD,
   validarCambioClave,
-  checkRole(1,5,10),
+  checkRole(1,4,7,9),
   salidasInventarioController.obtenerEstadisticas
 );
 
@@ -27,7 +27,7 @@ router.get(
   autenticacion.verificarUsuarioEnBD,
   validarCambioClave,
   salidasMiddleware.validarIdMedicamento,
-  checkRole(1,5,10),
+  checkRole(1,4,7,9),
   salidasInventarioController.obtenerPorMedicamento
 );
 
@@ -39,7 +39,7 @@ router.get(
   autenticacion.validarToken,
   autenticacion.verificarUsuarioEnBD,
   validarCambioClave,
-  checkRole(1,5,10),
+  checkRole(1,4,7,9),
   salidasInventarioController.listarTodas
 );
 
@@ -50,7 +50,7 @@ router.get(
   autenticacion.verificarUsuarioEnBD,
   validarCambioClave,
   salidasMiddleware.validarId,
-  checkRole(1,5,10),
+  checkRole(1,4,7,9),
   salidasInventarioController.obtenerPorId
 );
 
@@ -61,7 +61,7 @@ router.post(
   autenticacion.verificarUsuarioEnBD,
   validarCambioClave,
   salidasMiddleware.validarCrear,
-  checkRole(1,5,10),
+  checkRole(1,4,7,9),
   salidasInventarioController.crear
 );
 
@@ -73,7 +73,7 @@ router.put(
   validarCambioClave,
   salidasMiddleware.validarId,
   salidasMiddleware.validarAnular,
-  checkRole(1,5,10),
+  checkRole(1,4,7,9),
   salidasInventarioController.anular
 );
 
