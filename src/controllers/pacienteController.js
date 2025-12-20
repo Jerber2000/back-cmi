@@ -1,5 +1,6 @@
 // controllers/pacienteController.js
 const PacienteService = require('../services/pacienteService');
+const { conAuditoria } = require('../utils/auditoria.helper');
 
 class PacienteController {
   /**
@@ -104,7 +105,10 @@ class PacienteController {
       const usuario = req.usuario?.usuario || 'sistema';
       const datosPaciente = req.body;
 
-      const resultado = await PacienteService.crearPaciente(datosPaciente, usuario);
+      const resultado = await conAuditoria(req, 'pacientes', async (tx) => {
+        // Llamar al service pasándole la transacción
+        return await PacienteService.crearPaciente(datosPaciente, usuario, tx);
+      });
 
       if (!resultado.success) {
         return res.status(400).json({
@@ -137,11 +141,14 @@ class PacienteController {
       const usuario = req.usuario?.usuario || 'sistema';
       const datosActualizacion = req.body;
 
-      const resultado = await PacienteService.actualizarPaciente(
-        id,
-        datosActualizacion,
-        usuario
-      );
+      const resultado = await conAuditoria(req, 'pacientes', async (tx) => {
+        return await PacienteService.actualizarPaciente(
+          id,
+          datosActualizacion,
+          usuario,
+          tx
+        );
+      });
 
       if (!resultado.success) {
         const statusCode = resultado.message === 'Paciente no encontrado' ? 404 : 400;
@@ -174,9 +181,9 @@ class PacienteController {
       const { id } = req.params;
       const usuario = req.usuario?.usuario || 'sistema';
 
-      console.log('🗑️ Intentando eliminar paciente ID:', id);
-
-      const resultado = await PacienteService.eliminarPaciente(id, usuario);
+      const resultado = await conAuditoria(req, 'pacientes', async (tx) => {
+        return await PacienteService.eliminarPaciente(id, usuario, tx);
+      });
 
       if (!resultado.success) {
         const statusCode = resultado.message === 'Paciente no encontrado' ? 404 : 409;

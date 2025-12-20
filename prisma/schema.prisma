@@ -308,6 +308,7 @@ model usuario {
   cambiarclave             Boolean?                  @default(false)
   last_login_timestamp     BigInt?
   fkclinica                Int?
+  bitacoras                Bitacora[]
   agendas                  agenda[]
   agenda_recurrente        agenda_recurrente[]
   detallesHistorialClinico detallehistorialclinico[]
@@ -317,4 +318,31 @@ model usuario {
   salidasinventario        salidasinventario[]
   clinica                  clinica?                  @relation(fields: [fkclinica], references: [idclinica], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_clinica")
   rol                      rol                       @relation(fields: [fkrol], references: [idrol], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_rol")
+}
+
+model Bitacora {
+  id                 Int      @id @default(autoincrement())
+  tabla              String   // nombre de la tabla afectada
+  registro_id        String   // ID del registro (String para soportar diferentes tipos)
+  accion             String   // CREATE, UPDATE, DELETE, READ (para consultas sensibles)
+  datos_anteriores   Json?    // estado antes del cambio
+  datos_nuevos       Json?    // estado después del cambio
+  campos_modificados String[] // array con nombres de campos que cambiaron
+  usuario_id         Int?     // puede ser null si es el sistema
+  usuario_nombre     String?  // guardamos el nombre por si el usuario se elimina
+  ip_address         String?
+  user_agent         String?
+  modulo             String?  // ej: "expedientes", "citas", "inventario"
+  descripcion        String?  // descripción legible de la acción
+  metadata           Json?    // datos adicionales contextuales
+  fecha_hora         DateTime @default(now())
+  
+  usuario            usuario? @relation(fields: [usuario_id], references: [idusuario])
+  
+  @@index([tabla, registro_id])
+  @@index([usuario_id])
+  @@index([fecha_hora])
+  @@index([tabla, fecha_hora])
+  @@index([accion])
+  @@map("bitacora")
 }

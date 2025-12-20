@@ -161,8 +161,11 @@ class PacienteService {
   /**
    * Crea un nuevo paciente en el sistema
    */
-  async crearPaciente(datosPaciente, usuarioCreador) {
+  async crearPaciente(datosPaciente, usuarioCreador, tx = null) {
     try {
+
+      const prismaClient = tx || prisma;
+
       const {
         nombres,
         apellidos,
@@ -184,7 +187,7 @@ class PacienteService {
       } = datosPaciente;
 
       // Verificar que el CUI no exista
-      const pacienteExistente = await prisma.paciente.findUnique({
+      const pacienteExistente = await prismaClient.paciente.findUnique({
         where: { cui }
       });
 
@@ -197,7 +200,7 @@ class PacienteService {
 
       // Verificar que la clínica existe si se proporciona
       if (fkclinica) {
-        const clinicaExiste = await prisma.clinica.findFirst({
+        const clinicaExiste = await prismaClient.clinica.findFirst({
           where: {
             idclinica: parseInt(fkclinica),
             estado: 1
@@ -212,7 +215,7 @@ class PacienteService {
         }
       }
 
-      const paciente = await prisma.paciente.create({
+      const paciente = await prismaClient.paciente.create({
         data: {
           nombres,
           apellidos,
@@ -258,10 +261,11 @@ class PacienteService {
   /**
    * Actualiza la información de un paciente existente
    */
-  async actualizarPaciente(id, datosActualizacion, usuarioModificador) {
+  async actualizarPaciente(id, datosActualizacion, usuarioModificador, tx = null) {
     try {
+      const prismaClient = tx || prisma;
       // Verificar que el paciente existe
-      const pacienteExistente = await prisma.paciente.findFirst({
+      const pacienteExistente = await prismaClient.paciente.findFirst({
         where: {
           idpaciente: parseInt(id),
           estado: 1
@@ -277,7 +281,7 @@ class PacienteService {
 
       // Verificar unicidad del CUI si se está actualizando
       if (datosActualizacion.cui && datosActualizacion.cui !== pacienteExistente.cui) {
-        const cuiExiste = await prisma.paciente.findFirst({
+        const cuiExiste = await prismaClient.paciente.findFirst({
           where: {
             cui: datosActualizacion.cui,
             idpaciente: { not: parseInt(id) }
@@ -294,7 +298,7 @@ class PacienteService {
 
       // Verificar que la clínica existe si se proporciona
       if (datosActualizacion.fkclinica) {
-        const clinicaExiste = await prisma.clinica.findFirst({
+        const clinicaExiste = await prismaClient.clinica.findFirst({
           where: {
             idclinica: parseInt(datosActualizacion.fkclinica),
             estado: 1
@@ -319,7 +323,7 @@ class PacienteService {
         datosActualizacion.fkclinica = parseInt(datosActualizacion.fkclinica);
       }
 
-      const pacienteActualizado = await prisma.paciente.update({
+      const pacienteActualizado = await prismaClient.paciente.update({
         where: {
           idpaciente: parseInt(id)
         },
@@ -352,10 +356,11 @@ class PacienteService {
   /**
    * Elimina lógicamente un paciente del sistema
    */
-  async eliminarPaciente(id, usuarioModificador) {
+  async eliminarPaciente(id, usuarioModificador, tx = null) {
     try {
+      const prismaClient = tx || prisma;
       // Verificar que el paciente existe
-      const pacienteExistente = await prisma.paciente.findFirst({
+      const pacienteExistente = await prismaClient.paciente.findFirst({
         where: {
           idpaciente: parseInt(id),
           estado: 1
@@ -418,7 +423,7 @@ class PacienteService {
       }
 
       // Eliminar lógicamente el paciente
-      const pacienteEliminado = await prisma.paciente.update({
+      const pacienteEliminado = await prismaClient.paciente.update({
         where: {
           idpaciente: parseInt(id)
         },
