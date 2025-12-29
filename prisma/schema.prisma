@@ -334,7 +334,6 @@ model Bitacora {
   user_agent         String?
   modulo             String?  // ej: "expedientes", "citas", "inventario"
   descripcion        String?  // descripción legible de la acción
-  metadata           Json?    // datos adicionales contextuales
   fecha_hora         DateTime @default(now())
   
   usuario            usuario? @relation(fields: [usuario_id], references: [idusuario])

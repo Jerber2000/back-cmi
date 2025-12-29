@@ -1,5 +1,7 @@
 // controllers/expedienteController.js
+const expedienteService = require('../services/expedienteService');
 const ExpedienteService = require('../services/expedienteService');
+const { conAuditoria } = require('../utils/auditoria.helper');
 
 class ExpedienteController {
   /**
@@ -104,7 +106,10 @@ class ExpedienteController {
       const usuario = req.usuario?.usuario || 'sistema';
       const datosExpediente = req.body;
 
-      const resultado = await ExpedienteService.crearExpediente(datosExpediente, usuario);
+      //const resultado = await ExpedienteService.crearExpediente(datosExpediente, usuario);
+      const resultado = await conAuditoria(req, 'expediente', async (tx) =>{
+        return await expedienteService.crearExpediente(datosExpediente, usuario, tx);
+      });
 
       if (!resultado.success) {
         return res.status(400).json({
@@ -137,11 +142,14 @@ class ExpedienteController {
       const usuario = req.usuario?.usuario || 'sistema';
       const datosActualizacion = req.body;
 
-      const resultado = await ExpedienteService.actualizarExpediente(
-        id,
-        datosActualizacion,
-        usuario
-      );
+      // const resultado = await ExpedienteService.actualizarExpediente(
+      //   id,
+      //   datosActualizacion,
+      //   usuario
+      // );
+      const resultado = await conAuditoria(req, 'expediente', async (tx) =>{
+        return await ExpedienteService.actualizarExpediente(id, datosActualizacion,usuario,tx);
+      });
 
       if (!resultado.success) {
         const statusCode = resultado.message === 'Expediente no encontrado' ? 404 : 400;
@@ -176,7 +184,10 @@ class ExpedienteController {
 
       console.log('🗑️ Intentando eliminar expediente ID:', id);
 
-      const resultado = await ExpedienteService.eliminarExpediente(id, usuario);
+      //const resultado = await ExpedienteService.eliminarExpediente(id, usuario);
+      const resultado = await conAuditoria(req, 'expediente', async (tx) => {
+        return await ExpedienteService.eliminarExpediente(id, usuario, tx);
+      });
 
       if (!resultado.success) {
         const statusCode = resultado.message === 'Expediente no encontrado' ? 404 : 409;

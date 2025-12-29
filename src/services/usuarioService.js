@@ -169,8 +169,10 @@ class UsuarioService {
         }
     }
 
-    async crearUsuario(usuarioData){
+    async crearUsuario(usuarioData, usuarioCreador ,tx = null){
         try{
+            const prismaClient = tx || prisma;
+
             const { fkrol, usuario, clave, nombres, apellidos, fechanacimiento, correo, puesto, profesion, telinstitucional, extension, telefonopersonal,
                     nombrecontactoemergencia, telefonoemergencia, rutafotoperfil, observaciones, usuariocreacion, estado, fkclinica } = usuarioData;
             // validar datos requeridos
@@ -206,7 +208,7 @@ class UsuarioService {
             }
 
             //valida si usuario ya existe
-            const existeUsuario = await prisma.usuario.findUnique({
+            const existeUsuario = await prismaClient.usuario.findUnique({
                 where: {usuario: usuario.toLowerCase() }
             });
 
@@ -218,7 +220,7 @@ class UsuarioService {
             }
 
             //valida si correo existe en otro usuario
-            const emailExiste = await prisma.usuario.findFirst({
+            const emailExiste = await prismaClient.usuario.findFirst({
                 where: {
                     correo: correo.toLowerCase()
                 }
@@ -236,7 +238,7 @@ class UsuarioService {
             const claveHash = await bcrypt.hash(clave, saltRounds);
 
             //crea usuario
-            const usuarioNuevo = await prisma.usuario.create({
+            const usuarioNuevo = await prismaClient.usuario.create({
                 data:{
                     fkrol:                    parseInt(fkrol), 
                     usuario:                  usuario.toLowerCase(), 
@@ -290,8 +292,10 @@ class UsuarioService {
         }
     }
 
-    async actualizarUsuario(idusuario, updateData){
+    async actualizarUsuario(idusuario, updateData, usuarioModificador, tx = null){
         try{
+            const prismaClient = tx || prisma;
+
             if (!idusuario || isNaN(parseInt(idusuario))) {
                 return {
                     success: false,
@@ -300,7 +304,7 @@ class UsuarioService {
             }
 
             //valida si usuario existe
-            const existeUsua = await prisma.usuario.findUnique({
+            const existeUsua = await prismaClient.usuario.findUnique({
                 where: {
                     idusuario: parseInt(idusuario)
                 }
@@ -327,7 +331,7 @@ class UsuarioService {
                 }
 
                 //valida si correo existe en otro usuario
-                const emailExiste = await prisma.usuario.findFirst({
+                const emailExiste = await prismaClient.usuario.findFirst({
                     where: {
                         correo: updateData.correo.toLowerCase(),
                         idusuario: { not: parseInt(idusuario) }
@@ -439,7 +443,7 @@ class UsuarioService {
             }
 
             // Actualizar usuario
-            const updatedUser = await prisma.usuario.update({
+            const updatedUser = await prismaClient.usuario.update({
                 where: { idusuario: parseInt(idusuario) },
                 data: dataParaActualizar,
                 select: {
@@ -464,8 +468,10 @@ class UsuarioService {
         }
     }
 
-    async eliminarUsuario(idusuario){
+    async eliminarUsuario(idusuario, usuarioModificador, tx = null){
         try{
+            const prismaClient = tx || prisma;
+
             if(!idusuario || isNaN(parseInt(idusuario))){
                 return{
                     success: false,
@@ -473,7 +479,7 @@ class UsuarioService {
                 };
             }
 
-            const usuario = await prisma.usuario.findUnique({
+            const usuario = await prismaClient.usuario.findUnique({
                 where:{
                     idusuario: parseInt(idusuario)
                 }
@@ -494,7 +500,7 @@ class UsuarioService {
             }
 
             if(usuario.fkrol === 1){
-                const adminContador = await prisma.usuario.count({
+                const adminContador = await prismaClient.usuario.count({
                     where:{
                         fkrol: 1,
                         estado: 1
@@ -509,7 +515,7 @@ class UsuarioService {
                 }
             }
 
-            await prisma.usuario.update({
+            await prismaClient.usuario.update({
                 where: { idusuario: parseInt(idusuario)},
                 data:{
                     estado: 0

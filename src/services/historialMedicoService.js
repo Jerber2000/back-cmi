@@ -119,8 +119,9 @@ class HistorialMedicoService {
 /**
  * Crea una nueva sesión de historial
  */
-async crearSesion(datos, usuarioCreador) {
+async crearSesion(datos, usuarioCreador, tx = null) {
   try {
+    const prismaClient = tx || prisma;
     const { 
       fkpaciente, 
       fkusuario,
@@ -161,7 +162,7 @@ async crearSesion(datos, usuarioCreador) {
     
     console.log('🏥 Service: Usando fkclinica:', clinicaId);
 
-    const nuevaSesion = await prisma.detallehistorialclinico.create({
+    const nuevaSesion = await prismaClient.detallehistorialclinico.create({
       data: {
         fkpaciente: parseInt(fkpaciente),
         fkusuario: parseInt(fkusuario),
@@ -267,8 +268,9 @@ async crearSesion(datos, usuarioCreador) {
   /**
    * Actualiza una sesión existente
    */
-  async actualizarSesion(idhistorial, datos, usuarioModificador) {
+  async actualizarSesion(idhistorial, datos, usuarioModificador, tx = null) {
     try {
+      const prismaClient = tx || prisma;
       const { 
         recordatorio,
         notaconsulta,
@@ -290,7 +292,7 @@ async crearSesion(datos, usuarioCreador) {
         };
       }
 
-      const sesionActualizada = await prisma.detallehistorialclinico.update({
+      const sesionActualizada = await prismaClient.detallehistorialclinico.update({
         where: { idhistorial: parseInt(idhistorial) },
         data: {
           recordatorio,
@@ -333,8 +335,9 @@ async crearSesion(datos, usuarioCreador) {
   /**
    * Elimina (desactiva) una sesión
    */
-  async eliminarSesion(idhistorial, usuarioModificador) {
+  async eliminarSesion(idhistorial, usuarioModificador, tx = null) {
     try {
+      const prismaClient = tx || prisma;
       // Verificar que la sesión existe
       const sesionExiste = await prisma.detallehistorialclinico.findUnique({
         where: { idhistorial: parseInt(idhistorial) }
@@ -349,7 +352,7 @@ async crearSesion(datos, usuarioCreador) {
       }
 
       // Eliminar lógicamente (cambiar estado a 0)
-      await prisma.detallehistorialclinico.update({
+      await prismaClient.detallehistorialclinico.update({
         where: { idhistorial: parseInt(idhistorial) },
         data: {
           estado: 0,

@@ -1,6 +1,7 @@
 // controllers/historialMedicoController.js
 const historialService = require('../services/historialMedicoService');
 const { fileService } = require('../services/fileService');
+const { conAuditoria } = require('../utils/auditoria.helper');
 
 class HistorialMedicoController {
 
@@ -73,10 +74,17 @@ class HistorialMedicoController {
       console.log('🏥 Controller: fkclinica del usuario autenticado:', fkclinicaUsuario);
 
       // ✅ Pasar fkclinica del usuario al service
-      const resultado = await historialService.crearSesion(
-        { ...datos, fkclinicaUsuario }, 
-        usuarioCreador
-      );
+      // const resultado = await historialService.crearSesion(
+      //   { ...datos, fkclinicaUsuario }, 
+      //   usuarioCreador
+      // );
+      const resultado = await conAuditoria(req, 'Hisorial Clinico', async (tx) => {
+        return await historialService.crearSesion(
+          { ...datos, fkclinicaUsuario },
+          usuarioCreador,
+          tx
+        );
+      });
 
       if (!resultado.success) {
         return res.status(400).json(resultado);
@@ -106,11 +114,19 @@ class HistorialMedicoController {
 
       console.log('🔄 Controller: Actualizando sesión ID:', idhistorial);
 
-      const resultado = await historialService.actualizarSesion(
-        idhistorial, 
-        datos, 
-        usuarioModificador
-      );
+      // const resultado = await historialService.actualizarSesion(
+      //   idhistorial, 
+      //   datos, 
+      //   usuarioModificador
+      // );
+      const resultado = await conAuditoria(req, 'Historial Clinico', async (tx) => {
+        return await historialService.actualizarSesion(
+          idhistorial,
+          datos,
+          usuarioModificador,
+          tx
+        );
+      });
 
       if (!resultado.success) {
         return res.status(404).json(resultado);
@@ -139,7 +155,15 @@ class HistorialMedicoController {
 
       console.log('🗑️ Controller: Eliminando sesión ID:', idhistorial);
 
-      const resultado = await historialService.eliminarSesion(idhistorial, usuarioModificador);
+      //const resultado = await historialService.eliminarSesion(idhistorial, usuarioModificador);
+
+      const resultado = await conAuditoria(req, 'Historial Clinico', async (tx) => {
+        return await historialService.eliminarSesion(
+          idhistorial,
+          usuarioModificador,
+          tx
+        );
+      });
 
       if (!resultado.success) {
         return res.status(404).json(resultado);

@@ -101,10 +101,11 @@ class DocumentoService {
     }
   }
 
-  async crearDocumento(data) {
+  async crearDocumento(data,tx = null) {
     try {
+      const prismaClient = tx || prisma;
       const { nombredocumento, descripcion, fkclinica, usuariocreacion } = data;
-
+      
       // Validar campos requeridos
       if (!nombredocumento || !usuariocreacion || !fkclinica) {
         return {
@@ -124,7 +125,7 @@ class DocumentoService {
         };
       }
 
-      const nuevoDocumento = await prisma.detalledocumento.create({
+      const nuevoDocumento = await prismaClient.detalledocumento.create({
         data: {
           nombredocumento: nombredocumento.trim(),
           descripcion: descripcion ? descripcion.trim() : null,
@@ -132,7 +133,7 @@ class DocumentoService {
           fkclinica: parseInt(fkclinica),
           usuariocreacion,
           estado: 1
-        },
+        }/*,
         select: {
           iddocumento: true,
           nombredocumento: true,
@@ -148,7 +149,7 @@ class DocumentoService {
               nombreclinica: true
             }
           }
-        }
+        }*/
       });
 
       return {
@@ -172,7 +173,7 @@ class DocumentoService {
           rutadocumento,
           usuariomodificacion,
           fechamodificacion: new Date()
-        },
+        }/*,
         select: {
           iddocumento: true,
           nombredocumento: true,
@@ -190,7 +191,7 @@ class DocumentoService {
               nombreclinica: true
             }
           }
-        }
+        }*/
       });
 
       return documentoActualizado;
@@ -200,12 +201,13 @@ class DocumentoService {
     }
   }
 
-  async actualizarDocumento(iddocumento, data) {
+  async actualizarDocumento(iddocumento, data, tx = null) {
     try {
+      const prismaClient = tx || prisma;
       const { nombredocumento, descripcion, fkclinica, usuariomodificacion } = data;
 
       // Validar que el documento existe
-      const documentoExiste = await prisma.detalledocumento.findUnique({
+      const documentoExiste = await prismaClient.detalledocumento.findUnique({
         where: { iddocumento: parseInt(iddocumento) }
       });
 
@@ -229,7 +231,7 @@ class DocumentoService {
         }
       }
 
-      const documentoActualizado = await prisma.detalledocumento.update({
+      const documentoActualizado = await prismaClient.detalledocumento.update({
         where: {
           iddocumento: parseInt(iddocumento)
         },
@@ -271,10 +273,11 @@ class DocumentoService {
     }
   }
 
-  async eliminarDocumento(iddocumento, usuariomodificacion) {
+  async eliminarDocumento(iddocumento, usuariomodificacion, tx = null) {
     try {
+      const prismaClient = tx || prisma;
       // Validar que el documento existe
-      const documentoExiste = await prisma.detalledocumento.findUnique({
+      const documentoExiste = await prismaClient.detalledocumento.findUnique({
         where: { iddocumento: parseInt(iddocumento) }
       });
 
@@ -293,7 +296,7 @@ class DocumentoService {
         };
       }
 
-      const documentoEliminado = await prisma.detalledocumento.update({
+      const documentoEliminado = await prismaClient.detalledocumento.update({
         where: {
           iddocumento: parseInt(iddocumento)
         },
@@ -314,10 +317,11 @@ class DocumentoService {
     }
   }
 
-  async cambiarEstado(iddocumento, nuevoEstado, usuariomodificacion) {
+  async cambiarEstado(iddocumento, nuevoEstado, usuarioModificador, tx = null) {
     try {
+      const prismaClient = tx || prisma;
       // Validar que el documento existe
-      const documentoExiste = await prisma.detalledocumento.findUnique({
+      const documentoExiste = await prismaClient.detalledocumento.findUnique({
         where: { iddocumento: parseInt(iddocumento) }
       });
 
@@ -328,7 +332,7 @@ class DocumentoService {
         };
       }
 
-      const documentoActualizado = await prisma.detalledocumento.update({
+      const documentoActualizado = await prismaClient.detalledocumento.update({
         where: {
           iddocumento: parseInt(iddocumento)
         },

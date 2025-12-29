@@ -1,9 +1,15 @@
 const agendaService = require('../services/agendaService');
+const { conAuditoria } = require('../utils/auditoria.helper');
 
 const crearCita = async (req, res) => {
     try{
         const citaData = req.body;
-        const resultado = await agendaService.crearCita(citaData);
+        const usuario = req.usuario?.usuario || 'sistema';
+
+        //const resultado = await agendaService.crearCita(citaData);
+        const resultado = await conAuditoria(req, 'agenda', async (tx) => {
+            return await agendaService.crearCita(citaData, tx);
+        });
 
         res.status(200).json(resultado);
     }catch(error){
@@ -54,8 +60,13 @@ const actualizarCita = async (req, res) => {
     try{
         const { id } = req.params;
         const citaData = req.body;
+        const usuario = req.usuario?.usuario || 'sistema';
         
-        const resultado = await agendaService.actualizarCita(id, citaData);
+        //const resultado = await agendaService.actualizarCita(id, citaData);
+        const resultado = await conAuditoria(req, 'agenda', async (tx) => {
+            return await agendaService.actualizarCita(id, citaData, tx);
+        });
+
         res.status(200).json(resultado);
     }catch(error){
         res.status(500).json({
@@ -70,8 +81,12 @@ const eliminarCita = async (req, res) => {
     try{
         const { id } = req.params;
         const { usuariomodificacion } = req.body;
-        
-        const resultado = await agendaService.eliminarCita(id, usuariomodificacion);
+
+       // const resultado = await agendaService.eliminarCita(id, usuariomodificacion);
+        const resutlado = await conAuditoria(req, 'agenda', async (tx) => {
+            return await agendaService.eliminarCita(id, usuariomodificacion, tx);
+        });
+
         res.status(200).json(resultado);
     }catch(error){
         res.status(500).json({
@@ -85,7 +100,9 @@ const eliminarCita = async (req, res) => {
 const crearCitaRecurrente = async (req, res) => {
     try {
         const datosRecurrentes = req.body;
+        
         const resultado = await agendaService.crearCitaRecurrente(datosRecurrentes);
+       
         res.status(200).json(resultado);
     } catch (error) {
         res.status(500).json({
@@ -101,7 +118,13 @@ const cancelarCitaRecurrente = async (req, res) => {
         const { id } = req.params;
         const { usuariomodificacion } = req.body;
         
-        const resultado = await agendaService.cancelarCitaRecurrente(id, usuariomodificacion);
+        //const resultado = await agendaService.cancelarCitaRecurrente(id, usuariomodificacion);
+        const resultado = await conAuditoria(req, 'agenda', async (tx) => {
+            return await agendaService.cancelarCitaRecurrente(
+                id, usuariomodificacion, tx
+            );
+        });
+
         res.status(200).json(resultado);
     } catch (error) {
         res.status(500).json({
@@ -118,6 +141,7 @@ const cancelarSerieCompleta = async (req, res) => {
         const { usuariomodificacion } = req.body;
         
         const resultado = await agendaService.cancelarSerieCompleta(id, usuariomodificacion);
+        
         res.status(200).json(resultado);
     } catch (error) {
         res.status(500).json({

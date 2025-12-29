@@ -1,6 +1,7 @@
 const documentoService = require('../services/documentoService');
 const { fileService } = require('../services/fileService');
 const path = require('path');
+const { conAuditoria } = require('../utils/auditoria.helper');
 
 class DocumentoController {
 
@@ -76,11 +77,19 @@ class DocumentoController {
       }
 
       // Crear documento en BD (sin ruta aún)
-      const resultado = await documentoService.crearDocumento({
-        nombredocumento,
-        descripcion,
-        fkclinica,
-        usuariocreacion
+      // const resultado = await documentoService.crearDocumento({
+      //   nombredocumento,
+      //   descripcion,
+      //   fkclinica,
+      //   usuariocreacion
+      // });
+      const resultado = await conAuditoria(req, 'Documento', async (tx) => {
+        return await documentoService.crearDocumento({nombredocumento,
+          descripcion,
+          fkclinica,
+          usuariocreacion},
+          tx
+        );
       });
 
       // Si no se pudo crear el documento, retornar error
@@ -128,11 +137,21 @@ class DocumentoController {
       const usuariomodificacion = req.usuario.usuario || req.usuario.nombres;
 
       // Actualizar datos básicos del documento
-      const resultado = await documentoService.actualizarDocumento(id, {
-        nombredocumento,
-        descripcion,
-        fkclinica,
-        usuariomodificacion
+      // const resultado = await documentoService.actualizarDocumento(id, {
+      //   nombredocumento,
+      //   descripcion,
+      //   fkclinica,
+      //   usuariomodificacion
+      // });
+      const resultado = await conAuditoria(req, 'Documento', async (tx) => {
+        return await documentoService.actualizarDocumento(
+          id,
+          {nombredocumento,
+          descripcion,
+          fkclinica,
+          usuariomodificacion},
+          tx
+        );
       });
 
       if (!resultado.success) {
@@ -213,7 +232,14 @@ class DocumentoController {
       }
 
       // Soft delete en BD
-      const resultado = await documentoService.eliminarDocumento(id, usuariomodificacion);
+      //const resultado = await documentoService.eliminarDocumento(id, usuariomodificacion);
+      const resultado = await conAuditoria(req, 'Documento', async (tx) => {
+        return await documentoService.eliminarDocumento(
+          id,
+          usuariomodificacion,
+          tx
+        );
+      });
 
       if (resultado.success) {
         res.status(200).json(resultado);
@@ -237,11 +263,19 @@ class DocumentoController {
       const { estado } = req.body;
       const usuariomodificacion = req.usuario.usuario || req.usuario.nombres;
 
-      const resultado = await documentoService.cambiarEstado(
-        id,
-        estado,
-        usuariomodificacion
-      );
+      // const resultado = await documentoService.cambiarEstado(
+      //   id,
+      //   estado,
+      //   usuariomodificacion
+      // );
+      const resultado = await conAuditoria(req, 'detalledocumento', async (tx) => {
+        return await documentoService.cambiarEstado(
+          id,
+          estado,
+          usuariomodificacion,
+          tx
+        );
+      });
 
       if (resultado.success) {
         res.status(200).json(resultado);

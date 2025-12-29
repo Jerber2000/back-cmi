@@ -103,9 +103,9 @@ class AuditoriaUtils {
     
     // Lista de posibles nombres de campos ID
     const camposId = [
-      'id', 'idpaciente', 'idusuario', 'idclinica', 'idexpediente', 
-      'idcita', 'idagenda', 'idmedico', 'idconsulta', 'iddiagnostico',
-      'idreceta', 'idinventario', 'idtransferencia', 'idreferencia'
+      'idpaciente', 'idusuario', 'iddocumento', 'idrefpaciente', 'idhistorial', 'idexpediente', 
+      'idagenda', 'idagenda_recurrente', 'idmedicina', 'idsalida', 
+      'idclinica'
     ];
     
     // 1. Intentar desde params.args.where

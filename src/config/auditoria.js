@@ -18,24 +18,25 @@ const AccionAuditoria = {
 const CONFIGURACION_AUDITORIA = {
   // Tablas críticas: auditar TODO
   CRITICO: [
-    'expediente'
+    
   ],
   
   // Tablas importantes: auditar cambios y eliminaciones
   IMPORTANTE: [
-    'paciente',
     'usuario',
-    'inventariomedico',
-    'salidasinventario',
     'detalledocumento',
     'detallereferirpaciente',
-    'detallehistorialclinico'
+    'detallehistorialclinico',
+    'expediente'
   ],
   
   // Tablas normales: solo eliminaciones
   NORMAL: [
     'agenda',
-    'agenda_recurrente'
+    'agenda_recurrente',
+    'inventariomedico',
+    'salidasinventario',
+    'paciente',
   ],
   
   // No auditar
@@ -72,11 +73,16 @@ const OPERACIONES_EXCLUIDAS = [
   'aggregate'
 ];
 
+const OPERACIONES_INTERNAS = {
+  'detalledocumento': ['actualizarRutaDocumento'] // Solo actualiza la ruta del archivo
+};
+
 module.exports = {
   NivelAuditoria,
   AccionAuditoria,
   CONFIGURACION_AUDITORIA,
   RETENER_DIAS,
   CAMPOS_SENSIBLES,
-  OPERACIONES_EXCLUIDAS
+  OPERACIONES_EXCLUIDAS,
+  OPERACIONES_INTERNAS
 };

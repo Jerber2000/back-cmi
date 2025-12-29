@@ -99,8 +99,9 @@ class InventarioMedicoService {
   }
 
   // Actualizar un medicamento
-  async actualizar(id, data) {
+  async actualizar(id, data, tx = null) {
     try {
+      const prismaClient = tx || prisma;
       // Verificar que existe
       await this.obtenerPorId(id);
 
@@ -120,7 +121,7 @@ class InventarioMedicoService {
         }
       }
 
-      const medicamentoActualizado = await prisma.inventariomedico.update({
+      const medicamentoActualizado = await prismaClient.inventariomedico.update({
         where: { idmedicina: parseInt(id) },
         data: {
           codigoproducto: data.codigoproducto !== undefined ? data.codigoproducto : undefined,
@@ -151,13 +152,14 @@ class InventarioMedicoService {
   }
 
   // Cambiar estado (activar/desactivar)
-  async cambiarEstado(id, usuarioModificacion) {
+  async cambiarEstado(id, usuarioModificacion, tx = null) {
     try {
+      const prismaClient = tx || prisma;
       // Obtener el estado actual
       const medicamento = await this.obtenerPorId(id);
       const nuevoEstado = medicamento.estado === 1 ? 0 : 1;
 
-      const medicamentoActualizado = await prisma.inventariomedico.update({
+      const medicamentoActualizado = await prismaClient.inventariomedico.update({
         where: { idmedicina: parseInt(id) },
         data: {
           estado: nuevoEstado,

@@ -194,8 +194,9 @@ class ExpedienteService {
   /**
    * Crea un nuevo expediente médico
    */
-  async crearExpediente(datosExpediente, usuarioCreador) {
+  async crearExpediente(datosExpediente, usuarioCreador ,tx = null) {
     try {
+      const prismaClient = tx || prisma;
       const {
         fkpaciente,
         numeroexpediente,
@@ -238,7 +239,7 @@ class ExpedienteService {
 
       // Verificar que el paciente existe
       if (fkpaciente) {
-        const pacienteExiste = await prisma.paciente.findFirst({
+        const pacienteExiste = await prismaClient.paciente.findFirst({
           where: {
             idpaciente: parseInt(fkpaciente),
             estado: 1
@@ -253,7 +254,7 @@ class ExpedienteService {
         }
 
         // Verificar si el paciente ya tiene un expediente activo
-        const expedienteExistente = await prisma.expediente.findFirst({
+        const expedienteExistente = await prismaClient.expediente.findFirst({
           where: {
             fkpaciente: parseInt(fkpaciente),
             estado: 1
@@ -276,7 +277,7 @@ class ExpedienteService {
         numeroFinal = resultado.data.numeroexpediente;
       } else {
         // Verificar unicidad del número manual
-        const existeNumero = await prisma.expediente.findUnique({
+        const existeNumero = await prismaClient.expediente.findUnique({
           where: { numeroexpediente: numeroFinal }
         });
 
@@ -288,7 +289,7 @@ class ExpedienteService {
         }
       }
 
-      const expediente = await prisma.expediente.create({
+      const expediente = await prismaClient.expediente.create({
         data: {
           fkpaciente: fkpaciente ? parseInt(fkpaciente) : null,
           numeroexpediente: numeroFinal,
@@ -362,10 +363,11 @@ class ExpedienteService {
   /**
    * Actualiza un expediente existente
    */
-  async actualizarExpediente(id, datosActualizacion, usuarioModificador) {
+  async actualizarExpediente(id, datosActualizacion, usuarioModificador, tx = null) {
     try {
+      const prismaClient = tx || prisma;
       // Verificar que el expediente existe
-      const expedienteExistente = await prisma.expediente.findFirst({
+      const expedienteExistente = await prismaClient.expediente.findFirst({
         where: {
           idexpediente: parseInt(id),
           estado: 1
@@ -382,7 +384,7 @@ class ExpedienteService {
       // Verificar unicidad del número si se está actualizando
       if (datosActualizacion.numeroexpediente && 
           datosActualizacion.numeroexpediente !== expedienteExistente.numeroexpediente) {
-        const numeroExiste = await prisma.expediente.findFirst({
+        const numeroExiste = await prismaClient.expediente.findFirst({
           where: {
             numeroexpediente: datosActualizacion.numeroexpediente,
             idexpediente: { not: parseInt(id) }
@@ -417,7 +419,7 @@ class ExpedienteService {
         }
       });
 
-      const expedienteActualizado = await prisma.expediente.update({
+      const expedienteActualizado = await prismaClient.expediente.update({
         where: {
           idexpediente: parseInt(id)
         },
@@ -459,10 +461,11 @@ class ExpedienteService {
   /**
    * Elimina lógicamente un expediente
    */
-  async eliminarExpediente(id, usuarioModificador) {
+  async eliminarExpediente(id, usuarioModificador, tx = null) {
     try {
+      const prismaClient = tx || prisma;
       // Verificar que el expediente existe
-      const expedienteExistente = await prisma.expediente.findFirst({
+      const expedienteExistente = await prismaClient.expediente.findFirst({
         where: {
           idexpediente: parseInt(id),
           estado: 1
@@ -478,7 +481,7 @@ class ExpedienteService {
 
       // Verificar referencias activas
       const [referenciasActivas] = await Promise.all([
-        prisma.detallereferirpaciente.count({
+        prismaClient.detallereferirpaciente.count({
           where: {
             fkexpediente: parseInt(id),
             estado: 1
@@ -496,7 +499,7 @@ class ExpedienteService {
         };
       }
 
-      const expedienteEliminado = await prisma.expediente.update({
+      const expedienteEliminado = await prismaClient.expediente.update({
         where: {
           idexpediente: parseInt(id)
         },

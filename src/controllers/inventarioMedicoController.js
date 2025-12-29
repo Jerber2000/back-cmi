@@ -1,5 +1,6 @@
 // src/controllers/inventarioMedicoController.js
 const inventarioMedicoService = require('../services/inventarioMedicoService');
+const { conAuditoria } = require('../utils/auditoria.helper');
 
 class InventarioMedicoController {
   // GET /api/inventario - Listar todos
@@ -71,8 +72,16 @@ class InventarioMedicoController {
   async actualizar(req, res) {
     try {
       const { id } = req.params;
-      const medicamentoActualizado = await inventarioMedicoService.actualizar(id, req.body);
+      //const medicamentoActualizado = await inventarioMedicoService.actualizar(id, req.body);
       
+      const medicamentoActualizado = await conAuditoria(req, 'Inventario Medico', async (tx) => {
+        return await inventarioMedicoService.actualizar(
+          id,
+          req.body,
+          tx
+        );
+      });
+
       return res.status(200).json({
         success: true,
         message: 'Medicamento actualizado exitosamente',
@@ -110,8 +119,15 @@ class InventarioMedicoController {
         });
       }
 
-      const resultado = await inventarioMedicoService.cambiarEstado(id, usuariomodificacion);
-      
+      //const resultado = await inventarioMedicoService.cambiarEstado(id, usuariomodificacion);
+      const resultado = await conAuditoria(req, 'Inventario Medico', async (tx) => {
+        return await inventarioMedicoService.cambiarEstado(
+          id,
+          usuariomodificacion,
+          tx
+        );
+      });
+
       return res.status(200).json({
         success: true,
         message: resultado.mensaje,

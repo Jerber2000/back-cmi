@@ -1,10 +1,11 @@
 
 const { prisma } = require('../config/prisma');
 const referirService = require('../services/referirService');
+const { conAuditoria } = require('../utils/auditoria.helper');
 const referirController = {
   
   // POST /referir - Crear nuevo referido
-async crearReferido(req, res) {
+  async crearReferido(req, res) {
     try {
       const {
         fkpaciente,
@@ -23,13 +24,26 @@ async crearReferido(req, res) {
       const fkusuario = req.usuario.idusuario;
       const usuariocreacion = req.usuario.usuario;
 
-      const nuevoReferido = await referirService.crearReferido({
-        fkusuario,
-        fkpaciente,
-        fkexpediente,
-        fkclinica,
-        comentario,
-        usuariocreacion
+      // const nuevoReferido = await referirService.crearReferido({
+      //   fkusuario,
+      //   fkpaciente,
+      //   fkexpediente,
+      //   fkclinica,
+      //   comentario,
+      //   usuariocreacion
+      // });
+      const nuevoReferido = await conAuditoria(req, 'Referir Paciente', async (tx) => {
+        return await referirService.crearReferido(
+          {
+            fkusuario,
+            fkpaciente,
+            fkexpediente,
+            fkclinica,
+            comentario,
+            usuariocreacion
+          },
+          tx
+        );
       });
 
       return res.status(201).json({
@@ -118,53 +132,53 @@ async crearReferido(req, res) {
   },
 
   // PUT /referir/:id/confirmar - Confirmar/aprobar un referido
-async confirmarReferido(req, res) {
-  try {
-    console.log('🚀 === INICIO confirmarReferido CONTROLLER ===');
-    console.log('📋 req.params:', req.params);
-    console.log('📋 req.body:', req.body);
-    console.log('👤 req.usuario:', req.usuario);
-    
-    const { id } = req.params;
-    const { comentario } = req.body;
-    const usuario = req.usuario;
+  async confirmarReferido(req, res) {
+    try {
+      console.log('🚀 === INICIO confirmarReferido CONTROLLER ===');
+      console.log('📋 req.params:', req.params);
+      console.log('📋 req.body:', req.body);
+      console.log('👤 req.usuario:', req.usuario);
+      
+      const { id } = req.params;
+      const { comentario } = req.body;
+      const usuario = req.usuario;
 
-    console.log('🔍 Llamando a referirService.confirmarReferido...');
-    const resultado = await referirService.confirmarReferido(
-      parseInt(id),
-      usuario,
-      comentario
-    );
+      console.log('🔍 Llamando a referirService.confirmarReferido...');
+      const resultado = await referirService.confirmarReferido(
+        parseInt(id),
+        usuario,
+        comentario
+      );
 
-    console.log('✅ Confirmación exitosa:', resultado);
+      console.log('✅ Confirmación exitosa:', resultado);
 
-    return res.status(200).json({
-      ok: true,
-      mensaje: resultado.mensaje,
-      data: resultado.referido
-    });
+      return res.status(200).json({
+        ok: true,
+        mensaje: resultado.mensaje,
+        data: resultado.referido
+      });
 
-  } catch (error) {
-    console.error('💥 ERROR en confirmarReferido controller:', error);
-    
-    if (error.message.includes('no tiene permisos') || 
-        error.message.includes('no autorizado')) {
-      return res.status(403).json({
+    } catch (error) {
+      console.error('💥 ERROR en confirmarReferido controller:', error);
+      
+      if (error.message.includes('no tiene permisos') || 
+          error.message.includes('no autorizado')) {
+        return res.status(403).json({
+          ok: false,
+          mensaje: error.message
+        });
+      }
+
+      return res.status(500).json({
         ok: false,
-        mensaje: error.message
+        mensaje: 'Error al confirmar el referido',
+        error: error.message
       });
     }
-
-    return res.status(500).json({
-      ok: false,
-      mensaje: 'Error al confirmar el referido',
-      error: error.message
-    });
-  }
-},
+  },
 
   // PUT /referir/:id - Actualizar datos del referido
- async actualizarReferido(req, res) {
+  async actualizarReferido(req, res) {
     try {
       const { id } = req.params;
       const {
@@ -177,16 +191,30 @@ async confirmarReferido(req, res) {
       
       const usuario = req.usuario;
 
-      const referidoActualizado = await referirService.actualizarReferido(
-        parseInt(id),
-        {
-          fkclinica,
-          comentario,
-          rutadocumentoinicial,
-          rutadocumentofinal
-        },
-        usuario
-      );
+      // const referidoActualizado = await referirService.actualizarReferido(
+      //   parseInt(id),
+      //   {
+      //     fkclinica,
+      //     comentario,
+      //     rutadocumentoinicial,
+      //     rutadocumentofinal
+      //   },
+      //   usuario
+      // );
+      const referidoActualizado = await conAuditoria(req, 'Referir paciente', async (tx) => {
+        return await referirService.actualizarReferido(
+          parseInt(id),
+          {
+            fkclinica,
+            comentario,
+            rutadocumentoinicial,
+            rutadocumentofinal
+          },
+          usuario,
+          usuario,
+          tx
+        );
+      });
 
       return res.status(200).json({
         ok: true,

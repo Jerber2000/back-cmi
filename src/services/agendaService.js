@@ -18,8 +18,10 @@ class AgendaService{
         return fecha;
     }
 
-    async crearCita(agendaData){
+    async crearCita(agendaData, tx = null){
         try{
+            const prismaClient = tx || prisma;
+
             const { fkusuario, fkpaciente, fechaatencion, horaatencion, comentario, transporte, fechatransporte, horariotransporte, direccion,
                     usuariocreacion, estado } = agendaData;
 
@@ -78,7 +80,7 @@ class AgendaService{
                 };
             }
 
-            const citaNueva = await prisma.agenda.create({
+            const citaNueva = await prismaClient.agenda.create({
                 data:{
                     fkusuario:          parseInt(fkusuario),
                     fkpaciente:         parseInt(fkpaciente),
@@ -352,8 +354,10 @@ class AgendaService{
         }
     }
 
-    async actualizarCita(idagenda, agendaData){
+    async actualizarCita(idagenda, agendaData, tx = null){
         try{
+            const prismaClient = tx || prisma;
+
             const { fkusuario, fkpaciente, fechaatencion, horaatencion, comentario, transporte, fechatransporte, horariotransporte, direccion,
                     usuariomodificacion, estado } = agendaData;
 
@@ -441,7 +445,7 @@ class AgendaService{
                 }
             }
 
-            const citaActualizada = await prisma.agenda.update({
+            const citaActualizada = await prismaClient.agenda.update({
                 where: {
                     idagenda:           parseInt(idagenda)
                 },
@@ -527,8 +531,9 @@ class AgendaService{
         }
     }
 
-    async eliminarCita(idagenda, usuarioModificacion){
+    async eliminarCita(idagenda, usuarioModificacion, tx = null){
         try{
+            const prismaClient = tx || prisma;
             // Validar que la cita existe
             const citaExistente = await prisma.agenda.findUnique({
                 where: { idagenda: parseInt(idagenda) }
@@ -550,7 +555,7 @@ class AgendaService{
             }
 
             // Cambiar estado a ELIMINADA (soft delete)
-            const citaEliminada = await prisma.agenda.update({
+            const citaEliminada = await prismaClient.agenda.update({
                 where: {
                     idagenda: parseInt(idagenda)
                 },
@@ -842,8 +847,9 @@ class AgendaService{
     /**
      * Cancelar una cita individual de una serie recurrente
      */
-    async cancelarCitaRecurrente(idagenda, usuariomodificacion) {
+    async cancelarCitaRecurrente(idagenda, usuariomodificacion, tx = null) {
         try {
+            const prismaClient = tx || prisma;
             const citaExistente = await prisma.agenda.findUnique({
                 where: { idagenda: parseInt(idagenda) }
             });
@@ -863,7 +869,7 @@ class AgendaService{
             }
             
             // Cancelar solo esta cita
-            await prisma.agenda.update({
+            await prismaClient.agenda.update({
                 where: { idagenda: parseInt(idagenda) },
                 data: {
                     estado: 0,
