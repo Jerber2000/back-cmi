@@ -327,7 +327,6 @@ model Bitacora {
   accion             String   // CREATE, UPDATE, DELETE, READ (para consultas sensibles)
   datos_anteriores   Json?    // estado antes del cambio
   datos_nuevos       Json?    // estado después del cambio
-  campos_modificados String[] // array con nombres de campos que cambiaron
   usuario_id         Int?     // puede ser null si es el sistema
   usuario_nombre     String?  // guardamos el nombre por si el usuario se elimina
   ip_address         String?

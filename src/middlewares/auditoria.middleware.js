@@ -95,7 +95,7 @@ const crearAuditoriaMiddleware = () => {
               accion: accionAuditoria,
               datos_anteriores: datosAnteriores ? AuditoriaUtils.ofuscarDatosSensibles(datosAnteriores) : null,
               datos_nuevos: datosNuevos ? AuditoriaUtils.ofuscarDatosSensibles(datosNuevos) : null,
-              campos_modificados: camposModificados,
+              //campos_modificados: camposModificados,
               usuario_id: contexto.usuario_id || null,
               usuario_nombre: contexto.usuario_nombre || null,
               ip_address: contexto.ip_address || null,

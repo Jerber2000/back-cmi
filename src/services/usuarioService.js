@@ -452,7 +452,16 @@ class UsuarioService {
                     nombres:   true,
                     apellidos: true,
                     fkrol:     true,
-                    fkclinica: true
+                    fkclinica: true,
+                    estado: true,
+                    extension: true,
+                    fechanacimiento: true,
+                    nombrecontactoemergencia: true,
+                    profesion: true,
+                    puesto: true,
+                    telefonoemergencia: true,
+                    telefonopersonal: true,
+                    telinstitucional: true
                 }
             });
             
