@@ -34,7 +34,8 @@ router.get('/consultas',
 // GET /api/reporteria/inventario - Reporte de inventario médico
 router.get('/inventario',
   validarReporteria.validarFiltrosInventario,
-  checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+  //checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+  checkRole(1,4,7,9),
   reporteriaController.obtenerReporteInventario
 );
 
@@ -55,7 +56,7 @@ router.get('/referencias',
 // GET /api/reporteria/salidas - Reporte de salidas
 router.get('/salidas',
   validarReporteria.validarFiltrosSalidas,
-  checkRole(1,5),
+  checkRole(1,4,7,9),
   reporteriaController.obtenerReporteSalidas
 );
 

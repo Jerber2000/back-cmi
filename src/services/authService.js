@@ -175,10 +175,15 @@ class AuthService{
 
             // Actualizar la contraseña y desactivar el flag
             await prisma.usuario.update({
-                where: { usuario: usuario_ },
+                where: { 
+                    idusuario: usuario.idusuario
+                },
                 data: {
                     clave: hashNuevaClave,
-                    cambiarclave: false // Desactivar el cambio obligatorio
+                    cambiarclave: false
+                },
+                select: {
+                    idusuario: true
                 }
             });
 
