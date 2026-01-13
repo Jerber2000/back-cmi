@@ -42,19 +42,15 @@ class AuthService{
                 const ahora = Date.now();
                 const tiempoTranscurrido = ahora - timestampBD;
                 
-                // Tiempo de expiración en milisegundos (8 horas = 28800000 ms)
+                // Tiempo de expiración en milisegundos (3 horas por defecto)
                 const horasExpiracion = parseInt(process.env.JWT_EXPIRES_IN) || 3;
                 const TIEMPO_EXPIRACION = horasExpiracion * 60 * 60 * 1000;
                 
                 // Si la sesión aún no ha expirado, bloquear el login
                 if (tiempoTranscurrido < TIEMPO_EXPIRACION) {
-                    const tiempoRestante = TIEMPO_EXPIRACION - tiempoTranscurrido;
-                    const horasRestantes = Math.floor(tiempoRestante / (60 * 60 * 1000));
-                    const minutosRestantes = Math.floor((tiempoRestante % (60 * 60 * 1000)) / (60 * 1000));
-                    
                     throw new Error(
                         `Ya tienes una sesión activa en otro dispositivo. ` +
-                        `Por favor, cierra sesión en el otro dispositivo`
+                        `Cierra sesión en el otro dispositivo o usa "Olvidé mi contraseña" para resetear tu acceso.`
                     );
                 }
             }

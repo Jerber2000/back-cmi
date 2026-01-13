@@ -330,7 +330,7 @@ const referirService = {
         fkclinica: usuarioConRol?.fkclinica
       });
 
-      const esAdmin = usuarioConRol.fkrol === 1 || usuarioConRol.fkrol === 8;
+      const esAdmin = usuarioConRol.fkrol === 1 || usuarioConRol.fkrol === 7;
       const usuarioNombre = usuario.usuario;
       let campoActualizar = {};
       let mensaje = '';
@@ -462,7 +462,7 @@ const referirService = {
         include: { rol: true }
       });
 
-      const esAdmin = usuarioConRol.fkrol === 1 || usuarioConRol.fkrol === 8;
+      const esAdmin = usuarioConRol.fkrol === 1 || usuarioConRol.fkrol === 7;
       const esCreador = referido.fkusuario === usuario.idusuario;
 
       // ✅ FILTRAR CAMPOS UNDEFINED ANTES DE VALIDAR
