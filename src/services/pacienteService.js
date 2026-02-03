@@ -82,6 +82,7 @@ class PacienteService {
           idpaciente: true,
           nombres: true,
           apellidos: true,
+          cui: true,
           nombreencargado: true,
           telefonoencargado: true,
           municipio: true,

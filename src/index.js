@@ -1,3 +1,7 @@
+BigInt.prototype.toJSON = function() {
+    return this.toString();
+};
+
 // src/index.js
 require('dotenv').config();
 const express = require('express');

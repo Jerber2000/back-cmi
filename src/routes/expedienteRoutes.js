@@ -15,7 +15,7 @@ const clinicaService = require('../services/clinicaService');
 router.get('/', 
     autenticacion.validarToken, 
     autenticacion.verificarUsuarioEnBD, 
-    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+    checkRole(1,2,3,4,5,6,7,8,10,11,12,13,14,15,16),
     ExpedienteController.obtenerTodosLosExpedientes
 );
 
@@ -23,7 +23,7 @@ router.get('/',
 router.get('/disponibles', 
     autenticacion.validarToken, 
     autenticacion.verificarUsuarioEnBD,
-    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+    checkRole(1,2,3,4,5,6,7,8,10,11,12,13,14,15,16),
     ExpedienteController.obtenerExpedientesDisponibles
 );
 
@@ -31,7 +31,7 @@ router.get('/disponibles',
 router.get('/generar-numero', 
     autenticacion.validarToken, 
     autenticacion.verificarUsuarioEnBD,
-    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+    checkRole(1,2,3,4,5,6,7,8,10,11,12,13,14,15,16),
     ExpedienteController.generarNumeroExpediente
 );
 
@@ -39,7 +39,7 @@ router.get('/generar-numero',
 router.get('/estadisticas', 
     autenticacion.validarToken, 
     autenticacion.verificarUsuarioEnBD,
-    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+    checkRole(1,2,3,4,5,6,7,8,10,11,12,13,14,15,16),
     ExpedienteController.obtenerEstadisticas
 );
 
@@ -47,7 +47,7 @@ router.get('/estadisticas',
 router.get('/clinicas',
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
-    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+    checkRole(1,2,3,4,5,6,7,8,10,11,12,13,14,15,16),
     async (req, res) => {
         try {
             const { prisma } = require('../config/prisma');
@@ -80,7 +80,7 @@ router.get('/:id',
     autenticacion.validarToken, 
     autenticacion.verificarUsuarioEnBD, 
     validarIdExpediente,
-    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+    checkRole(1,2,3,4,5,6,7,8,10,11,12,13,14,15,16),
     ExpedienteController.obtenerExpedientePorId
 );
 
@@ -89,7 +89,7 @@ router.post('/',
     autenticacion.validarToken, 
     autenticacion.verificarUsuarioEnBD, 
     validarExpediente,
-    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+    checkRole(1,2,3,4,5,6,7,8,10,11,12,13,14,15,16),
     ExpedienteController.crearExpediente
 );
 
@@ -99,7 +99,7 @@ router.put('/:id',
     autenticacion.verificarUsuarioEnBD, 
     validarIdExpediente,
     validarExpediente,
-    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+    checkRole(1,2,3,4,5,6,7,8,10,11,12,13,14,15,16),
     ExpedienteController.actualizarExpediente
 );
 
@@ -108,7 +108,7 @@ router.delete('/:id',
     autenticacion.validarToken, 
     autenticacion.verificarUsuarioEnBD, 
     validarIdExpediente,
-    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+    checkRole(1,2,3,4,5,6,7,8,10,11,12,13,14,15,16),
     ExpedienteController.eliminarExpediente
 );
 

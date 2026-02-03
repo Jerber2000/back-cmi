@@ -10,7 +10,7 @@ router.post(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
-    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+    checkRole(1,2,3,4,5,6,7,8,10,11,12,13,14,15,16),
     agendaController.crearCita
 );
 
@@ -19,7 +19,7 @@ router.get(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
-    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+    checkRole(1,2,3,4,5,6,7,8,10,11,12,13,14,15,16),
     agendaController.obtenerCitas
 );
 
@@ -37,7 +37,7 @@ router.put(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
-    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+    checkRole(1,2,3,4,5,6,7,8,10,11,12,13,14,15,16),
     agendaController.actualizarCita
 );
 
@@ -46,7 +46,7 @@ router.put(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
-    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+    checkRole(1,2,3,4,5,6,7,8,10,11,12,13,14,15,16),
     agendaController.eliminarCita
 );
 
@@ -56,7 +56,7 @@ router.post(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
-    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+    checkRole(1,2,3,4,5,6,7,8,10,11,12,13,14,15,16),
     agendaController.crearCitaRecurrente
 );
 
@@ -65,7 +65,7 @@ router.put(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
-    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+    checkRole(1,2,3,4,5,6,7,8,10,11,12,13,14,15,16),
     agendaController.cancelarCitaRecurrente
 );
 
@@ -74,7 +74,7 @@ router.put(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
-    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+    checkRole(1,2,3,4,5,6,7,8,10,11,12,13,14,15,16),
     agendaController.cancelarSerieCompleta
 );
 
@@ -83,7 +83,7 @@ router.get(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
-    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+    checkRole(1,2,3,4,5,6,7,8,10,11,12,13,14,15,16),
     agendaController.obtenerDetallesSerieRecurrente
 );
 

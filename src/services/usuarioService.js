@@ -508,7 +508,7 @@ class UsuarioService {
                 };
             }
 
-            if(usuario.fkrol === 1){
+            if(Number(usuario.fkrol) === 1){
                 const adminContador = await prismaClient.usuario.count({
                     where:{
                         fkrol: 1,

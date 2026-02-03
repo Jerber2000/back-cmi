@@ -83,7 +83,7 @@ const eliminarCita = async (req, res) => {
         const { usuariomodificacion } = req.body;
 
        // const resultado = await agendaService.eliminarCita(id, usuariomodificacion);
-        const resutlado = await conAuditoria(req, 'agenda', async (tx) => {
+        const resultado = await conAuditoria(req, 'agenda', async (tx) => {
             return await agendaService.eliminarCita(id, usuariomodificacion, tx);
         });
 

@@ -581,13 +581,26 @@ class AgendaService{
         const fechas = [];
         const { tipo_recurrencia, intervalo, dias_semana, fecha_inicio, fecha_fin, numero_ocurrencias } = configuracion;
         
-        let fechaActual = new Date(fecha_inicio);
+        const [año, mes, dia] = fecha_inicio.split('-').map(Number);
+        //let fechaActual = new Date(fecha_inicio);
+        let fechaActual = new Date(año, mes - 1, dia);
+        console.log('Configuración recurrencia:', configuracion); // Debug
+        console.log('Fecha inicial parseada:', fechaActual); // Debug
+        console.log('Día de la semana inicial:', fechaActual.getDay());
+
         let contador = 0;
         const maxOcurrencias = numero_ocurrencias || 365; // Límite de seguridad
+
+        // Parsear fecha_fin si existe
+        let fechaFinObj = null;
+        if (fecha_fin) {
+            const [añoFin, mesFin, diaFin] = fecha_fin.split('-').map(Number);
+            fechaFinObj = new Date(añoFin, mesFin - 1, diaFin);
+        }
         
         while (contador < maxOcurrencias) {
             // Si hay fecha_fin y ya la pasamos, salir
-            if (fecha_fin && fechaActual > new Date(fecha_fin)) {
+            if (fechaFinObj && fechaActual > fechaFinObj) {
                 break;
             }
             
@@ -603,6 +616,7 @@ class AgendaService{
                     // JavaScript: 0=domingo, 1=lunes, ... 6=sábado
                     const diasPermitidos = dias_semana ? dias_semana.split(',').map(d => parseInt(d)) : [];
                     const diaActual = fechaActual.getDay();
+                    console.log('Día actual:', diaActual, 'Días permitidos:', diasPermitidos); // Debug 
                     agregarFecha = diasPermitidos.includes(diaActual);
                     break;
                     
@@ -613,7 +627,12 @@ class AgendaService{
             }
             
             if (agregarFecha) {
-                fechas.push(new Date(fechaActual));
+                const fechaParaAgregar = new Date(fechaActual.getFullYear(), fechaActual.getMonth(), fechaActual.getDate());
+                fechas.push(fechaParaAgregar);
+                contador++;
+                
+                console.log('Fecha agregada:', fechaParaAgregar.toISOString().split('T')[0]); // Debug
+            
                 contador++;
                 
                 // Si llegamos al número de ocurrencias, salir
@@ -635,6 +654,9 @@ class AgendaService{
                     break;
             }
         }
+
+        console.log('Total de fechas generadas:', fechas.length); // Debug
+        console.log('Fechas:', fechas.map(f => f.toISOString().split('T')[0]));
         
         return fechas;
     }
@@ -728,6 +750,15 @@ class AgendaService{
             
             // Crear en una transacción
             const resultado = await prisma.$transaction(async (tx) => {
+
+                const [año, mes, dia] = fecha_inicio.split('-').map(Number);
+                const fechaInicioObj = new Date(año, mes - 1, dia);
+
+                let fechaFinObj = null;
+                if (fecha_fin) {
+                    const [añoFin, mesFin, diaFin] = fecha_fin.split('-').map(Number);
+                    fechaFinObj = new Date(añoFin, mesFin - 1, diaFin);
+                }
                 // 1. Crear registro de agenda_recurrente
                 const agendaRecurrente = await tx.agenda_recurrente.create({
                     data: {
@@ -736,7 +767,8 @@ class AgendaService{
                         horaatencion: horaConvertida,
                         comentario: comentario || null,
                         transporte: parseInt(transporte || 0),
-                        fechatransporte:    this.convertirFecha(fechatransporte),
+                        //fechatransporte:    this.convertirFecha(fechatransporte),
+                        fechatransporte: parseInt(transporte || 0) ? fechaInicioObj : null,
                         horariotransporte:  horariotransporte
                                         ? new Date(`1970-01-01T${horariotransporte}:00Z`)
                                         : null,
@@ -744,8 +776,10 @@ class AgendaService{
                         tipo_recurrencia,
                         intervalo: parseInt(intervalo || 1),
                         dias_semana: dias_semana || null,
-                        fecha_inicio: this.convertirFecha(fecha_inicio),
-                        fecha_fin: fecha_fin ? this.convertirFecha(fecha_fin) : null,
+                        //fecha_inicio: this.convertirFecha(fecha_inicio),
+                        fecha_inicio: fechaInicioObj,
+                        //fecha_fin: fecha_fin ? this.convertirFecha(fecha_fin) : null,
+                        fecha_fin: fechaFinObj,
                         numero_ocurrencias: numero_ocurrencias ? parseInt(numero_ocurrencias) : null,
                         usuariocreacion,
                         estado: 1
@@ -761,7 +795,7 @@ class AgendaService{
                         horaatencion: horaConvertida,
                         comentario: comentario || null,
                         transporte: parseInt(transporte || 0),
-                        fechatransporte:    this.convertirFecha(fechatransporte),
+                        fechatransporte: parseInt(transporte || 0) ? fecha : null,
                         horariotransporte:  horariotransporte
                                         ? new Date(`1970-01-01T${horariotransporte}:00Z`)
                                         : null,
