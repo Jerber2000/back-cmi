@@ -316,7 +316,8 @@ const ResetearClave = async (correo_) => {
             where: { correo: correo_ },
             data: {
                 clave: hashPass,
-                cambiarclave: true
+                cambiarclave: true,
+                last_login_timestamp: null
             }
         });
 

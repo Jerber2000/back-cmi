@@ -16,20 +16,14 @@ const handleValidationErrors = (req, res, next) => {
 // Validación para resetear contraseña (mantener como estaba)
 const validarResetearPass = [
     body('correo')
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('correo inválido'),
-
-    (req, res, next) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-        return res.status(400).json({
-            error: 'Datos inválidos',
-            details: errors.array()
-        });
-        }
-        next();
-    }
+        .trim()
+        .notEmpty()
+        .withMessage('El correo es requerido')
+        .isEmail()
+        .withMessage('Formato de correo inválido')
+        .normalizeEmail(),
+    
+    handleValidationErrors  // ← Usa el manejador común
 ];
 
 // Validaciones para crear usuario

@@ -1,3 +1,4 @@
+// src/controllers/authController.js
 const authService = require('../services/authService');
 const emailService = require('../services/EmailService');
 
@@ -27,9 +28,8 @@ const login = async (req, res) => {
         let statusCode = 500;
         let message = error.message;
         
-        // ✅ MANEJO ESPECÍFICO PARA SESIÓN ACTIVA
         if(error.message.includes('Ya tienes una sesión activa')){
-            statusCode = 409; // Conflict
+            statusCode = 409;
             message = error.message;
         } else if(error.message === 'Credenciales inválidas'){
             statusCode = 401;
@@ -47,11 +47,9 @@ const login = async (req, res) => {
 
 const logout = async (req, res) => {
     try {
-        // Obtener ID del usuario del token
         const idusuario = req.usuario?.id || req.usuario?.idusuario;
         
         if (idusuario) {
-            // ✅ Limpiar el timestamp de la BD
             await authService.cerrarSesion(idusuario);
             
             res.status(200).json({
@@ -75,9 +73,17 @@ const logout = async (req, res) => {
 
 const RecuperarClave = async (req, res) => {
     try{
+        // ✅ DEBUG: Ver qué está llegando
+        console.log('📧 RecuperarClave - Headers:', req.headers);
+        console.log('📧 RecuperarClave - Body completo:', JSON.stringify(req.body));
+        console.log('📧 RecuperarClave - Correo extraído:', req.body.correo);
+        console.log('📧 RecuperarClave - Tipo de body:', typeof req.body);
+        
         const { correo } = req.body;
 
-        if (!correo) {
+        // ✅ Validación adicional por si acaso
+        if (!correo || correo.trim() === '') {
+            console.log('❌ Correo vacío o undefined');
             return res.status(400).json({
                 success: false,
                 message: 'El correo electrónico es requerido'
@@ -86,21 +92,25 @@ const RecuperarClave = async (req, res) => {
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(correo)) {
+            console.log('❌ Formato de correo inválido:', correo);
             return res.status(400).json({
                 success: false,
                 message: 'Formato de correo electrónico inválido'
             });
         }
 
+        console.log('✅ Correo válido, llamando a emailService.ResetearClave...');
         await emailService.ResetearClave(correo);
 
+        console.log('✅ Email enviado exitosamente');
         res.status(200).json({
             success: true,
             message: 'Se ha enviado una contraseña temporal a tu correo electrónico'
         });
         
     } catch(error) {
-        console.error('Error en AuthController.RecuperarClave:', error.message);
+        console.error('❌ Error en AuthController.RecuperarClave:', error.message);
+        console.error('❌ Stack:', error.stack);
         
         let statusCode = 500;
         let message = 'Error interno del servidor';
