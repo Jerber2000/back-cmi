@@ -7,13 +7,10 @@ class UsuarioService {
     convertirFecha(fechaString) {
         if (!fechaString) return null;
         
-        // Si ya es un objeto Date, devolverlo tal como está
         if (fechaString instanceof Date) return fechaString;
         
-        // Convertir string a Date
         const fecha = new Date(fechaString);
         
-        // Verificar que la fecha sea válida
         if (isNaN(fecha.getTime())) {
             throw new Error(`Fecha inválida: ${fechaString}`);
         }
@@ -83,7 +80,6 @@ class UsuarioService {
 
             const { clave: _, ...usuarioSinClave } = usuarioPorId;
 
-            // Convertir BigInt a Number usando JSON
             const usuarioSerializable = JSON.parse(
                 JSON.stringify(usuarioSinClave, (key, value) =>
                     typeof value === 'bigint' ? Number(value) : value
@@ -102,7 +98,7 @@ class UsuarioService {
 
     async obtenerUsuarioPorRol(roles) {
         try {
-            // Validar que roles exista
+            
             if (!roles) {
                 return {
                     success: false,
@@ -110,7 +106,6 @@ class UsuarioService {
                 };
             }
 
-            // Convertir a array si viene como string (ej: "2,6,7")
             let rolesArray;
             if (typeof roles === 'string') {
                 rolesArray = roles.split(',').map(r => parseInt(r.trim()));
@@ -120,7 +115,6 @@ class UsuarioService {
                 rolesArray = [parseInt(roles)];
             }
 
-            // Validar que todos los valores sean números válidos
             if (rolesArray.some(r => isNaN(r))) {
                 return {
                     success: false,
@@ -152,7 +146,6 @@ class UsuarioService {
                 };
             }
 
-            // Convertir BigInt a Number usando JSON
             const usuariosSerializables = JSON.parse(
                 JSON.stringify(usuarioPorRol, (key, value) =>
                     typeof value === 'bigint' ? Number(value) : value
@@ -175,7 +168,7 @@ class UsuarioService {
 
             const { fkrol, usuario, clave, nombres, apellidos, fechanacimiento, correo, puesto, profesion, telinstitucional, extension, telefonopersonal,
                     nombrecontactoemergencia, telefonoemergencia, rutafotoperfil, observaciones, usuariocreacion, estado, fkclinica } = usuarioData;
-            // validar datos requeridos
+            
             if(!usuario || !clave || !nombres || !apellidos || !correo){
                 return{
                     success: false,
@@ -183,7 +176,6 @@ class UsuarioService {
                 };
             }
 
-            //validar formato de correo
             const correoRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if(!correoRegex.test(correo)){
                 return{
@@ -192,7 +184,6 @@ class UsuarioService {
                 };
             }
 
-            //validar clave
             if(clave.length < 8){
                 return{
                     success: false,
@@ -207,7 +198,6 @@ class UsuarioService {
                 };
             }
 
-            //valida si usuario ya existe
             const existeUsuario = await prismaClient.usuario.findUnique({
                 where: {usuario: usuario.toLowerCase() }
             });
@@ -219,7 +209,6 @@ class UsuarioService {
                 };
             }
 
-            //valida si correo existe en otro usuario
             const emailExiste = await prismaClient.usuario.findFirst({
                 where: {
                     correo: correo.toLowerCase()
@@ -233,11 +222,9 @@ class UsuarioService {
                 };
             }
 
-            //encriptar clave
             const saltRounds = 12;
             const claveHash = await bcrypt.hash(clave, saltRounds);
 
-            //crea usuario
             const usuarioNuevo = await prismaClient.usuario.create({
                 data:{
                     fkrol:                    parseInt(fkrol), 
@@ -303,7 +290,6 @@ class UsuarioService {
                 };
             }
 
-            //valida si usuario existe
             const existeUsua = await prismaClient.usuario.findUnique({
                 where: {
                     idusuario: parseInt(idusuario)
@@ -317,11 +303,10 @@ class UsuarioService {
                 };
             }
 
-            //preparar data para actualizar
             const dataParaActualizar = {};
 
             if(updateData.correo){
-                //valida formato del correo
+                
                 const correoElectronicoRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 if(!correoElectronicoRegex.test(updateData.correo)){
                     return {
@@ -330,7 +315,6 @@ class UsuarioService {
                     };
                 }
 
-                //valida si correo existe en otro usuario
                 const emailExiste = await prismaClient.usuario.findFirst({
                     where: {
                         correo: updateData.correo.toLowerCase(),
@@ -434,7 +418,6 @@ class UsuarioService {
                 dataParaActualizar.fkclinica = updateData.fkclinica;
             }
 
-            // Solo actualizar si hay cambios
             if (Object.keys(dataParaActualizar).length === 0) {
                 return {
                     success: false,
@@ -442,7 +425,6 @@ class UsuarioService {
                 };
             }
 
-            // Actualizar usuario
             const updatedUser = await prismaClient.usuario.update({
                 where: { idusuario: parseInt(idusuario) },
                 data: dataParaActualizar,

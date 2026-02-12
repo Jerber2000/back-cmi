@@ -1,9 +1,7 @@
-// src/controllers/inventarioMedicoController.js
 const inventarioMedicoService = require('../services/inventarioMedicoService');
 const { conAuditoria } = require('../utils/auditoria.helper');
 
 class InventarioMedicoController {
-  // GET /api/inventario - Listar todos
   async listarTodos(req, res) {
     try {
       const medicamentos = await inventarioMedicoService.listarTodos();
@@ -23,7 +21,6 @@ class InventarioMedicoController {
     }
   }
 
-  // GET /api/inventario/:id - Obtener por ID
   async obtenerPorId(req, res) {
     try {
       const { id } = req.params;
@@ -44,7 +41,6 @@ class InventarioMedicoController {
     }
   }
 
-  // POST /api/inventario - Crear nuevo
   async crear(req, res) {
     try {
       const nuevoMedicamento = await inventarioMedicoService.crear(req.body);
@@ -57,7 +53,6 @@ class InventarioMedicoController {
     } catch (error) {
       console.error('Error en InventarioMedicoController.crear:', error.message);
       
-      // Manejo especial para errores de validación
       const statusCode = error.message.includes('ya está registrado') ? 400 : 500;
       
       return res.status(statusCode).json({
@@ -68,11 +63,9 @@ class InventarioMedicoController {
     }
   }
 
-  // PUT /api/inventario/:id - Actualizar
   async actualizar(req, res) {
     try {
       const { id } = req.params;
-      //const medicamentoActualizado = await inventarioMedicoService.actualizar(id, req.body);
       
       const medicamentoActualizado = await conAuditoria(req, 'Inventario Medico', async (tx) => {
         return await inventarioMedicoService.actualizar(
@@ -90,7 +83,6 @@ class InventarioMedicoController {
     } catch (error) {
       console.error('Error en InventarioMedicoController.actualizar:', error.message);
       
-      // Determinar código de estado apropiado
       let statusCode = 500;
       if (error.message.includes('no encontrado')) {
         statusCode = 404;
@@ -106,7 +98,6 @@ class InventarioMedicoController {
     }
   }
 
-  // PUT /api/inventario/:id/estado - Cambiar estado
   async cambiarEstado(req, res) {
     try {
       const { id } = req.params;
@@ -119,7 +110,6 @@ class InventarioMedicoController {
         });
       }
 
-      //const resultado = await inventarioMedicoService.cambiarEstado(id, usuariomodificacion);
       const resultado = await conAuditoria(req, 'Inventario Medico', async (tx) => {
         return await inventarioMedicoService.cambiarEstado(
           id,

@@ -28,7 +28,7 @@ router.get(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave, 
-    checkRole(1,4,8), // admin,sistemas,auxiliar-admon
+    checkRole(1,4,8), 
     agendaController.obtenerCitasConTransporte
 );
 
@@ -50,7 +50,6 @@ router.put(
     agendaController.eliminarCita
 );
 
-// Rutas para citas recurrentes
 router.post(
     '/crearCitaRecurrente',
     autenticacion.validarToken,

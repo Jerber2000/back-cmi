@@ -6,7 +6,6 @@ const crearCita = async (req, res) => {
         const citaData = req.body;
         const usuario = req.usuario?.usuario || 'sistema';
 
-        //const resultado = await agendaService.crearCita(citaData);
         const resultado = await conAuditoria(req, 'agenda', async (tx) => {
             return await agendaService.crearCita(citaData, tx);
         });
@@ -62,7 +61,6 @@ const actualizarCita = async (req, res) => {
         const citaData = req.body;
         const usuario = req.usuario?.usuario || 'sistema';
         
-        //const resultado = await agendaService.actualizarCita(id, citaData);
         const resultado = await conAuditoria(req, 'agenda', async (tx) => {
             return await agendaService.actualizarCita(id, citaData, tx);
         });
@@ -82,7 +80,6 @@ const eliminarCita = async (req, res) => {
         const { id } = req.params;
         const { usuariomodificacion } = req.body;
 
-       // const resultado = await agendaService.eliminarCita(id, usuariomodificacion);
         const resultado = await conAuditoria(req, 'agenda', async (tx) => {
             return await agendaService.eliminarCita(id, usuariomodificacion, tx);
         });
@@ -118,7 +115,6 @@ const cancelarCitaRecurrente = async (req, res) => {
         const { id } = req.params;
         const { usuariomodificacion } = req.body;
         
-        //const resultado = await agendaService.cancelarCitaRecurrente(id, usuariomodificacion);
         const resultado = await conAuditoria(req, 'agenda', async (tx) => {
             return await agendaService.cancelarCitaRecurrente(
                 id, usuariomodificacion, tx
@@ -137,7 +133,7 @@ const cancelarCitaRecurrente = async (req, res) => {
 
 const cancelarSerieCompleta = async (req, res) => {
     try {
-        const { id } = req.params; // idagenda_recurrente
+        const { id } = req.params;
         const { usuariomodificacion } = req.body;
         
         const resultado = await agendaService.cancelarSerieCompleta(id, usuariomodificacion);

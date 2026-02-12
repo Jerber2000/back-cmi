@@ -3,10 +3,6 @@ const { prisma } = require('../config/prisma');
 
 class HistorialMedicoService {
 
-  /**
-   * Obtiene el historial completo de un paciente
-   * ✅ CAMBIO: Incluir clínica en la respuesta
-   */
   async obtenerHistorialPorPaciente(idpaciente) {
     try {
       const pacienteExiste = await prisma.paciente.findUnique({
@@ -45,7 +41,7 @@ class HistorialMedicoService {
               }
             }
           },
-          clinica: {  // ✅ AGREGAR ESTA RELACIÓN
+          clinica: {  
             select: {
               idclinica: true,
               nombreclinica: true
@@ -68,11 +64,6 @@ class HistorialMedicoService {
     }
   }
 
-
-    /**
-   * Obtiene información básica del paciente
-   * ✅ CAMBIO: Incluir genero y fkclinica
-   */
   async obtenerInfoPaciente(idpaciente) {
     try {
       const paciente = await prisma.paciente.findUnique({
@@ -82,8 +73,8 @@ class HistorialMedicoService {
           nombres: true,
           apellidos: true,
           cui: true,
-          genero: true,  // ✅ AGREGAR
-          fkclinica: true,  // ✅ AGREGAR
+          genero: true,
+          fkclinica: true,
           rutafotoperfil: true,
           telefonopersonal: true,
           fechanacimiento: true,
@@ -116,9 +107,6 @@ class HistorialMedicoService {
     }
   }
 
-/**
- * Crea una nueva sesión de historial
- */
 async crearSesion(datos, usuarioCreador, tx = null) {
   try {
     const prismaClient = tx || prisma;
@@ -135,7 +123,6 @@ async crearSesion(datos, usuarioCreador, tx = null) {
       diagnosticotratamiento
     } = datos;
 
-    // Validar que el paciente y usuario existan
     const [pacienteExiste, usuarioExiste] = await Promise.all([
       prisma.paciente.findUnique({ where: { idpaciente: parseInt(fkpaciente) }}),
       prisma.usuario.findUnique({ where: { idusuario: parseInt(fkusuario) }})
@@ -157,7 +144,6 @@ async crearSesion(datos, usuarioCreador, tx = null) {
       };
     }
 
-    // Prioridad: usuario autenticado > request > paciente
     const clinicaId = fkclinicaUsuario || fkclinica || pacienteExiste.fkclinica || null;
     
     console.log('🏥 Service: Usando fkclinica:', clinicaId);
@@ -213,9 +199,6 @@ async crearSesion(datos, usuarioCreador, tx = null) {
   }
 }
 
-  /**
-   * ✅ NUEVO MÉTODO: Obtiene historial filtrado por clínica
-   */
   async obtenerHistorialPorClinica(fkclinica, filtros = {}) {
     try {
       const where = {
@@ -265,9 +248,6 @@ async crearSesion(datos, usuarioCreador, tx = null) {
     }
   }
 
-  /**
-   * Actualiza una sesión existente
-   */
   async actualizarSesion(idhistorial, datos, usuarioModificador, tx = null) {
     try {
       const prismaClient = tx || prisma;
@@ -279,7 +259,6 @@ async crearSesion(datos, usuarioCreador, tx = null) {
         diagnosticotratamiento
       } = datos;
 
-      // Verificar que la sesión exista
       const sesionExiste = await prisma.detallehistorialclinico.findUnique({
         where: { idhistorial: parseInt(idhistorial) }
       });
@@ -332,13 +311,10 @@ async crearSesion(datos, usuarioCreador, tx = null) {
     }
   }
 
-  /**
-   * Elimina (desactiva) una sesión
-   */
   async eliminarSesion(idhistorial, usuarioModificador, tx = null) {
     try {
       const prismaClient = tx || prisma;
-      // Verificar que la sesión existe
+      
       const sesionExiste = await prisma.detallehistorialclinico.findUnique({
         where: { idhistorial: parseInt(idhistorial) }
       });
@@ -351,7 +327,6 @@ async crearSesion(datos, usuarioCreador, tx = null) {
         };
       }
 
-      // Eliminar lógicamente (cambiar estado a 0)
       await prismaClient.detallehistorialclinico.update({
         where: { idhistorial: parseInt(idhistorial) },
         data: {
@@ -373,9 +348,6 @@ async crearSesion(datos, usuarioCreador, tx = null) {
     }
   }
 
-  /**
-   * Actualiza la ruta de archivos de una sesión
-   */
   async actualizarRutaArchivos(idhistorial, rutaarchivos, usuarioModificador) {
     try {
       const sesionExiste = await prisma.detallehistorialclinico.findUnique({
@@ -411,9 +383,6 @@ async crearSesion(datos, usuarioCreador, tx = null) {
     }
   }
 
-  /**
-   * Obtiene los archivos de una sesión específica
-   */
   async obtenerArchivosSesion(idhistorial) {
     try {
       const sesion = await prisma.detallehistorialclinico.findUnique({
@@ -435,7 +404,6 @@ async crearSesion(datos, usuarioCreador, tx = null) {
       
       if (sesion.rutahistorialclinico) {
         try {
-          // Si las rutas están como string separado por comas
           if (typeof sesion.rutahistorialclinico === 'string') {
             const rutas = sesion.rutahistorialclinico.split(',').filter(r => r.trim());
             
@@ -456,13 +424,11 @@ async crearSesion(datos, usuarioCreador, tx = null) {
               };
             });
           } else {
-            // Si ya está como JSON
             archivos = JSON.parse(sesion.rutahistorialclinico);
           }
           
         } catch (parseError) {
           console.error('Error parseando rutas de archivos:', parseError);
-          // Si falla el parsing, intentar como string simple
           archivos = [{
             id: Date.now(),
             nombre: sesion.rutahistorialclinico.split('/').pop(),
@@ -486,9 +452,6 @@ async crearSesion(datos, usuarioCreador, tx = null) {
     }
   }
 
-  /**
-   * Valida que un paciente exista
-   */
   async validarPacienteExiste(idpaciente) {
     const paciente = await prisma.paciente.findUnique({
       where: { idpaciente: parseInt(idpaciente) }

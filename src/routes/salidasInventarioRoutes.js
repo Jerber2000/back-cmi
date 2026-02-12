@@ -1,4 +1,4 @@
-// src/routes/salidasInventarioRoutes.js
+
 const { Router } = require('express');
 const salidasInventarioController = require('../controllers/salidasInventarioController');
 const salidasMiddleware = require('../middlewares/validacionSalidas');
@@ -8,9 +8,6 @@ const checkRole = require('../middlewares/checkRole');
 
 const router = Router();
 
-// ===== RUTAS ESPECÍFICAS PRIMERO =====
-
-// GET /api/salidas/estadisticas
 router.get(
   '/estadisticas',
   autenticacion.validarToken,
@@ -20,7 +17,6 @@ router.get(
   salidasInventarioController.obtenerEstadisticas
 );
 
-// 🆕 GET /api/salidas/medicamento/:idmedicina - Historial por medicamento
 router.get(
   '/medicamento/:idmedicina',
   autenticacion.validarToken,
@@ -31,9 +27,6 @@ router.get(
   salidasInventarioController.obtenerPorMedicamento
 );
 
-// ===== RUTAS GENÉRICAS =====
-
-// GET /api/salidas
 router.get(
   '/',
   autenticacion.validarToken,
@@ -43,7 +36,6 @@ router.get(
   salidasInventarioController.listarTodas
 );
 
-// GET /api/salidas/:id
 router.get(
   '/:id',
   autenticacion.validarToken,
@@ -54,7 +46,6 @@ router.get(
   salidasInventarioController.obtenerPorId
 );
 
-// POST /api/salidas
 router.post(
   '/',
   autenticacion.validarToken,
@@ -65,7 +56,6 @@ router.post(
   salidasInventarioController.crear
 );
 
-// PUT /api/salidas/:id/anular
 router.put(
   '/:id/anular',
   autenticacion.validarToken,

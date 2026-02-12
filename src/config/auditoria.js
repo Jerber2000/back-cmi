@@ -16,7 +16,6 @@ const AccionAuditoria = {
 };
 
 const CONFIGURACION_AUDITORIA = {
-  // Tablas críticas: auditar TODO
   CRITICO: [
     
   ],
@@ -56,7 +55,6 @@ const RETENER_DIAS = {
   NORMAL: 365         // 1 año
 };
 
-// Campos sensibles que siempre deben ofuscarse en logs
 const CAMPOS_SENSIBLES = [
   'password',
   'token',
@@ -64,7 +62,6 @@ const CAMPOS_SENSIBLES = [
   'secret'
 ];
 
-// Operaciones que NO deben auditarse
 const OPERACIONES_EXCLUIDAS = [
   'findMany',
   'findFirst',
@@ -74,7 +71,7 @@ const OPERACIONES_EXCLUIDAS = [
 ];
 
 const OPERACIONES_INTERNAS = {
-  'detalledocumento': ['actualizarRutaDocumento'] // Solo actualiza la ruta del archivo
+  'detalledocumento': ['actualizarRutaDocumento'] 
 };
 
 module.exports = {

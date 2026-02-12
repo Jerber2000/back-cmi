@@ -1,12 +1,9 @@
-// controllers/expedienteController.js
 const expedienteService = require('../services/expedienteService');
 const ExpedienteService = require('../services/expedienteService');
 const { conAuditoria } = require('../utils/auditoria.helper');
 
 class ExpedienteController {
-  /**
-   * Genera un número de expediente automático
-   */
+
   static async generarNumeroExpediente(req, res) {
     try {
       const resultado = await ExpedienteService.generarNumeroExpediente();
@@ -23,7 +20,7 @@ class ExpedienteController {
         datos: resultado.data
       });
     } catch (error) {
-      console.error('❌ Error en generarNumeroExpediente:', error);
+      console.error('Error en generarNumeroExpediente:', error);
       res.status(500).json({
         exito: false,
         mensaje: 'Error interno del servidor',
@@ -31,10 +28,7 @@ class ExpedienteController {
       });
     }
   }
-
-  /**
-   * Obtiene todos los expedientes con paginación, búsqueda y filtro por clínica
-   */
+  
   static async obtenerTodosLosExpedientes(req, res) {
     try {
       const { pagina = 1, limite = 10, busqueda = '', fkclinica = null } = req.query;
@@ -59,7 +53,7 @@ class ExpedienteController {
         paginacion: resultado.pagination
       });
     } catch (error) {
-      console.error('❌ Error en obtenerTodosLosExpedientes:', error);
+      console.error('Error en obtenerTodosLosExpedientes:', error);
       res.status(500).json({
         exito: false,
         mensaje: 'Error interno del servidor',
@@ -68,9 +62,6 @@ class ExpedienteController {
     }
   }
 
-  /**
-   * Obtiene un expediente específico por su ID
-   */
   static async obtenerExpedientePorId(req, res) {
     try {
       const { id } = req.params;
@@ -89,7 +80,7 @@ class ExpedienteController {
         datos: resultado.data
       });
     } catch (error) {
-      console.error('❌ Error en obtenerExpedientePorId:', error);
+      console.error('Error en obtenerExpedientePorId:', error);
       res.status(500).json({
         exito: false,
         mensaje: 'Error interno del servidor',
@@ -98,15 +89,11 @@ class ExpedienteController {
     }
   }
 
-  /**
-   * Crea un nuevo expediente médico
-   */
   static async crearExpediente(req, res) {
     try {
       const usuario = req.usuario?.usuario || 'sistema';
       const datosExpediente = req.body;
 
-      //const resultado = await ExpedienteService.crearExpediente(datosExpediente, usuario);
       const resultado = await conAuditoria(req, 'expediente', async (tx) =>{
         return await expedienteService.crearExpediente(datosExpediente, usuario, tx);
       });
@@ -132,21 +119,13 @@ class ExpedienteController {
       });
     }
   }
-
-  /**
-   * Actualiza un expediente existente
-   */
+  
   static async actualizarExpediente(req, res) {
     try {
       const { id } = req.params;
       const usuario = req.usuario?.usuario || 'sistema';
       const datosActualizacion = req.body;
 
-      // const resultado = await ExpedienteService.actualizarExpediente(
-      //   id,
-      //   datosActualizacion,
-      //   usuario
-      // );
       const resultado = await conAuditoria(req, 'expediente', async (tx) =>{
         return await ExpedienteService.actualizarExpediente(id, datosActualizacion,usuario,tx);
       });
@@ -174,17 +153,11 @@ class ExpedienteController {
     }
   }
 
-  /**
-   * Elimina lógicamente un expediente
-   */
   static async eliminarExpediente(req, res) {
     try {
       const { id } = req.params;
       const usuario = req.usuario?.usuario || 'sistema';
 
-      console.log('🗑️ Intentando eliminar expediente ID:', id);
-
-      //const resultado = await ExpedienteService.eliminarExpediente(id, usuario);
       const resultado = await conAuditoria(req, 'expediente', async (tx) => {
         return await ExpedienteService.eliminarExpediente(id, usuario, tx);
       });
@@ -198,15 +171,13 @@ class ExpedienteController {
         });
       }
 
-      console.log('✅ Expediente eliminado exitosamente');
-
       res.json({
         exito: true,
         mensaje: resultado.message,
         datos: resultado.data
       });
     } catch (error) {
-      console.error('❌ Error en eliminarExpediente:', error);
+      console.error('Error en eliminarExpediente:', error);
       res.status(500).json({
         exito: false,
         mensaje: 'Error interno del servidor al eliminar expediente',
@@ -215,9 +186,6 @@ class ExpedienteController {
     }
   }
 
-  /**
-   * Obtiene expedientes disponibles (sin paciente asignado)
-   */
   static async obtenerExpedientesDisponibles(req, res) {
     try {
       const resultado = await ExpedienteService.obtenerExpedientesDisponibles();
@@ -234,7 +202,7 @@ class ExpedienteController {
         datos: resultado.data
       });
     } catch (error) {
-      console.error('❌ Error en obtenerExpedientesDisponibles:', error);
+      console.error('Error en obtenerExpedientesDisponibles:', error);
       res.status(500).json({
         exito: false,
         mensaje: 'Error interno del servidor',
@@ -243,9 +211,6 @@ class ExpedienteController {
     }
   }
 
-  /**
-   * Obtiene estadísticas de expedientes
-   */
   static async obtenerEstadisticas(req, res) {
     try {
       const resultado = await ExpedienteService.obtenerEstadisticas();
@@ -262,7 +227,7 @@ class ExpedienteController {
         datos: resultado.data
       });
     } catch (error) {
-      console.error('❌ Error en obtenerEstadisticas:', error);
+      console.error('Error en obtenerEstadisticas:', error);
       res.status(500).json({
         exito: false,
         mensaje: 'Error interno del servidor',

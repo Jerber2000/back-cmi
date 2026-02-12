@@ -4,12 +4,11 @@ const inventarioMedicoService = require('./inventarioMedicoService');
 
 class SalidasInventarioService {
   
-  // Listar todas las salidas
   async listarTodas() {
     try {
       const salidas = await prisma.salidasinventario.findMany({
         include: {
-          medicamento: true,  // ← Simplifica el include primero
+          medicamento: true, 
           usuario: true
         },
         orderBy: {
@@ -23,7 +22,6 @@ class SalidasInventarioService {
     }
   }
 
-  // Obtener salida por ID
   async obtenerPorId(id) {
     try {
       const salida = await prisma.salidasinventario.findUnique({
@@ -61,10 +59,9 @@ class SalidasInventarioService {
     }
   }
 
-  // Obtener historial de salidas de un medicamento específico
   async obtenerPorMedicamento(idmedicina) {
     try {
-      // Verificar que el medicamento existe
+      
       await inventarioMedicoService.obtenerPorId(idmedicina);
 
       const salidas = await prisma.salidasinventario.findMany({
@@ -92,22 +89,18 @@ class SalidasInventarioService {
     }
   }
 
-  // Crear nueva salida (CON TRANSACCIÓN)
   async crear(data) {
     try {
-      // 1. Validar que el medicamento existe y tiene suficiente stock
       await inventarioMedicoService.validarDisponibilidad(
         data.fkmedicina, 
         data.cantidad
       );
 
-      // 2. Obtener información actual del medicamento
       const medicamento = await inventarioMedicoService.obtenerPorId(data.fkmedicina);
       const nuevasUnidades = medicamento.unidades - data.cantidad;
 
-      // 3. Ejecutar creación de salida y actualización de inventario en TRANSACCIÓN
       const resultado = await prisma.$transaction(async (tx) => {
-        // Crear registro de salida
+        
         const nuevaSalida = await tx.salidasinventario.create({
           data: {
             fkmedicina: data.fkmedicina,
@@ -136,7 +129,6 @@ class SalidasInventarioService {
           }
         });
 
-        // Descontar unidades del inventario
         await tx.inventariomedico.update({
           where: { idmedicina: data.fkmedicina },
           data: {
@@ -161,24 +153,20 @@ class SalidasInventarioService {
     }
   }
 
-  // Anular una salida (CON TRANSACCIÓN)
   async anular(id, usuarioModificacion) {
     try {
-      // 1. Obtener la salida
+      
       const salida = await this.obtenerPorId(id);
-
-      // 2. Validar que la salida esté activa
+      
       if (salida.estado === 0) {
         throw new Error('La salida ya está anulada');
       }
-
-      // 3. Obtener el medicamento actual
+      
       const medicamento = await inventarioMedicoService.obtenerPorId(salida.fkmedicina);
       const nuevasUnidades = medicamento.unidades + salida.cantidad;
 
-      // 4. Ejecutar anulación y devolución de unidades en TRANSACCIÓN
       const resultado = await prisma.$transaction(async (tx) => {
-        // Anular la salida
+        
         const salidaAnulada = await tx.salidasinventario.update({
           where: { idsalida: parseInt(id) },
           data: {
@@ -196,7 +184,6 @@ class SalidasInventarioService {
           }
         });
 
-        // Devolver unidades al inventario
         await tx.inventariomedico.update({
           where: { idmedicina: salida.fkmedicina },
           data: {
@@ -222,7 +209,6 @@ class SalidasInventarioService {
     }
   }
 
-  // Obtener estadísticas de salidas
   async obtenerEstadisticas() {
     try {
       const estadisticas = await prisma.salidasinventario.aggregate({

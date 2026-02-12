@@ -1,4 +1,3 @@
-// src/routes/documentoRoutes.js
 
 const express = require('express');
 const router = express.Router();
@@ -6,7 +5,7 @@ const documentoController = require('../controllers/documentoController');
 const autenticacion = require('../middlewares/auth');
 const { validarCambioClave } = require('../middlewares/validarCambioClave');
 const { fileService } = require('../services/fileService');
-const clinicaService = require('../services/clinicaService'); // ← AGREGAR ESTA LÍNEA
+const clinicaService = require('../services/clinicaService'); 
 const {
   validarCrearDocumento,
   validarActualizarDocumento,
@@ -75,7 +74,6 @@ router.patch(
   documentoController.cambiarEstado
 );
 
-// ← AGREGAR ESTE ENDPOINT DE CLÍNICAS
 router.get(
   '/clinicas/listar',
   autenticacion.validarToken,

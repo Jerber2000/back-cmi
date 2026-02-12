@@ -4,13 +4,10 @@ class AgendaService{
     convertirFecha(fechaString) {
         if (!fechaString) return null;
         
-        // Si ya es un objeto Date, devolverlo tal como está
         if (fechaString instanceof Date) return fechaString;
         
-        // Convertir string a Date
         const fecha = new Date(fechaString);
         
-        // Verificar que la fecha sea válida
         if (isNaN(fecha.getTime())) {
             throw new Error(`Fecha inválida: ${fechaString}`);
         }
@@ -34,8 +31,6 @@ class AgendaService{
 
             let horaFormateada = horaatencion;
 
-            // Si viene en formato HH:mm:ss, usarla directamente
-            // Si viene en formato HH:mm, agregar :00
             if (horaatencion.split(':').length === 2) {
                 horaFormateada = `${horaatencion}:00`;
             }
@@ -43,7 +38,6 @@ class AgendaService{
             const fechaConvertida = this.convertirFecha(fechaatencion);
             const horaConvertida = new Date(`1970-01-01T${horaFormateada}Z`);
 
-            // Verificar si ya existe una cita para el paciente en esa fecha y hora
             const citaExistente = await prisma.agenda.findFirst({
                 where: {
                     fkpaciente:    parseInt(fkpaciente),
@@ -113,7 +107,7 @@ class AgendaService{
             return{
                 success: true,
                 message: 'Cita creada exitosamente',
-                data: citaNueva // Cambiado para devolver la cita creada
+                data: citaNueva
             };
         }catch(error){
             return{
@@ -214,23 +208,19 @@ class AgendaService{
 
     async obtenerCitasConTransporte(fecha) {
         try {
-            // Si no se proporciona fecha, usar la fecha actual en formato YYYY-MM-DD
             let fechaBusqueda = fecha;
             
             if (!fechaBusqueda) {
                 const hoy = new Date();
-                // Ajustar a la zona horaria local antes de formatear
                 const offset = hoy.getTimezoneOffset();
                 const fechaLocal = new Date(hoy.getTime() - (offset * 60 * 1000));
                 fechaBusqueda = fechaLocal.toISOString().split('T')[0];
             }
 
-            // SOLUCIÓN: Usar Prisma.sql para comparación exacta de fechas sin conversión
             const citasConTransporte = await prisma.agenda.findMany({
                 where: {
                     estado: 1,
                     transporte: 1,
-                    // Comparación directa sin conversión de zona horaria
                     fechatransporte: {
                         equals: new Date(fechaBusqueda + 'T00:00:00.000Z')
                     }
@@ -383,8 +373,6 @@ class AgendaService{
 
             let horaFormateada = horaatencion;
 
-            // Si viene en formato HH:mm:ss, usarla directamente
-            // Si viene en formato HH:mm, agregar :00
             if (horaatencion.split(':').length === 2) {
                 horaFormateada = `${horaatencion}:00`;
             }
@@ -392,7 +380,6 @@ class AgendaService{
             const fechaConvertida = this.convertirFecha(fechaatencion);
             const horaConvertida = new Date(`1970-01-01T${horaFormateada}Z`);
 
-            // IMPORTANTE: Excluir la cita actual de la búsqueda
             const citaExistentePaciente = await prisma.agenda.findFirst({
                 where: {
                     fkpaciente:    parseInt(fkpaciente),
@@ -402,7 +389,7 @@ class AgendaService{
                         not: 0
                     },
                     idagenda: {
-                        not: parseInt(idagenda) // EXCLUIR LA CITA ACTUAL
+                        not: parseInt(idagenda)
                     }
                 }
             });
@@ -423,7 +410,7 @@ class AgendaService{
                         not: 0
                     },
                     idagenda: {
-                        not: parseInt(idagenda) // EXCLUIR LA CITA ACTUAL
+                        not: parseInt(idagenda)
                     }
                 }
             });
@@ -435,7 +422,6 @@ class AgendaService{
                 };
             }
 
-            // Formatear hora de transporte si existe
             let horaTransporteFormateada = null;
             if (horariotransporte) {
                 if (horariotransporte.split(':').length === 2) {
@@ -498,7 +484,6 @@ class AgendaService{
                 }
             });
 
-            // Formatear las fechas para el frontend
             const fechaStr = citaActualizada.fechaatencion.toISOString().split('T')[0];
             const horaStr = citaActualizada.horaatencion.toISOString().split('T')[1].substring(0, 8);
             
@@ -554,7 +539,7 @@ class AgendaService{
                 };
             }
 
-            // Cambiar estado a ELIMINADA (soft delete)
+            // Cambiar estado a ELIMINADA 
             const citaEliminada = await prismaClient.agenda.update({
                 where: {
                     idagenda: parseInt(idagenda)
@@ -582,16 +567,11 @@ class AgendaService{
         const { tipo_recurrencia, intervalo, dias_semana, fecha_inicio, fecha_fin, numero_ocurrencias } = configuracion;
         
         const [año, mes, dia] = fecha_inicio.split('-').map(Number);
-        //let fechaActual = new Date(fecha_inicio);
         let fechaActual = new Date(año, mes - 1, dia);
-        console.log('Configuración recurrencia:', configuracion); // Debug
-        console.log('Fecha inicial parseada:', fechaActual); // Debug
-        console.log('Día de la semana inicial:', fechaActual.getDay());
 
         let contador = 0;
-        const maxOcurrencias = numero_ocurrencias || 365; // Límite de seguridad
+        const maxOcurrencias = numero_ocurrencias || 365;
 
-        // Parsear fecha_fin si existe
         let fechaFinObj = null;
         if (fecha_fin) {
             const [añoFin, mesFin, diaFin] = fecha_fin.split('-').map(Number);
@@ -599,7 +579,6 @@ class AgendaService{
         }
         
         while (contador < maxOcurrencias) {
-            // Si hay fecha_fin y ya la pasamos, salir
             if (fechaFinObj && fechaActual > fechaFinObj) {
                 break;
             }
@@ -612,16 +591,12 @@ class AgendaService{
                     break;
                     
                 case 'semanal':
-                    // dias_semana es un string como "1,3,5" (lun, mie, vie)
-                    // JavaScript: 0=domingo, 1=lunes, ... 6=sábado
                     const diasPermitidos = dias_semana ? dias_semana.split(',').map(d => parseInt(d)) : [];
                     const diaActual = fechaActual.getDay();
-                    console.log('Día actual:', diaActual, 'Días permitidos:', diasPermitidos); // Debug 
                     agregarFecha = diasPermitidos.includes(diaActual);
                     break;
                     
                 case 'mensual':
-                    // Mismo día del mes
                     agregarFecha = true;
                     break;
             }
@@ -630,40 +605,30 @@ class AgendaService{
                 const fechaParaAgregar = new Date(fechaActual.getFullYear(), fechaActual.getMonth(), fechaActual.getDate());
                 fechas.push(fechaParaAgregar);
                 contador++;
-                
-                console.log('Fecha agregada:', fechaParaAgregar.toISOString().split('T')[0]); // Debug
-            
+                            
                 contador++;
                 
-                // Si llegamos al número de ocurrencias, salir
                 if (numero_ocurrencias && contador >= numero_ocurrencias) {
                     break;
                 }
             }
             
-            // Avanzar al siguiente periodo
             switch (tipo_recurrencia) {
                 case 'diaria':
                     fechaActual.setDate(fechaActual.getDate() + intervalo);
                     break;
                 case 'semanal':
-                    fechaActual.setDate(fechaActual.getDate() + 1); // Avanzar día a día
+                    fechaActual.setDate(fechaActual.getDate() + 1);
                     break;
                 case 'mensual':
                     fechaActual.setMonth(fechaActual.getMonth() + intervalo);
                     break;
             }
         }
-
-        console.log('Total de fechas generadas:', fechas.length); // Debug
-        console.log('Fechas:', fechas.map(f => f.toISOString().split('T')[0]));
         
         return fechas;
     }
 
-    /**
-     * Crear cita recurrente con todas sus instancias
-     */
     async crearCitaRecurrente(datosRecurrentes) {
         try {
             const {
@@ -684,7 +649,6 @@ class AgendaService{
                 usuariocreacion
             } = datosRecurrentes;
             
-            // Validaciones
             if (!fkusuario || !fkpaciente || !horaatencion || !tipo_recurrencia || !fecha_inicio || !usuariocreacion) {
                 return {
                     success: false,
@@ -692,7 +656,6 @@ class AgendaService{
                 };
             }
             
-            // Validar tipo de recurrencia
             if (!['diaria', 'semanal', 'mensual'].includes(tipo_recurrencia)) {
                 return {
                     success: false,
@@ -700,7 +663,6 @@ class AgendaService{
                 };
             }
             
-            // Si es semanal, validar días
             if (tipo_recurrencia === 'semanal' && !dias_semana) {
                 return {
                     success: false,
@@ -708,14 +670,12 @@ class AgendaService{
                 };
             }
             
-            // Formatear hora
             let horaFormateada = horaatencion;
             if (horaatencion.split(':').length === 2) {
                 horaFormateada = `${horaatencion}:00`;
             }
             const horaConvertida = new Date(`1970-01-01T${horaFormateada}Z`);
             
-            // Generar fechas
             const fechas = this.generarFechasRecurrentes({
                 tipo_recurrencia,
                 intervalo: intervalo || 1,
@@ -732,7 +692,6 @@ class AgendaService{
                 };
             }
             
-            // Verificar conflictos antes de crear
             const conflictos = await this.verificarConflictosRecurrentes(
                 parseInt(fkusuario),
                 parseInt(fkpaciente),
@@ -748,7 +707,6 @@ class AgendaService{
                 };
             }
             
-            // Crear en una transacción
             const resultado = await prisma.$transaction(async (tx) => {
 
                 const [año, mes, dia] = fecha_inicio.split('-').map(Number);
@@ -759,7 +717,7 @@ class AgendaService{
                     const [añoFin, mesFin, diaFin] = fecha_fin.split('-').map(Number);
                     fechaFinObj = new Date(añoFin, mesFin - 1, diaFin);
                 }
-                // 1. Crear registro de agenda_recurrente
+                
                 const agendaRecurrente = await tx.agenda_recurrente.create({
                     data: {
                         fkusuario: parseInt(fkusuario),
@@ -767,7 +725,6 @@ class AgendaService{
                         horaatencion: horaConvertida,
                         comentario: comentario || null,
                         transporte: parseInt(transporte || 0),
-                        //fechatransporte:    this.convertirFecha(fechatransporte),
                         fechatransporte: parseInt(transporte || 0) ? fechaInicioObj : null,
                         horariotransporte:  horariotransporte
                                         ? new Date(`1970-01-01T${horariotransporte}:00Z`)
@@ -776,9 +733,7 @@ class AgendaService{
                         tipo_recurrencia,
                         intervalo: parseInt(intervalo || 1),
                         dias_semana: dias_semana || null,
-                        //fecha_inicio: this.convertirFecha(fecha_inicio),
                         fecha_inicio: fechaInicioObj,
-                        //fecha_fin: fecha_fin ? this.convertirFecha(fecha_fin) : null,
                         fecha_fin: fechaFinObj,
                         numero_ocurrencias: numero_ocurrencias ? parseInt(numero_ocurrencias) : null,
                         usuariocreacion,
@@ -786,7 +741,6 @@ class AgendaService{
                     }
                 });
                 
-                // 2. Crear todas las citas individuales
                 const citasCreadas = await tx.agenda.createMany({
                     data: fechas.map(fecha => ({
                         fkusuario: parseInt(fkusuario),
@@ -831,14 +785,10 @@ class AgendaService{
         }
     }
 
-    /**
-     * Verificar conflictos de horario para múltiples fechas
-     */
     async verificarConflictosRecurrentes(fkusuario, fkpaciente, fechas, hora) {
         const conflictos = [];
         
         for (const fecha of fechas) {
-            // Verificar conflicto del paciente
             const conflictoPaciente = await prisma.agenda.findFirst({
                 where: {
                     fkpaciente: fkpaciente,
@@ -856,7 +806,6 @@ class AgendaService{
                 });
             }
             
-            // Verificar conflicto del usuario/profesional
             const conflictoUsuario = await prisma.agenda.findFirst({
                 where: {
                     fkusuario: fkusuario,
@@ -878,9 +827,6 @@ class AgendaService{
         return conflictos;
     }
 
-    /**
-     * Cancelar una cita individual de una serie recurrente
-     */
     async cancelarCitaRecurrente(idagenda, usuariomodificacion, tx = null) {
         try {
             const prismaClient = tx || prisma;
@@ -902,7 +848,6 @@ class AgendaService{
                 };
             }
             
-            // Cancelar solo esta cita
             await prismaClient.agenda.update({
                 where: { idagenda: parseInt(idagenda) },
                 data: {
@@ -925,13 +870,9 @@ class AgendaService{
         }
     }
 
-    /**
-     * Cancelar toda la serie de citas recurrentes
-     */
     async cancelarSerieCompleta(idagenda_recurrente, usuariomodificacion) {
         try {
             const resultado = await prisma.$transaction(async (tx) => {
-                // Cancelar el registro recurrente
                 await tx.agenda_recurrente.update({
                     where: { idagenda_recurrente: parseInt(idagenda_recurrente) },
                     data: {
@@ -941,12 +882,11 @@ class AgendaService{
                     }
                 });
                 
-                // Cancelar todas las citas futuras de la serie
                 const citasCanceladas = await tx.agenda.updateMany({
                     where: {
                         fkagenda_recurrente: parseInt(idagenda_recurrente),
                         fechaatencion: {
-                            gte: new Date() // Solo futuras
+                            gte: new Date()
                         },
                         estado: { not: 0 }
                     },

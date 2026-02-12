@@ -1,13 +1,12 @@
 
 const { prisma } = require('../config/prisma');
 
-// Cache para mensajes de error legibles
 let rolesCache = null;
 let cacheTimestamp = null;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
 /**
- * Obtener roles desde cache (solo para mensajes de error)
+ * Obtener roles desde cache 
  */
 async function obtenerRolesParaMensajes() {
   const ahora = Date.now();
@@ -31,7 +30,6 @@ async function obtenerRolesParaMensajes() {
 const checkRole = (...idsRolesPermitidos) => {
   return async (req, res, next) => {
     try {
-      // Obtener el rol del usuario desde req.usuario (viene de verificarUsuarioEnBD)
       const fkrol = req.usuario.fkrol;
 
       if (!fkrol) {
@@ -41,11 +39,9 @@ const checkRole = (...idsRolesPermitidos) => {
         });
       }
 
-      // ⭐ VALIDACIÓN DIRECTA - MUY RÁPIDA (sin consulta a BD)
       const tienePermiso = idsRolesPermitidos.includes(fkrol);
 
       if (!tienePermiso) {
-        // Solo aquí consultamos BD para hacer el mensaje de error legible
         const roles = await obtenerRolesParaMensajes();
         const rolUsuario = roles.find(r => r.idrol === fkrol);
         const nombresPermitidos = idsRolesPermitidos.map(id => {
@@ -63,7 +59,6 @@ const checkRole = (...idsRolesPermitidos) => {
         });
       }
 
-      // Permiso concedido
       next();
     } catch (error) {
       console.error('Error en checkRole:', error);

@@ -75,14 +75,7 @@ class DocumentoController {
           message: 'Debe adjuntar un archivo'
         });
       }
-
-      // Crear documento en BD (sin ruta aún)
-      // const resultado = await documentoService.crearDocumento({
-      //   nombredocumento,
-      //   descripcion,
-      //   fkclinica,
-      //   usuariocreacion
-      // });
+      
       const resultado = await conAuditoria(req, 'Documento', async (tx) => {
         return await documentoService.crearDocumento({nombredocumento,
           descripcion,
@@ -136,13 +129,6 @@ class DocumentoController {
       const archivoNuevo = req.file;
       const usuariomodificacion = req.usuario.usuario || req.usuario.nombres;
 
-      // Actualizar datos básicos del documento
-      // const resultado = await documentoService.actualizarDocumento(id, {
-      //   nombredocumento,
-      //   descripcion,
-      //   fkclinica,
-      //   usuariomodificacion
-      // });
       const resultado = await conAuditoria(req, 'Documento', async (tx) => {
         return await documentoService.actualizarDocumento(
           id,
@@ -231,8 +217,6 @@ class DocumentoController {
         }
       }
 
-      // Soft delete en BD
-      //const resultado = await documentoService.eliminarDocumento(id, usuariomodificacion);
       const resultado = await conAuditoria(req, 'Documento', async (tx) => {
         return await documentoService.eliminarDocumento(
           id,
@@ -263,11 +247,6 @@ class DocumentoController {
       const { estado } = req.body;
       const usuariomodificacion = req.usuario.usuario || req.usuario.nombres;
 
-      // const resultado = await documentoService.cambiarEstado(
-      //   id,
-      //   estado,
-      //   usuariomodificacion
-      // );
       const resultado = await conAuditoria(req, 'detalledocumento', async (tx) => {
         return await documentoService.cambiarEstado(
           id,

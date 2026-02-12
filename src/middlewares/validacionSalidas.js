@@ -1,8 +1,6 @@
-// src/middlewares/validacionSalidas.js
 
 class SalidasMiddleware {
   
-  // Validar ID en parámetros
   validarId(req, res, next) {
     const { id } = req.params;
     
@@ -25,7 +23,6 @@ class SalidasMiddleware {
     next();
   }
 
-  // Validar ID de medicamento en parámetros
   validarIdMedicamento(req, res, next) {
     const { idmedicina } = req.params;
     
@@ -48,7 +45,6 @@ class SalidasMiddleware {
     next();
   }
 
-  // Validar datos al CREAR salida
   validarCrear(req, res, next) {
     const { 
       fkmedicina, 
@@ -63,23 +59,18 @@ class SalidasMiddleware {
     
     const errores = [];
 
-    // ===== CAMPOS OBLIGATORIOS =====
-    
-    // fkmedicina
     if (!fkmedicina) {
       errores.push('El campo fkmedicina es obligatorio');
     } else if (typeof fkmedicina !== 'number' || fkmedicina <= 0) {
       errores.push('El campo fkmedicina debe ser un número mayor a 0');
     }
 
-    // fkusuario
     if (!fkusuario) {
       errores.push('El campo fkusuario es obligatorio');
     } else if (typeof fkusuario !== 'number' || fkusuario <= 0) {
       errores.push('El campo fkusuario debe ser un número mayor a 0');
     }
 
-    // cantidad
     if (cantidad === undefined || cantidad === null) {
       errores.push('El campo cantidad es obligatorio');
     } else if (typeof cantidad !== 'number' || cantidad <= 0) {
@@ -88,7 +79,6 @@ class SalidasMiddleware {
       errores.push('La cantidad debe ser un número entero');
     }
 
-    // fechasalida
     if (!fechasalida) {
       errores.push('El campo fechasalida es obligatorio');
     } else {
@@ -98,16 +88,12 @@ class SalidasMiddleware {
       }
     }
 
-    // usuariocreacion
     if (!usuariocreacion || usuariocreacion.trim() === '') {
       errores.push('El campo usuariocreacion es obligatorio');
     } else if (usuariocreacion.length > 100) {
       errores.push('El campo usuariocreacion no puede exceder 100 caracteres');
     }
 
-    // ===== CAMPOS OPCIONALES (con validaciones de formato) =====
-    
-    // motivo
     if (motivo !== undefined && motivo !== null) {
       if (typeof motivo !== 'string') {
         errores.push('El campo motivo debe ser un texto');
@@ -116,7 +102,6 @@ class SalidasMiddleware {
       }
     }
 
-    // destino
     if (destino !== undefined && destino !== null) {
       if (typeof destino !== 'string') {
         errores.push('El campo destino debe ser un texto');
@@ -125,14 +110,12 @@ class SalidasMiddleware {
       }
     }
 
-    // observaciones
     if (observaciones !== undefined && observaciones !== null) {
       if (typeof observaciones !== 'string') {
         errores.push('El campo observaciones debe ser un texto');
       }
     }
 
-    // Si hay errores, retornar respuesta 400
     if (errores.length > 0) {
       return res.status(400).json({
         success: false,
@@ -144,7 +127,6 @@ class SalidasMiddleware {
     next();
   }
 
-  // Validar datos al ANULAR salida
   validarAnular(req, res, next) {
     const { usuariomodificacion } = req.body;
 
@@ -165,13 +147,11 @@ class SalidasMiddleware {
     next();
   }
 
-  // Validar filtros para listar (OPCIONAL - para uso futuro)
   validarFiltros(req, res, next) {
     const { estado, fechaDesde, fechaHasta } = req.query;
 
     const errores = [];
 
-    // Validar estado si viene
     if (estado !== undefined) {
       const estadoNum = parseInt(estado);
       if (isNaN(estadoNum) || (estadoNum !== 0 && estadoNum !== 1)) {
@@ -179,7 +159,6 @@ class SalidasMiddleware {
       }
     }
 
-    // Validar fechas si vienen
     if (fechaDesde) {
       const fecha = new Date(fechaDesde);
       if (isNaN(fecha.getTime())) {
@@ -194,7 +173,6 @@ class SalidasMiddleware {
       }
     }
 
-    // Validar que fechaDesde sea menor que fechaHasta
     if (fechaDesde && fechaHasta) {
       const desde = new Date(fechaDesde);
       const hasta = new Date(fechaHasta);

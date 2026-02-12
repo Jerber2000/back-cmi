@@ -2,14 +2,11 @@
 const { prisma } = require('../config/prisma');
 
 class PacienteService {
-  /**
-   * Obtiene todos los pacientes con paginación, búsqueda y filtro por clínica
-   */
+
   async obtenerTodosLosPacientes(pagina = 1, limite = 10, busqueda = '', fkclinica = null) {
     try {
       const saltar = (parseInt(pagina) - 1) * parseInt(limite);
 
-      // Construir condición de búsqueda
       const condicionBusqueda = busqueda ? {
         OR: [
           { nombres: { contains: busqueda, mode: 'insensitive' } },
@@ -18,7 +15,6 @@ class PacienteService {
         ]
       } : {};
 
-      // Construir condición de filtro por clínica
       const condicionClinica = fkclinica ? { fkclinica: parseInt(fkclinica) } : {};
 
       const whereCondition = {
@@ -72,9 +68,6 @@ class PacienteService {
     }
   }
 
-  /**
-   * Obtiene listado simple de pacientes
-   */
   async listadoPacientes() {
     try {
       const pacienteListado = await prisma.paciente.findMany({
@@ -114,9 +107,6 @@ class PacienteService {
     }
   }
 
-  /**
-   * Obtiene un paciente específico por su ID
-   */
   async obtenerPacientePorId(id) {
     try {
       const paciente = await prisma.paciente.findFirst({
@@ -159,9 +149,6 @@ class PacienteService {
     }
   }
 
-  /**
-   * Crea un nuevo paciente en el sistema
-   */
   async crearPaciente(datosPaciente, usuarioCreador, tx = null) {
     try {
 
@@ -187,7 +174,6 @@ class PacienteService {
         fkclinica
       } = datosPaciente;
 
-      // Verificar que el CUI no exista
       const pacienteExistente = await prismaClient.paciente.findUnique({
         where: { cui }
       });
@@ -199,7 +185,6 @@ class PacienteService {
         };
       }
 
-      // Verificar que la clínica existe si se proporciona
       if (fkclinica) {
         const clinicaExiste = await prismaClient.clinica.findFirst({
           where: {
@@ -259,13 +244,10 @@ class PacienteService {
     }
   }
 
-  /**
-   * Actualiza la información de un paciente existente
-   */
   async actualizarPaciente(id, datosActualizacion, usuarioModificador, tx = null) {
     try {
       const prismaClient = tx || prisma;
-      // Verificar que el paciente existe
+      
       const pacienteExistente = await prismaClient.paciente.findFirst({
         where: {
           idpaciente: parseInt(id),
@@ -280,7 +262,6 @@ class PacienteService {
         };
       }
 
-      // Verificar unicidad del CUI si se está actualizando
       if (datosActualizacion.cui && datosActualizacion.cui !== pacienteExistente.cui) {
         const cuiExiste = await prismaClient.paciente.findFirst({
           where: {
@@ -297,7 +278,6 @@ class PacienteService {
         }
       }
 
-      // Verificar que la clínica existe si se proporciona
       if (datosActualizacion.fkclinica) {
         const clinicaExiste = await prismaClient.clinica.findFirst({
           where: {
@@ -314,12 +294,10 @@ class PacienteService {
         }
       }
 
-      // Procesar fecha de nacimiento si está presente
       if (datosActualizacion.fechanacimiento) {
         datosActualizacion.fechanacimiento = new Date(datosActualizacion.fechanacimiento);
       }
 
-      // Convertir fkclinica a entero si existe
       if (datosActualizacion.fkclinica) {
         datosActualizacion.fkclinica = parseInt(datosActualizacion.fkclinica);
       }
@@ -354,13 +332,10 @@ class PacienteService {
     }
   }
 
-  /**
-   * Elimina lógicamente un paciente del sistema
-   */
   async eliminarPaciente(id, usuarioModificador, tx = null) {
     try {
       const prismaClient = tx || prisma;
-      // Verificar que el paciente existe
+      
       const pacienteExistente = await prismaClient.paciente.findFirst({
         where: {
           idpaciente: parseInt(id),
@@ -375,7 +350,6 @@ class PacienteService {
         };
       }
 
-      // Verificar expedientes activos e inactivos por separado
       const [historialCount, expedientesActivos, expedientesInactivos] = await Promise.all([
         prisma.detallehistorialclinico.count({
           where: {
@@ -397,7 +371,6 @@ class PacienteService {
         })
       ]);
 
-      // Solo bloquear si tiene expedientes ACTIVOS o historial médico
       if (historialCount > 0 || expedientesActivos > 0) {
         let mensajeDetallado = 'No se puede eliminar el paciente. ';
 
@@ -423,7 +396,6 @@ class PacienteService {
         };
       }
 
-      // Eliminar lógicamente el paciente
       const pacienteEliminado = await prismaClient.paciente.update({
         where: {
           idpaciente: parseInt(id)
@@ -447,7 +419,6 @@ class PacienteService {
     } catch (error) {
       console.error('Error en eliminarPaciente:', error);
       
-      // Manejar errores específicos de Prisma
       if (error.code === 'P2003') {
         return {
           success: false,
@@ -466,9 +437,6 @@ class PacienteService {
     }
   }
 
-  /**
-   * Obtiene estadísticas básicas de los pacientes
-   */
   async obtenerEstadisticas() {
     try {
       const [
@@ -519,7 +487,6 @@ class PacienteService {
         })
       ]);
 
-      // Obtener nombres de clínicas para las estadísticas
       const clinicasIds = pacientesPorClinica.map(p => p.fkclinica).filter(id => id !== null);
       const clinicas = await prisma.clinica.findMany({
         where: {
@@ -556,9 +523,6 @@ class PacienteService {
     }
   }
 
-  /**
-   * Obtiene la lista de pacientes disponibles para asignación
-   */
   async obtenerPacientesDisponibles() {
     try {
       const pacientesDisponibles = await prisma.paciente.findMany({

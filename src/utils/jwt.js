@@ -1,4 +1,4 @@
-// src/utils/jwt.js
+
 const jwt = require('jsonwebtoken');
 
 const generarToken = (payload) => {

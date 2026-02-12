@@ -2,10 +2,6 @@
 const { prisma } = require('../config/prisma');
 const PDFDocument = require('pdfkit');
 
-// ==========================================
-// FUNCIONES AUXILIARES
-// ==========================================
-
 function calcularEdad(fechaNacimiento) {
   const hoy = new Date();
   const nacimiento = new Date(fechaNacimiento);
@@ -26,7 +22,6 @@ function truncarTexto(texto, maxLength) {
   return texto.substring(0, maxLength - 3) + '...';
 }
 
-// VALIDACIÓN DE FECHAS - CRÍTICO
 function esFechaValida(fecha) {
   if (!fecha || fecha === '' || fecha === null || fecha === undefined) return false;
   const date = new Date(fecha);
@@ -68,7 +63,6 @@ function generarPDFDashboard(doc, data) {
     .text(`  Completadas: ${data.referencias.completadas}`);
 }
 
-// ACTUALIZADO: Tabla de pacientes con TODAS las columnas
 function generarTablaPacientesPDF(doc, datos) {
   const headers = ['Nombre', 'CUI', 'Género', 'Edad', 'F.Nac', 'Tel.Personal', 'Municipio', 'Aldea', 'Dirección'];
   const colWidths = [80, 70, 40, 30, 55, 60, 70, 60, 85];
@@ -180,9 +174,7 @@ function generarTablaPacientesPDF(doc, datos) {
   });
 }
 
-// ACTUALIZADO: Tabla de consultas con campos separados
 function generarTablaConsultasPDF(doc, datos) {
-  // PÁGINA 1: Información básica
   const headers = ['Fecha', 'Paciente', 'F.Nac', 'Médico', 'Clínica'];
   const colWidths = [60, 110, 60, 110, 120];
   const startX = 40;
@@ -233,7 +225,6 @@ function generarTablaConsultasPDF(doc, datos) {
     y += 18;
   });
   
-  // PÁGINA 2: Detalles de consulta
   doc.addPage();
   doc.fontSize(12).font('Helvetica-Bold').text('Detalles de Consultas', 50, 50);
   doc.moveDown(1);
@@ -428,7 +419,6 @@ function generarTablaAgendaPDF(doc, datos) {
   });
 }
 
-// ACTUALIZADO: Tabla de referencias con usuario confirmador y número de expediente
 function generarTablaReferenciasPDF(doc, datos) {
   const headers = ['Fecha', 'Paciente', 'N° Exp.', 'De', 'Para', 'Clínica', 'Estado'];
   const colWidths = [55, 85, 60, 85, 85, 90, 55];
@@ -464,7 +454,6 @@ function generarTablaReferenciasPDF(doc, datos) {
       doc.font('Helvetica').fontSize(6);
     }
 
-    // Usuario que confirmó (confirmacion4)
     const usuarioConfirmador = item.usuarioconfirma4 || 'Pendiente';
 
     const row = [
@@ -507,7 +496,6 @@ function generarPDFTabla(doc, tipoReporte, datosReporte) {
   }
 }
 
-// ACTUALIZADO: Excel Pacientes con todas las columnas
 function generarExcelPacientes(worksheet, datos) {
   worksheet.columns = [
     { header: 'Nombre Completo', key: 'nombre', width: 35 },
@@ -560,7 +548,6 @@ function generarExcelPacientes(worksheet, datos) {
   });
 }
 
-// ACTUALIZADO: Excel Consultas con campos separados
 function generarExcelConsultas(worksheet, datos) {
   worksheet.columns = [
     { header: 'Fecha Consulta', key: 'fecha', width: 18 },
@@ -598,7 +585,6 @@ function generarExcelConsultas(worksheet, datos) {
       diagnostico: item.diagnosticotratamiento || 'Sin diagnóstico'
     });
     
-    // Habilitar wrap text para campos largos
     ['recordatorio', 'notaConsulta', 'motivoConsulta', 'evolucion', 'diagnostico'].forEach(col => {
       row.getCell(col).alignment = { wrapText: true, vertical: 'top' };
     });
@@ -682,7 +668,6 @@ function generarExcelAgenda(worksheet, datos) {
   });
 }
 
-// ACTUALIZADO: Excel Referencias con usuario confirmador y número de expediente
 function generarExcelReferencias(worksheet, datos) {
   worksheet.columns = [
     { header: 'Fecha', key: 'fecha', width: 18 },
@@ -702,7 +687,6 @@ function generarExcelReferencias(worksheet, datos) {
   };
 
   datos.data.forEach(item => {
-    // Usuario que confirmó la referencia (confirmacion4)
     const usuarioConfirmador = item.usuarioconfirma4 || 'Pendiente de confirmación';
     
     worksheet.addRow({
@@ -716,10 +700,6 @@ function generarExcelReferencias(worksheet, datos) {
     });
   });
 }
-
-// ==========================================
-// SERVICIO PRINCIPAL
-// ==========================================
 
 const reporteriaService = {
 
@@ -825,7 +805,6 @@ const reporteriaService = {
         })
       ]);
 
-      // 🆕 NUEVO - SALIDAS DE INVENTARIO
       const hace30Dias = new Date();
       hace30Dias.setDate(hace30Dias.getDate() - 30);
 
@@ -892,7 +871,6 @@ const reporteriaService = {
     }
   },
 
-  // ACTUALIZADO: Incluir todos los campos del paciente
   async obtenerReportePacientes(filtros) {
     try {
       const { desde, hasta, genero, municipio, edadMin, edadMax, tipodiscapacidad, page, limit } = filtros;
@@ -974,7 +952,6 @@ const reporteriaService = {
     }
   },
 
-  // ACTUALIZADO: Incluir clínica y campos separados
   async obtenerReporteConsultas(filtros, usuario) {
     try {
       const { desde, hasta, medico, paciente, diagnostico, page, limit } = filtros;
@@ -1229,7 +1206,6 @@ const reporteriaService = {
     }
   },
 
-  // ACTUALIZADO: Incluir número de expediente y usuario confirmador
   async obtenerReporteReferencias(filtros, usuario) {
     try {
       const { tipo, estado, clinica, medico, desde, hasta, page, limit } = filtros;
@@ -1427,26 +1403,18 @@ const reporteriaService = {
       throw error;
     }
   },
-  // =====================================================
-// 🆕 AGREGAR ESTO AL FINAL DE reporteriaService.js
-// =====================================================
-
-/**
- * Obtener datos de salidas para el dashboard (últimos 30 días)
- */
+  
 async obtenerDatosSalidasDashboard() {
   try {
     const hace30Dias = new Date();
     hace30Dias.setDate(hace30Dias.getDate() - 30);
 
-    // Total de salidas del mes
     const totalMes = await prisma.salidasinventario.count({
       where: {
         fechacreacion: { gte: hace30Dias }
       }
     });
 
-    // Total unidades despachadas del mes (solo activas)
     const unidadesMes = await prisma.salidasinventario.aggregate({
       where: {
         fechacreacion: { gte: hace30Dias },
@@ -1455,7 +1423,6 @@ async obtenerDatosSalidasDashboard() {
       _sum: { cantidad: true }
     });
 
-    // Totales generales
     const activas = await prisma.salidasinventario.count({
       where: { estado: 1 }
     });
@@ -1477,15 +1444,12 @@ async obtenerDatosSalidasDashboard() {
   }
 },
 
-/**
- * Obtener reporte completo de salidas con filtros
- */
 async obtenerReporteSalidas(filtros, usuario) {
   try {
     const {
       desde,
       hasta,
-      estado, // 'activas' | 'anuladas' | 'todas'
+      estado, 
       medicamento,
       usuarioFiltro,
       motivo,
@@ -1494,34 +1458,28 @@ async obtenerReporteSalidas(filtros, usuario) {
       limit = 10
     } = filtros;
 
-    // Construir WHERE clause
     const where = {};
 
-    // Filtro por fechas
     if (desde || hasta) {
       where.fechasalida = {};
       if (desde) where.fechasalida.gte = new Date(desde);
       if (hasta) where.fechasalida.lte = new Date(hasta);
     }
 
-    // Filtro por estado
     if (estado === 'activas') {
       where.estado = 1;
     } else if (estado === 'anuladas') {
       where.estado = 0;
     }
 
-    // Filtro por medicamento
     if (medicamento) {
       where.fkmedicina = parseInt(medicamento);
     }
 
-    // Filtro por usuario
     if (usuarioFiltro) {
       where.fkusuario = parseInt(usuarioFiltro);
     }
 
-    // Filtro por motivo
     if (motivo) {
       where.motivo = {
         contains: motivo,
@@ -1529,7 +1487,6 @@ async obtenerReporteSalidas(filtros, usuario) {
       };
     }
 
-    // Filtro por destino
     if (destino) {
       where.destino = {
         contains: destino,
@@ -1537,11 +1494,9 @@ async obtenerReporteSalidas(filtros, usuario) {
       };
     }
 
-    // Paginación
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const take = parseInt(limit);
 
-    // Obtener salidas
     const [salidas, total] = await Promise.all([
       prisma.salidasinventario.findMany({
         where,
@@ -1571,7 +1526,6 @@ async obtenerReporteSalidas(filtros, usuario) {
       prisma.salidasinventario.count({ where })
     ]);
 
-    // Calcular resumen
     const estadisticas = await prisma.salidasinventario.aggregate({
       where,
       _count: { idsalida: true },

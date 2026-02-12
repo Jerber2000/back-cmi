@@ -1,7 +1,4 @@
-// src/middlewares/validationInventario.js
-
 class InventarioMiddleware {
-  // Validar ID en parámetros
   validarId(req, res, next) {
     const { id } = req.params;
     
@@ -24,12 +21,10 @@ class InventarioMiddleware {
     next();
   }
 
-  // Validar datos al CREAR
   validarCrear(req, res, next) {
     const { fkusuario, nombre, codigoproducto, usuariocreacion } = req.body;
     const errores = [];
 
-    // Campos obligatorios
     if (!fkusuario || fkusuario <= 0) {
       errores.push('El campo fkusuario es obligatorio y debe ser mayor a 0');
     }
@@ -46,7 +41,6 @@ class InventarioMiddleware {
       errores.push('El campo usuariocreacion es obligatorio');
     }
 
-    // Validación de código de producto (opcional pero con formato)
     if (codigoproducto) {
       if (codigoproducto.trim() === '') {
         errores.push('El código de producto no puede estar vacío');
@@ -56,7 +50,6 @@ class InventarioMiddleware {
       }
     }
 
-    // Validaciones opcionales
     if (req.body.unidades !== undefined && req.body.unidades < 0) {
       errores.push('Las unidades no pueden ser negativas');
     }
@@ -76,7 +69,6 @@ class InventarioMiddleware {
     next();
   }
 
-  // Validar datos al ACTUALIZAR
   validarActualizar(req, res, next) {
     const { nombre, codigoproducto, usuariomodificacion } = req.body;
     const errores = [];
@@ -93,7 +85,6 @@ class InventarioMiddleware {
       errores.push('El campo usuariomodificacion es obligatorio');
     }
 
-    // Validación de código de producto (opcional pero con formato)
     if (codigoproducto !== undefined && codigoproducto !== null) {
       if (codigoproducto.trim() === '') {
         errores.push('El código de producto no puede estar vacío');
@@ -122,7 +113,6 @@ class InventarioMiddleware {
     next();
   }
 
-  // Validar cambio de estado
   validarCambiarEstado(req, res, next) {
     const { usuariomodificacion } = req.body;
 

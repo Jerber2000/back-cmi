@@ -1,17 +1,12 @@
-// controllers/historialMedicoController.js
 const historialService = require('../services/historialMedicoService');
 const { fileService } = require('../services/fileService');
 const { conAuditoria } = require('../utils/auditoria.helper');
 
 class HistorialMedicoController {
 
-  /**
-   * Obtiene historial de un paciente
-   */
   async obtenerHistorialPorPaciente(req, res) {
     try {
       const { idpaciente } = req.params;
-      console.log('🔍 Controller: Obteniendo historial para paciente ID:', idpaciente);
       
       const resultado = await historialService.obtenerHistorialPorPaciente(idpaciente);
 
@@ -19,11 +14,10 @@ class HistorialMedicoController {
         return res.status(404).json(resultado);
       }
 
-      console.log(`✅ Controller: ${resultado.total} registros encontrados`);
       return res.status(200).json(resultado);
 
     } catch (error) {
-      console.error('❌ Controller: Error al obtener historial:', error);
+      console.error('Controller: Error al obtener historial:', error);
       return res.status(500).json({
         success: false,
         message: 'Error al obtener historial médico',
@@ -32,13 +26,9 @@ class HistorialMedicoController {
     }
   }
 
-  /**
-   * Obtiene info básica del paciente
-   */
   async obtenerInfoPaciente(req, res) {
     try {
       const { idpaciente } = req.params;
-      console.log('🔍 Controller: Obteniendo info del paciente ID:', idpaciente);
 
       const resultado = await historialService.obtenerInfoPaciente(idpaciente);
 
@@ -46,11 +36,10 @@ class HistorialMedicoController {
         return res.status(404).json(resultado);
       }
 
-      console.log('✅ Controller: Paciente encontrado');
       return res.status(200).json(resultado);
 
     } catch (error) {
-      console.error('❌ Controller: Error al obtener paciente:', error);
+      console.error('Controller: Error al obtener paciente:', error);
       return res.status(500).json({
         success: false,
         message: 'Error al obtener información del paciente',
@@ -59,25 +48,13 @@ class HistorialMedicoController {
     }
   }
 
-  /**
-   * Crea nueva sesión
-   */
   async crearSesion(req, res) {
     try {
       const datos = req.body;
       const usuarioCreador = req.usuario?.usuario || req.usuario?.nombres || 'Sistema';
       
-      // ✅ Obtener fkclinica del usuario autenticado
       const fkclinicaUsuario = req.usuario?.fkclinica || null;
 
-      console.log('🆕 Controller: Creando nueva sesión para paciente:', datos.fkpaciente);
-      console.log('🏥 Controller: fkclinica del usuario autenticado:', fkclinicaUsuario);
-
-      // ✅ Pasar fkclinica del usuario al service
-      // const resultado = await historialService.crearSesion(
-      //   { ...datos, fkclinicaUsuario }, 
-      //   usuarioCreador
-      // );
       const resultado = await conAuditoria(req, 'Hisorial Clinico', async (tx) => {
         return await historialService.crearSesion(
           { ...datos, fkclinicaUsuario },
@@ -90,11 +67,10 @@ class HistorialMedicoController {
         return res.status(400).json(resultado);
       }
 
-      console.log('✅ Controller: Sesión creada con ID:', resultado.data.idhistorial);
       return res.status(201).json(resultado);
 
     } catch (error) {
-      console.error('❌ Controller: Error al crear sesión:', error);
+      console.error('Controller: Error al crear sesión:', error);
       return res.status(500).json({
         success: false,
         message: 'Error al crear sesión de historial médico',
@@ -103,22 +79,12 @@ class HistorialMedicoController {
     }
   }
 
-  /**
-   * Actualiza sesión existente
-   */
   async actualizarSesion(req, res) {
     try {
       const { idhistorial } = req.params;
       const datos = req.body;
       const usuarioModificador = req.usuario?.usuario || req.usuario?.nombres || 'Sistema';
 
-      console.log('🔄 Controller: Actualizando sesión ID:', idhistorial);
-
-      // const resultado = await historialService.actualizarSesion(
-      //   idhistorial, 
-      //   datos, 
-      //   usuarioModificador
-      // );
       const resultado = await conAuditoria(req, 'Historial Clinico', async (tx) => {
         return await historialService.actualizarSesion(
           idhistorial,
@@ -132,11 +98,10 @@ class HistorialMedicoController {
         return res.status(404).json(resultado);
       }
 
-      console.log('✅ Controller: Sesión actualizada correctamente');
       return res.status(200).json(resultado);
 
     } catch (error) {
-      console.error('❌ Controller: Error al actualizar sesión:', error);
+      console.error('Controller: Error al actualizar sesión:', error);
       return res.status(500).json({
         success: false,
         message: 'Error al actualizar sesión',
@@ -145,17 +110,10 @@ class HistorialMedicoController {
     }
   }
 
-  /**
-   * Elimina sesión
-   */
   async eliminarSesion(req, res) {
     try {
       const { idhistorial } = req.params;
       const usuarioModificador = req.usuario?.usuario || 'Sistema';
-
-      console.log('🗑️ Controller: Eliminando sesión ID:', idhistorial);
-
-      //const resultado = await historialService.eliminarSesion(idhistorial, usuarioModificador);
 
       const resultado = await conAuditoria(req, 'Historial Clinico', async (tx) => {
         return await historialService.eliminarSesion(
@@ -169,11 +127,10 @@ class HistorialMedicoController {
         return res.status(404).json(resultado);
       }
 
-      console.log('✅ Controller: Sesión eliminada correctamente');
       return res.status(200).json(resultado);
 
     } catch (error) {
-      console.error('❌ Controller: Error al eliminar sesión:', error);
+      console.error('Controller: Error al eliminar sesión:', error);
       return res.status(500).json({
         success: false,
         message: 'Error al eliminar sesión',
@@ -182,16 +139,11 @@ class HistorialMedicoController {
     }
   }
 
-  /**
-   * Actualiza ruta de archivos de una sesión
-   */
   async actualizarSesionConArchivos(req, res) {
     try {
       const { idhistorial } = req.params;
       const { rutaarchivos } = req.body;
       const usuarioModificador = req.usuario?.usuario || req.usuario?.nombres || 'Sistema';
-
-      console.log('🔄 Controller: Actualizando archivos para sesión ID:', idhistorial);
 
       const resultado = await historialService.actualizarRutaArchivos(
         idhistorial, 
@@ -203,11 +155,10 @@ class HistorialMedicoController {
         return res.status(404).json(resultado);
       }
 
-      console.log('✅ Controller: Archivos actualizados correctamente');
       return res.status(200).json(resultado);
 
     } catch (error) {
-      console.error('❌ Controller: Error al actualizar archivos de sesión:', error);
+      console.error('Controller: Error al actualizar archivos de sesión:', error);
       return res.status(500).json({
         success: false,
         message: 'Error al actualizar archivos',
@@ -216,13 +167,9 @@ class HistorialMedicoController {
     }
   }
 
-  /**
-   * Obtiene archivos de una sesión específica
-   */
   async obtenerArchivosSesion(req, res) {
     try {
       const { idhistorial } = req.params;
-      console.log('📎 Controller: Obteniendo archivos para sesión ID:', idhistorial);
 
       const resultado = await historialService.obtenerArchivosSesion(idhistorial);
 
@@ -230,11 +177,10 @@ class HistorialMedicoController {
         return res.status(404).json(resultado);
       }
 
-      console.log(`✅ Controller: ${resultado.total} archivos encontrados`);
       return res.status(200).json(resultado);
 
     } catch (error) {
-      console.error('❌ Controller: Error al obtener archivos:', error);
+      console.error('Controller: Error al obtener archivos:', error);
       return res.status(500).json({
         success: false,
         message: 'Error al obtener archivos',
@@ -243,15 +189,10 @@ class HistorialMedicoController {
     }
   }
 
-  /**
-   * Sube archivos para historial médico
-   */
   async subirArchivos(req, res) {
     try {
       const { idpaciente } = req.params;
       const files = req.files;
-
-      console.log('📎 Controller: Subiendo archivos para paciente:', idpaciente);
 
       if (!files || files.length === 0) {
         return res.status(400).json({
@@ -260,7 +201,6 @@ class HistorialMedicoController {
         });
       }
 
-      // Verificar que el paciente existe usando el service
       const pacienteExiste = await historialService.validarPacienteExiste(idpaciente);
       
       if (!pacienteExiste) {
@@ -301,8 +241,6 @@ class HistorialMedicoController {
         }
       }
 
-      console.log(`✅ Controller: ${archivosSubidos.length} de ${files.length} archivos subidos`);
-
       return res.status(201).json({
         success: true,
         message: `${archivosSubidos.length} archivo(s) subido(s) correctamente`,
@@ -315,7 +253,7 @@ class HistorialMedicoController {
       });
 
     } catch (error) {
-      console.error('❌ Controller: Error al subir archivos:', error);
+      console.error('Controller: Error al subir archivos:', error);
       return res.status(500).json({
         success: false,
         message: 'Error al subir archivos',

@@ -2,14 +2,10 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
 
-// Ruta base desde .env o por defecto
 const BASE_UPLOAD_PATH = process.env.UPLOAD_BASE_PATH;
 
 class FileService {
 
-  /**
-   * Asegura que el directorio existe
-   */
   async ensureDirectoryExists(dirPath) {
     try {
       await fs.access(dirPath);
@@ -18,9 +14,6 @@ class FileService {
     }
   }
 
-  /**
-   * Genera nombre único para archivo
-   */
   generateUniqueFileName(originalName) {
     const timestamp = Date.now();
     const random = Math.round(Math.random() * 1E9);
@@ -31,35 +24,31 @@ class FileService {
 
   /**
    * Sube archivos a una ruta específica
-   * @param {string} uploadPath - Ruta relativa (ej: "usuarios/fotos") 
-   * @param {Object} files - Archivos { fieldName: File }
+   * @param {string} uploadPath - Ruta relativa 
+   * @param {Object} files - Archivos 
    * @returns {Object} Rutas relativas para guardar en BD
    */
   async uploadFiles(uploadPath, files) {
     const savedFiles = {};
 
     try {
-      // Crear directorio
       const fullUploadPath = path.join(BASE_UPLOAD_PATH, uploadPath);
       await this.ensureDirectoryExists(fullUploadPath);
 
-      // Procesar cada archivo
       for (const [fieldName, file] of Object.entries(files)) {
         if (!file) continue;
 
-        // Generar nombre único
         const uniqueFileName = this.generateUniqueFileName(file.originalname);
         const fullFilePath = path.join(fullUploadPath, uniqueFileName);
         const relativeFilePath = path.join(uploadPath, uniqueFileName);
 
-        // Mover archivo (multer ya lo guardó temporalmente)
         if (file.path) {
           await fs.rename(file.path, fullFilePath);
         } else {
           await fs.writeFile(fullFilePath, file.buffer);
         }
 
-        savedFiles[fieldName] = relativeFilePath.replace(/\\/g, '/'); // Normalizar separadores
+        savedFiles[fieldName] = relativeFilePath.replace(/\\/g, '/'); 
       }
 
       return savedFiles;
@@ -70,11 +59,8 @@ class FileService {
     }
   }
 
-  /**
-   * Crea middleware de multer
-   */
   createGenericMiddleware(allowedTypes = ['image', 'document'], maxFiles = 10) {
-    const self = this; // Para acceder a 'this' dentro de las funciones
+    const self = this;
 
     const storage = multer.diskStorage({
       destination: async (req, file, cb) => {
@@ -119,9 +105,6 @@ class FileService {
     });
   }
 
-  /**
-   * Elimina archivo
-   */
   async deleteFile(relativePath) {
     try {
       const fullPath = path.join(BASE_UPLOAD_PATH, relativePath);
@@ -133,14 +116,10 @@ class FileService {
     }
   }
 
-  /**
-   * Obtiene ruta completa
-   */
   getFullPath(relativePath) {
     return path.join(BASE_UPLOAD_PATH, relativePath);
   }
 }
 
-// Exportar instancia única
 const fileService = new FileService();
 module.exports = { fileService };

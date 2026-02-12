@@ -1,15 +1,11 @@
-// src/middlewares/validarReporteria.js
-
 const validarReporteria = {
 
-  // Validar filtros para reporte de pacientes
   validarFiltrosPacientes: (req, res, next) => {
     try {
       const { desde, hasta, genero, edadMin, edadMax, page, limit } = req.query;
 
       const errores = [];
 
-      // Validar fechas si vienen
       if (desde && !isValidDate(desde)) {
         errores.push('Formato de fecha "desde" inválido. Use YYYY-MM-DD');
       }
@@ -17,17 +13,14 @@ const validarReporteria = {
         errores.push('Formato de fecha "hasta" inválido. Use YYYY-MM-DD');
       }
 
-      // Validar que "hasta" sea mayor que "desde"
       if (desde && hasta && new Date(desde) > new Date(hasta)) {
         errores.push('La fecha "desde" no puede ser mayor que "hasta"');
       }
 
-      // Validar género
       if (genero && !['M', 'F'].includes(genero.toUpperCase())) {
         errores.push('El género debe ser M o F');
       }
 
-      // Validar edades
       if (edadMin && (isNaN(edadMin) || parseInt(edadMin) < 0)) {
         errores.push('edadMin debe ser un número positivo');
       }
@@ -38,7 +31,6 @@ const validarReporteria = {
         errores.push('edadMin no puede ser mayor que edadMax');
       }
 
-      // Validar paginación - LÍMITE AUMENTADO PARA REPORTERÍA
       if (page && (isNaN(page) || parseInt(page) < 1)) {
         errores.push('page debe ser un número mayor a 0');
       }
@@ -66,14 +58,12 @@ const validarReporteria = {
     }
   },
 
-  // Validar filtros para reporte de consultas
   validarFiltrosConsultas: (req, res, next) => {
     try {
       const { desde, hasta, medico, paciente, page, limit } = req.query;
 
       const errores = [];
 
-      // Validar fechas
       if (desde && !isValidDate(desde)) {
         errores.push('Formato de fecha "desde" inválido. Use YYYY-MM-DD');
       }
@@ -84,7 +74,6 @@ const validarReporteria = {
         errores.push('La fecha "desde" no puede ser mayor que "hasta"');
       }
 
-      // Validar IDs
       if (medico && isNaN(medico)) {
         errores.push('El ID de médico debe ser un número');
       }
@@ -92,7 +81,6 @@ const validarReporteria = {
         errores.push('El ID de paciente debe ser un número');
       }
 
-      // Validar paginación - LÍMITE AUMENTADO
       if (page && (isNaN(page) || parseInt(page) < 1)) {
         errores.push('page debe ser un número mayor a 0');
       }
@@ -120,19 +108,16 @@ const validarReporteria = {
     }
   },
 
-  // Validar filtros para reporte de inventario
   validarFiltrosInventario: (req, res, next) => {
     try {
       const { estado, stockMinimo, proximosVencer, usuario, page, limit } = req.query;
 
       const errores = [];
 
-      // Validar estado
       if (estado && !['activo', 'inactivo', 'todos'].includes(estado.toLowerCase())) {
         errores.push('estado debe ser: activo, inactivo o todos');
       }
 
-      // Validar números
       if (stockMinimo && isNaN(stockMinimo)) {
         errores.push('stockMinimo debe ser un número');
       }
@@ -143,7 +128,6 @@ const validarReporteria = {
         errores.push('El ID de usuario debe ser un número');
       }
 
-      // Validar paginación - LÍMITE AUMENTADO
       if (page && (isNaN(page) || parseInt(page) < 1)) {
         errores.push('page debe ser un número mayor a 0');
       }
@@ -171,14 +155,12 @@ const validarReporteria = {
     }
   },
 
-  // Validar filtros para reporte de agenda
   validarFiltrosAgenda: (req, res, next) => {
     try {
       const { desde, hasta, medico, mes, anio, transporte, page, limit } = req.query;
 
       const errores = [];
 
-      // Validar fechas
       if (desde && !isValidDate(desde)) {
         errores.push('Formato de fecha "desde" inválido. Use YYYY-MM-DD');
       }
@@ -189,7 +171,6 @@ const validarReporteria = {
         errores.push('La fecha "desde" no puede ser mayor que "hasta"');
       }
 
-      // Validar mes y año
       if (mes && (isNaN(mes) || parseInt(mes) < 1 || parseInt(mes) > 12)) {
         errores.push('mes debe estar entre 1 y 12');
       }
@@ -197,17 +178,14 @@ const validarReporteria = {
         errores.push('anio debe estar entre 2000 y 2100');
       }
 
-      // Validar IDs
       if (medico && isNaN(medico)) {
         errores.push('El ID de médico debe ser un número');
       }
 
-      // Validar transporte
       if (transporte && !['0', '1'].includes(transporte)) {
         errores.push('transporte debe ser 0 o 1');
       }
-
-      // Validar paginación - LÍMITE AUMENTADO
+      
       if (page && (isNaN(page) || parseInt(page) < 1)) {
         errores.push('page debe ser un número mayor a 0');
       }
@@ -235,24 +213,20 @@ const validarReporteria = {
     }
   },
 
-  // Validar filtros para reporte de referencias
   validarFiltrosReferencias: (req, res, next) => {
     try {
       const { tipo, estado, clinica, medico, desde, hasta, page, limit } = req.query;
 
       const errores = [];
 
-      // Validar tipo
       if (tipo && !['enviadas', 'recibidas', 'todos'].includes(tipo.toLowerCase())) {
         errores.push('tipo debe ser: enviadas, recibidas o todos');
       }
 
-      // Validar estado
       if (estado && !['pendiente', 'proceso', 'completado', 'todos'].includes(estado.toLowerCase())) {
         errores.push('estado debe ser: pendiente, proceso, completado o todos');
       }
 
-      // Validar fechas
       if (desde && !isValidDate(desde)) {
         errores.push('Formato de fecha "desde" inválido. Use YYYY-MM-DD');
       }
@@ -263,7 +237,6 @@ const validarReporteria = {
         errores.push('La fecha "desde" no puede ser mayor que "hasta"');
       }
 
-      // Validar IDs
       if (clinica && isNaN(clinica)) {
         errores.push('El ID de clínica debe ser un número');
       }
@@ -271,7 +244,6 @@ const validarReporteria = {
         errores.push('El ID de médico debe ser un número');
       }
 
-      // Validar paginación - LÍMITE AUMENTADO
       if (page && (isNaN(page) || parseInt(page) < 1)) {
         errores.push('page debe ser un número mayor a 0');
       }
@@ -305,7 +277,6 @@ const validarReporteria = {
 
       const errores = [];
 
-      // Validar fechas
       if (desde && !isValidDate(desde)) {
         errores.push('Formato de fecha "desde" inválido. Use YYYY-MM-DD');
       }
@@ -316,12 +287,10 @@ const validarReporteria = {
         errores.push('La fecha "desde" no puede ser mayor que "hasta"');
       }
 
-      // Validar estado
       if (estado && !['activas', 'anuladas', 'todas'].includes(estado.toLowerCase())) {
         errores.push('estado debe ser: activas, anuladas o todas');
       }
 
-      // Validar IDs
       if (medicamento && isNaN(medicamento)) {
         errores.push('El ID de medicamento debe ser un número');
       }
@@ -329,7 +298,6 @@ const validarReporteria = {
         errores.push('El ID de usuario debe ser un número');
       }
 
-      // Validar paginación
       if (page && (isNaN(page) || parseInt(page) < 1)) {
         errores.push('page debe ser un número mayor a 0');
       }
@@ -357,7 +325,6 @@ const validarReporteria = {
     }
   },
 
-  // Validar generación de PDF
   validarGeneracionPDF: (req, res, next) => {
     try {
       const { tipoReporte, filtros } = req.body;
@@ -397,7 +364,6 @@ const validarReporteria = {
     }
   },
 
-  // Validar exportación a Excel
   validarExportacionExcel: (req, res, next) => {
     try {
       const { tipoReporte, filtros } = req.body;
@@ -439,7 +405,6 @@ const validarReporteria = {
 
 };
 
-// Función auxiliar para validar fechas
 function isValidDate(dateString) {
   const regex = /^\d{4}-\d{2}-\d{2}$/;
   if (!regex.test(dateString)) return false;

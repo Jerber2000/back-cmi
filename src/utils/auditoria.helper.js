@@ -1,11 +1,9 @@
-// src/utils/auditoria.helper.js
 
 const { auditoriaStorage } = require('./auditoria.storage');
 
 async function conAuditoria(req, modulo, callback) {
   const { prisma } = require('../config/prisma');
   
-  // Obtener IP real del usuario (incluso detrás de proxies)
   let ipAddress = 
     req.headers['x-forwarded-for']?.split(',')[0].trim() ||
     req.headers['x-real-ip'] ||
@@ -15,7 +13,6 @@ async function conAuditoria(req, modulo, callback) {
     req.socket?.remoteAddress ||
     null;
   
-  // Convertir ::1 a 127.0.0.1 en desarrollo
   if (ipAddress === '::1' || ipAddress === '::ffff:127.0.0.1') {
     ipAddress = '127.0.0.1';
   }
@@ -28,8 +25,6 @@ async function conAuditoria(req, modulo, callback) {
     modulo: modulo
   };
   
-  // 🔥 Ejecutar la transacción dentro del storage
-  // AsyncLocalStorage automáticamente aísla el contexto por petición
   return await auditoriaStorage.run(contexto, async () => {
     return await prisma.$transaction(async (tx) => {
       return await callback(tx);

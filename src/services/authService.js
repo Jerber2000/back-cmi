@@ -36,17 +36,15 @@ class AuthService{
                 throw new Error('Credenciales inválidas');
             }
 
-            // ✅ VERIFICAR SI YA HAY UNA SESIÓN ACTIVA
+            // VERIFICAR SI YA HAY UNA SESIÓN ACTIVA
             if (usuario.last_login_timestamp) {
                 const timestampBD = Number(usuario.last_login_timestamp);
                 const ahora = Date.now();
                 const tiempoTranscurrido = ahora - timestampBD;
                 
-                // Tiempo de expiración en milisegundos (3 horas por defecto)
                 const horasExpiracion = parseInt(process.env.JWT_EXPIRES_IN) || 3;
                 const TIEMPO_EXPIRACION = horasExpiracion * 60 * 60 * 1000;
                 
-                // Si la sesión aún no ha expirado, bloquear el login
                 if (tiempoTranscurrido < TIEMPO_EXPIRACION) {
                     throw new Error(
                         `Ya tienes una sesión activa en otro dispositivo. ` +
@@ -55,10 +53,8 @@ class AuthService{
                 }
             }
 
-            // ✅ GENERAR TIMESTAMP ÚNICO para esta sesión
             const timestamp = Date.now();
 
-            //Genera el token con el timestamp
             const token = generarToken({
                 id:             usuario.idusuario,
                 usuario:        usuario.usuario,
@@ -66,11 +62,9 @@ class AuthService{
                 apellido:       usuario.apellidos,
                 rutafotoperfil: usuario.rutafotoperfil,
                 fkrol:          usuario.fkrol,
-                timestamp:      timestamp  // ← Timestamp único de esta sesión
+                timestamp:      timestamp  
             });
 
-            // ✅ GUARDAR el timestamp en la base de datos
-            // Esto invalida cualquier token anterior
             await prisma.usuario.update({
                 where: { idusuario: usuario.idusuario },
                 data: { 
@@ -78,7 +72,6 @@ class AuthService{
                 }
             });
 
-            //Retornar datos (sin la contraseña y sin el timestamp que es BigInt)
             const { clave: _, last_login_timestamp, ...usuarioSinClave } = usuario;
             
             return {
@@ -95,7 +88,6 @@ class AuthService{
         }
     }
 
-    // ✅ NUEVO: Verificar si el timestamp del token coincide con el guardado en BD
     async verificarSesionActiva(idusuario_, timestamp_) {
         try {
             const usuario = await prisma.usuario.findUnique({
@@ -110,13 +102,12 @@ class AuthService{
                 return false;
             }
 
-            // Comparar timestamps (convertir BigInt a Number para comparación)
             const timestampBD = usuario.last_login_timestamp 
                 ? Number(usuario.last_login_timestamp) 
                 : null;
 
             if (!timestampBD || timestampBD !== timestamp_) {
-                return false; // Token desactualizado o no existe
+                return false; 
             }
 
             return true;
@@ -143,33 +134,27 @@ class AuthService{
                 throw new Error('No es necesario cambiar la contraseña');
             }
 
-            // Verificar la contraseña actual (temporal)
             const claveValida = await bcrypt.compare(claveActual_, usuario.clave);
             if (!claveValida) {
                 throw new Error('Contraseña actual incorrecta');
             }
 
-            // Validar que la nueva contraseña no sea igual a la temporal
             const mismaClaveAnterior = await bcrypt.compare(claveNueva_, usuario.clave);
             if (mismaClaveAnterior) {
                 throw new Error('La nueva contraseña debe ser diferente a la temporal');
             }
 
-            // Validar formato de la nueva contraseña
             if (claveNueva_.length < 8 || claveNueva_.length > 12) {
                 throw new Error('La contraseña debe tener entre 8 y 12 caracteres');
             }
 
-            // Validar complejidad de la contraseña (opcional)
             const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/;
             if (!passwordRegex.test(claveNueva_)) {
                 throw new Error('La contraseña debe contener al menos: una mayúscula, una minúscula, un número y un símbolo');
             }
 
-            // Hashear la nueva contraseña
             const hashNuevaClave = await bcrypt.hash(claveNueva_, 10);
 
-            // Actualizar la contraseña y desactivar el flag
             await prisma.usuario.update({
                 where: { 
                     idusuario: usuario.idusuario
@@ -208,7 +193,6 @@ class AuthService{
         }
     }
 
-    // ✅ NUEVO: Cerrar sesión (limpiar timestamp)
     async cerrarSesion(idusuario_) {
         try {
             await prisma.usuario.update({

@@ -1,11 +1,8 @@
-// controllers/pacienteController.js
 const PacienteService = require('../services/pacienteService');
 const { conAuditoria } = require('../utils/auditoria.helper');
 
 class PacienteController {
-  /**
-   * Obtiene todos los pacientes con paginación, búsqueda y filtro por clínica
-   */
+
   static async obtenerTodosLosPacientes(req, res) {
     try {
       const { pagina = 1, limite = 10, busqueda = '', fkclinica = null } = req.query;
@@ -30,7 +27,7 @@ class PacienteController {
         paginacion: resultado.pagination
       });
     } catch (error) {
-      console.error('❌ Error en obtenerTodosLosPacientes:', error);
+      console.error('Error en obtenerTodosLosPacientes:', error);
       res.status(500).json({
         exito: false,
         mensaje: 'Error interno del servidor',
@@ -39,9 +36,6 @@ class PacienteController {
     }
   }
 
-  /**
-   * Obtiene listado simple de pacientes
-   */
   static async listadoPacientes(req, res) {
     try {
       const resultado = await PacienteService.listadoPacientes();
@@ -58,7 +52,7 @@ class PacienteController {
         datos: resultado.data
       });
     } catch (error) {
-      console.error('❌ Error en listadoPacientes:', error);
+      console.error('Error en listadoPacientes:', error);
       res.status(500).json({
         exito: false,
         mensaje: 'Error interno del servidor',
@@ -67,9 +61,6 @@ class PacienteController {
     }
   }
 
-  /**
-   * Obtiene un paciente específico por su ID
-   */
   static async obtenerPacientePorId(req, res) {
     try {
       const { id } = req.params;
@@ -88,7 +79,7 @@ class PacienteController {
         datos: resultado.data
       });
     } catch (error) {
-      console.error('❌ Error en obtenerPacientePorId:', error);
+      console.error('Error en obtenerPacientePorId:', error);
       res.status(500).json({
         exito: false,
         mensaje: 'Error interno del servidor',
@@ -97,16 +88,12 @@ class PacienteController {
     }
   }
 
-  /**
-   * Crea un nuevo paciente en el sistema
-   */
   static async crearPaciente(req, res) {
     try {
       const usuario = req.usuario?.usuario || 'sistema';
       const datosPaciente = req.body;
 
       const resultado = await conAuditoria(req, 'pacientes', async (tx) => {
-        // Llamar al service pasándole la transacción
         return await PacienteService.crearPaciente(datosPaciente, usuario, tx);
       });
 
@@ -123,7 +110,7 @@ class PacienteController {
         datos: resultado.data
       });
     } catch (error) {
-      console.error('❌ Error en crearPaciente:', error);
+      console.error('Error en crearPaciente:', error);
       res.status(500).json({
         exito: false,
         mensaje: 'Error interno del servidor',
@@ -132,9 +119,6 @@ class PacienteController {
     }
   }
 
-  /**
-   * Actualiza la información de un paciente existente
-   */
   static async actualizarPaciente(req, res) {
     try {
       const { id } = req.params;
@@ -164,7 +148,7 @@ class PacienteController {
         datos: resultado.data
       });
     } catch (error) {
-      console.error('❌ Error en actualizarPaciente:', error);
+      console.error('Error en actualizarPaciente:', error);
       res.status(500).json({
         exito: false,
         mensaje: 'Error interno del servidor',
@@ -173,9 +157,6 @@ class PacienteController {
     }
   }
 
-  /**
-   * Elimina lógicamente un paciente del sistema
-   */
   static async eliminarPaciente(req, res) {
     try {
       const { id } = req.params;
@@ -194,15 +175,13 @@ class PacienteController {
         });
       }
 
-      console.log('✅ Paciente eliminado exitosamente');
-
       res.json({
         exito: true,
         mensaje: resultado.message,
         datos: resultado.data
       });
     } catch (error) {
-      console.error('❌ Error en eliminarPaciente:', error);
+      console.error('Error en eliminarPaciente:', error);
       res.status(500).json({
         exito: false,
         mensaje: 'Error interno del servidor al eliminar paciente',
@@ -211,9 +190,6 @@ class PacienteController {
     }
   }
 
-  /**
-   * Obtiene estadísticas básicas de los pacientes
-   */
   static async obtenerEstadisticas(req, res) {
     try {
       const resultado = await PacienteService.obtenerEstadisticas();
@@ -230,7 +206,7 @@ class PacienteController {
         datos: resultado.data
       });
     } catch (error) {
-      console.error('❌ Error en obtenerEstadisticas:', error);
+      console.error('Error en obtenerEstadisticas:', error);
       res.status(500).json({
         exito: false,
         mensaje: 'Error interno del servidor',
@@ -239,9 +215,6 @@ class PacienteController {
     }
   }
 
-  /**
-   * Obtiene la lista de pacientes disponibles para asignación
-   */
   static async obtenerPacientesDisponibles(req, res) {
     try {
       const resultado = await PacienteService.obtenerPacientesDisponibles();
@@ -258,7 +231,7 @@ class PacienteController {
         datos: resultado.data
       });
     } catch (error) {
-      console.error('❌ Error en obtenerPacientesDisponibles:', error);
+      console.error('Error en obtenerPacientesDisponibles:', error);
       res.status(500).json({
         exito: false,
         mensaje: 'Error interno del servidor',

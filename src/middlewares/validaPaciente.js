@@ -1,9 +1,5 @@
-// middlewares/validaPaciente.js
 const { body, param, validationResult } = require('express-validator');
 
-/**
- * Middleware para manejar errores de validación
- */
 const manejarErroresValidacion = (req, res, next) => {
     const errores = validationResult(req);
     if (!errores.isEmpty()) {
@@ -16,11 +12,7 @@ const manejarErroresValidacion = (req, res, next) => {
     next();
 };
 
-/**
- * Validaciones para crear y actualizar pacientes
- */
 const validarPaciente = [
-    // Información personal básica
     body('nombres')
         .notEmpty()
         .withMessage('Los nombres son obligatorios')
@@ -37,7 +29,6 @@ const validarPaciente = [
         .matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/)
         .withMessage('Los apellidos solo pueden contener letras y espacios'),
 
-    // Documento de identificación
     body('cui')
         .notEmpty()
         .withMessage('El CUI es obligatorio')
@@ -46,7 +37,6 @@ const validarPaciente = [
         .isNumeric()
         .withMessage('El CUI debe contener solo números'),
 
-    // Fecha de nacimiento
     body('fechanacimiento')
         .notEmpty()
         .withMessage('La fecha de nacimiento es obligatoria')
@@ -67,20 +57,17 @@ const validarPaciente = [
             return true;
         }),
 
-    // Género
     body('genero')
         .notEmpty()
         .withMessage('El género es obligatorio')
         .isIn(['M', 'F'])
         .withMessage('El género debe ser M (Masculino) o F (Femenino)'),
 
-    // ✅ NUEVA VALIDACIÓN: Clínica (opcional)
     body('fkclinica')
         .optional({ nullable: true, checkFalsy: true })
         .isInt({ min: 1 })
         .withMessage('El ID de clínica debe ser un número entero válido'),
 
-    // Información médica
     body('tipoconsulta')
         .optional({ nullable: true, checkFalsy: true })
         .isLength({ max: 100 })
@@ -91,7 +78,6 @@ const validarPaciente = [
         .isLength({ max: 150 })
         .withMessage('El tipo de discapacidad no puede exceder 150 caracteres'),
 
-    // Información de contacto personal
     body('telefonopersonal')
         .optional({ nullable: true, checkFalsy: true })
         .matches(/^[0-9+\-\s()]*$/)
@@ -99,7 +85,6 @@ const validarPaciente = [
         .isLength({ max: 20 })
         .withMessage('El teléfono personal no puede exceder 20 caracteres'),
 
-    // Contacto de emergencia
     body('nombrecontactoemergencia')
         .optional({ nullable: true, checkFalsy: true })
         .isLength({ max: 150 })
@@ -114,7 +99,6 @@ const validarPaciente = [
         .isLength({ max: 20 })
         .withMessage('El teléfono de emergencia no puede exceder 20 caracteres'),
 
-    // Información del encargado/responsable
     body('nombreencargado')
         .optional({ nullable: true, checkFalsy: true })
         .isLength({ max: 150 })
@@ -136,7 +120,6 @@ const validarPaciente = [
         .isLength({ max: 20 })
         .withMessage('El teléfono del encargado no puede exceder 20 caracteres'),
 
-    // Información de ubicación
     body('municipio')
         .optional({ nullable: true, checkFalsy: true })
         .isLength({ max: 100 })
@@ -155,9 +138,6 @@ const validarPaciente = [
     manejarErroresValidacion
 ];
 
-/**
- * Validación para parámetros de ID de paciente
- */
 const validarIdPaciente = [
     param('id')
         .isInt({ min: 1 })
@@ -165,12 +145,7 @@ const validarIdPaciente = [
     manejarErroresValidacion
 ];
 
-/**
- * Validaciones específicas para actualización de paciente
- * (permite campos opcionales que son requeridos en creación)
- */
 const validarActualizacionPaciente = [
-    // Información personal básica (opcional en actualización)
     body('nombres')
         .optional()
         .isLength({ min: 2, max: 100 })
@@ -185,7 +160,6 @@ const validarActualizacionPaciente = [
         .matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/)
         .withMessage('Los apellidos solo pueden contener letras y espacios'),
 
-    // CUI (opcional en actualización)
     body('cui')
         .optional()
         .isLength({ min: 13, max: 13 })
@@ -193,7 +167,6 @@ const validarActualizacionPaciente = [
         .isNumeric()
         .withMessage('El CUI debe contener solo números'),
 
-    // Fecha de nacimiento (opcional en actualización)
     body('fechanacimiento')
         .optional()
         .isISO8601()
@@ -213,19 +186,16 @@ const validarActualizacionPaciente = [
             return true;
         }),
 
-    // Género (opcional en actualización)
     body('genero')
         .optional()
         .isIn(['M', 'F'])
         .withMessage('El género debe ser M (Masculino) o F (Femenino)'),
 
-    // ✅ NUEVA VALIDACIÓN: Clínica (opcional en actualización)
     body('fkclinica')
         .optional({ nullable: true, checkFalsy: true })
         .isInt({ min: 1 })
         .withMessage('El ID de clínica debe ser un número entero válido'),
 
-    // El resto de campos mantienen las mismas validaciones que en creación
     body('tipoconsulta')
         .optional({ nullable: true, checkFalsy: true })
         .isLength({ max: 100 })

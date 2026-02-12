@@ -2,9 +2,7 @@
 const { prisma } = require('../config/prisma');
 
 class ExpedienteService {
-  /**
-   * Genera un número de expediente automático único
-   */
+
   async generarNumeroExpediente() {
     try {
       // Obtener el último expediente creado
@@ -54,14 +52,10 @@ class ExpedienteService {
     }
   }
 
-  /**
-   * Obtiene todos los expedientes con paginación, búsqueda y filtro por clínica
-   */
   async obtenerTodosLosExpedientes(pagina = 1, limite = 10, busqueda = '', fkclinica = null) {
     try {
       const saltar = (parseInt(pagina) - 1) * parseInt(limite);
 
-      // Construir condición de búsqueda
       const condicionBusqueda = busqueda ? {
         OR: [
           { numeroexpediente: { contains: busqueda, mode: 'insensitive' } },
@@ -77,7 +71,6 @@ class ExpedienteService {
         ]
       } : {};
 
-      // ✅ NUEVO: Construir condición de filtro por clínica (a través de paciente)
       const condicionClinica = fkclinica ? {
         paciente: {
           fkclinica: parseInt(fkclinica)
@@ -139,9 +132,6 @@ class ExpedienteService {
     }
   }
 
-  /**
-   * Obtiene un expediente específico por su ID
-   */
   async obtenerExpedientePorId(id) {
     try {
       const expediente = await prisma.expediente.findFirst({
@@ -191,9 +181,6 @@ class ExpedienteService {
     }
   }
 
-  /**
-   * Crea un nuevo expediente médico
-   */
   async crearExpediente(datosExpediente, usuarioCreador ,tx = null) {
     try {
       const prismaClient = tx || prisma;
@@ -237,7 +224,6 @@ class ExpedienteService {
         examenfisgmt
       } = datosExpediente;
 
-      // Verificar que el paciente existe
       if (fkpaciente) {
         const pacienteExiste = await prismaClient.paciente.findFirst({
           where: {
@@ -253,7 +239,6 @@ class ExpedienteService {
           };
         }
 
-        // Verificar si el paciente ya tiene un expediente activo
         const expedienteExistente = await prismaClient.expediente.findFirst({
           where: {
             fkpaciente: parseInt(fkpaciente),
@@ -269,14 +254,13 @@ class ExpedienteService {
         }
       }
 
-      // Determinar número de expediente
       let numeroFinal = numeroexpediente;
       
       if (generarAutomatico || !numeroexpediente) {
         const resultado = await this.generarNumeroExpediente();
         numeroFinal = resultado.data.numeroexpediente;
       } else {
-        // Verificar unicidad del número manual
+        
         const existeNumero = await prismaClient.expediente.findUnique({
           where: { numeroexpediente: numeroFinal }
         });
@@ -360,13 +344,10 @@ class ExpedienteService {
     }
   }
 
-  /**
-   * Actualiza un expediente existente
-   */
   async actualizarExpediente(id, datosActualizacion, usuarioModificador, tx = null) {
     try {
       const prismaClient = tx || prisma;
-      // Verificar que el expediente existe
+      
       const expedienteExistente = await prismaClient.expediente.findFirst({
         where: {
           idexpediente: parseInt(id),
@@ -381,7 +362,6 @@ class ExpedienteService {
         };
       }
 
-      // Verificar unicidad del número si se está actualizando
       if (datosActualizacion.numeroexpediente && 
           datosActualizacion.numeroexpediente !== expedienteExistente.numeroexpediente) {
         const numeroExiste = await prismaClient.expediente.findFirst({
@@ -399,12 +379,10 @@ class ExpedienteService {
         }
       }
 
-      // Procesar campos numéricos y fechas
       if (datosActualizacion.gineobsfur) {
         datosActualizacion.gineobsfur = new Date(datosActualizacion.gineobsfur);
       }
 
-      // Convertir campos a sus tipos correctos
       ['antintolerantelactosa', 'gineobsgestas', 'gineobspartos', 'gineobsabortos', 
        'gineobscesareas', 'examenfisfc', 'examenfisfr'].forEach(campo => {
         if (datosActualizacion[campo]) {
@@ -458,13 +436,10 @@ class ExpedienteService {
     }
   }
 
-  /**
-   * Elimina lógicamente un expediente
-   */
   async eliminarExpediente(id, usuarioModificador, tx = null) {
     try {
       const prismaClient = tx || prisma;
-      // Verificar que el expediente existe
+      
       const expedienteExistente = await prismaClient.expediente.findFirst({
         where: {
           idexpediente: parseInt(id),
@@ -479,7 +454,6 @@ class ExpedienteService {
         };
       }
 
-      // Verificar referencias activas
       const [referenciasActivas] = await Promise.all([
         prismaClient.detallereferirpaciente.count({
           where: {
@@ -529,9 +503,6 @@ class ExpedienteService {
     }
   }
 
-  /**
-   * Obtiene expedientes disponibles (sin paciente asignado)
-   */
   async obtenerExpedientesDisponibles() {
     try {
       const expedientesDisponibles = await prisma.expediente.findMany({
@@ -559,9 +530,6 @@ class ExpedienteService {
     }
   }
 
-  /**
-   * Obtiene estadísticas de expedientes
-   */
   async obtenerEstadisticas() {
     try {
       const [
@@ -598,7 +566,6 @@ class ExpedienteService {
         })
       ]);
 
-      // ✅ NUEVO: Obtener conteo por clínica manualmente (sin groupBy vacío)
       const expedientesConClinica = await prisma.expediente.findMany({
         where: {
           estado: 1,
@@ -621,7 +588,6 @@ class ExpedienteService {
         }
       });
 
-      // Agrupar por clínica manualmente
       const porClinica = {};
       expedientesConClinica.forEach(exp => {
         const clinicaId = exp.paciente?.fkclinica;

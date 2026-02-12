@@ -1,6 +1,6 @@
 const usuarioService = require('../services/usuarioService');
 const { conAuditoria } = require('../utils/auditoria.helper');
-//obtener todos los usuario
+
 const obtenerUsuarios = async (req, res) => {
     try{
         const resultado = await usuarioService.obtenerUsuarios();
@@ -19,7 +19,6 @@ const obtenerUsuarios = async (req, res) => {
     }
 };
 
-//obtener usuario por id
 const obtenerUsuarioPorId = async (req, res) => {
     try{
         const { idusuario } = req.params;
@@ -58,12 +57,11 @@ const obtenerUsuarioPorRol = async (req, res) => {
     }
 }
 
-//Creacion nuevo usuario
 const crearUsuario = async (req, res) => {
     try{
         const usuarioData = req.body;
         const usuario = req.usuario?.usuario || 'sistema';
-        //const resultado = await usuarioService.crearUsuario(usuarioData);
+        
         const resultado = await conAuditoria(req, 'usuario', async (tx) =>{
             return await usuarioService.crearUsuario(usuarioData, usuario, tx);
         });
@@ -82,13 +80,12 @@ const crearUsuario = async (req, res) => {
     }
 };
 
-//actualizar usuario
 const actuarlizarUsuario = async (req, res) => {
     try{
         const { idusuario } = req.params;
         const updateData = req.body;
         const usuario = req.usuario?.usuario || 'sistema';
-        //const resultado = await usuarioService.actualizarUsuario(idusuario, updateData);
+        
         const resultado = await conAuditoria(req, 'usuario', async (tx) =>{
             return await usuarioService.actualizarUsuario(idusuario, updateData, usuario, tx);
         });
@@ -107,12 +104,11 @@ const actuarlizarUsuario = async (req, res) => {
     }
 };
 
-//eliminar usuario
 const eliminarUsuario = async (req, res) => {
     try{
         const { idusuario } = req.params;
         const usuario = req.usuario?.usuario || 'sistema';
-        //const resultado = await usuarioService.eliminarUsuario(idusuario);
+        
         const resultado = await conAuditoria(req, 'usuario', async (tx) => {
             return await usuarioService.eliminarUsuario(idusuario, usuario, tx);
         });
@@ -131,7 +127,6 @@ const eliminarUsuario = async (req, res) => {
     }
 };
 
-// Obtener perfil del usuario autenticado
 const obtenerPerfil = async (req, res) => {
     try {
         const idusuario = req.usuario.idusuario;
@@ -151,19 +146,16 @@ const obtenerPerfil = async (req, res) => {
     }
 };
 
-// Actualizar perfil del usuario autenticado
 const actualizarPerfil = async (req, res) => {
     try {
         const idusuario = req.usuario.idusuario;
         const updateData = req.body;
         const usuario = req.usuario?.usuario || 'sistema';
 
-        // Usuarios normales no pueden cambiar su propio role
         if (req.usuario.fkrol !== 1) {
             delete updateData.fkrol;
         }
 
-        //const resultado = await usuarioService.actualizarUsuario(idusuario, updateData);
         const resultado = await conAuditoria(req, 'usuario', async (tx) => {
             return await usuarioService.actualizarUsuario(idusuario, updateData, usuario,tx);
         });

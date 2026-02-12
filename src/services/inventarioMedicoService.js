@@ -2,7 +2,7 @@
 const { prisma } = require('../config/prisma');
 
 class InventarioMedicoService {
-  // Listar TODOS los medicamentos (activos e inactivos)
+  
   async listarTodos() {
     try {
       const medicamentos = await prisma.inventariomedico.findMany({
@@ -26,7 +26,6 @@ class InventarioMedicoService {
     }
   }
 
-  // Obtener un medicamento por ID
   async obtenerPorId(id) {
     try {
       const medicamento = await prisma.inventariomedico.findUnique({
@@ -54,10 +53,9 @@ class InventarioMedicoService {
     }
   }
 
-  // Crear un nuevo medicamento
   async crear(data) {
     try {
-      // Validar que código de producto no exista si se proporciona
+      
       if (data.codigoproducto) {
         const existeCodigo = await prisma.inventariomedico.findUnique({
           where: { codigoproducto: data.codigoproducto }
@@ -98,14 +96,12 @@ class InventarioMedicoService {
     }
   }
 
-  // Actualizar un medicamento
   async actualizar(id, data, tx = null) {
     try {
       const prismaClient = tx || prisma;
-      // Verificar que existe
+      
       await this.obtenerPorId(id);
 
-      // Validar código de producto si se actualiza
       if (data.codigoproducto) {
         const existeCodigo = await prisma.inventariomedico.findFirst({
           where: {
@@ -151,11 +147,9 @@ class InventarioMedicoService {
     }
   }
 
-  // Cambiar estado (activar/desactivar)
   async cambiarEstado(id, usuarioModificacion, tx = null) {
     try {
       const prismaClient = tx || prisma;
-      // Obtener el estado actual
       const medicamento = await this.obtenerPorId(id);
       const nuevoEstado = medicamento.estado === 1 ? 0 : 1;
 
@@ -177,7 +171,6 @@ class InventarioMedicoService {
     }
   }
 
-  // Validar disponibilidad de unidades (útil para salidas)
   async validarDisponibilidad(idmedicina, cantidadSolicitada) {
     try {
       const medicamento = await this.obtenerPorId(idmedicina);

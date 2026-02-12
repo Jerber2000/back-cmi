@@ -19,7 +19,6 @@ const validarToken = async (req, res, next) => {
     try{
         const decoded = verificarToken(token);
         
-        // ✅ VERIFICAR si el timestamp del token coincide con el guardado en BD
         const sesionValida = await authService.verificarSesionActiva(
             decoded.id, 
             decoded.timestamp
@@ -46,7 +45,6 @@ const validarToken = async (req, res, next) => {
 const verificarUsuarioEnBD = async (req, res, next) => {
     
     try{
-        //tomar el id del usuario del token decodificado
         const idusuario = req.usuario.id || req.usuario.idusuario;
         
         if(!idusuario){
@@ -56,7 +54,6 @@ const verificarUsuarioEnBD = async (req, res, next) => {
             });
         }
 
-        //buscar usuario en BD
         const usuario = await prisma.usuario.findFirst({
             where:{
                 idusuario: parseInt(idusuario),

@@ -1,4 +1,4 @@
-// src/routes/inventariomedicoRoutes.js
+
 const { Router } = require('express');
 const inventarioMedicoController = require('../controllers/inventarioMedicoController');
 const inventarioMiddleware = require('../middlewares/validationInventario');
@@ -8,7 +8,6 @@ const checkRole = require('../middlewares/checkRole');
 
 const router = Router();
 
-// GET - Listar todos
 router.get(
   '/',
   autenticacion.validarToken,
@@ -18,11 +17,6 @@ router.get(
   inventarioMedicoController.listarTodos
 );
 
-// ===== RUTAS ESPECÍFICAS PRIMERO =====
-
-
-// PUT - Cambiar estado (activo/inactivo)
-// ⚠️ También debe ir antes de /:id
 router.put(
   '/:id/estado',
   autenticacion.validarToken,
@@ -34,9 +28,6 @@ router.put(
   inventarioMedicoController.cambiarEstado
 );
 
-// ===== RUTAS GENÉRICAS AL FINAL =====
-
-// GET - Obtener por ID
 router.get(
   '/:id',
   autenticacion.validarToken,
@@ -47,7 +38,6 @@ router.get(
   inventarioMedicoController.obtenerPorId
 );
 
-// POST - Crear nuevo
 router.post(
   '/',
   autenticacion.validarToken,
@@ -58,7 +48,6 @@ router.post(
   inventarioMedicoController.crear
 );
 
-// PUT - Actualizar
 router.put(
   '/:id',
   autenticacion.validarToken,

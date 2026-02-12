@@ -106,7 +106,6 @@ class DocumentoService {
       const prismaClient = tx || prisma;
       const { nombredocumento, descripcion, fkclinica, usuariocreacion } = data;
       
-      // Validar campos requeridos
       if (!nombredocumento || !usuariocreacion || !fkclinica) {
         return {
           success: false,
@@ -173,25 +172,7 @@ class DocumentoService {
           rutadocumento,
           usuariomodificacion,
           fechamodificacion: new Date()
-        }/*,
-        select: {
-          iddocumento: true,
-          nombredocumento: true,
-          descripcion: true,
-          rutadocumento: true,
-          fkclinica: true,
-          usuariocreacion: true,
-          fechacreacion: true,
-          usuariomodificacion: true,
-          fechamodificacion: true,
-          estado: true,
-          clinica: {
-            select: {
-              idclinica: true,
-              nombreclinica: true
-            }
-          }
-        }*/
+        }
       });
 
       return documentoActualizado;
@@ -206,7 +187,6 @@ class DocumentoService {
       const prismaClient = tx || prisma;
       const { nombredocumento, descripcion, fkclinica, usuariomodificacion } = data;
 
-      // Validar que el documento existe
       const documentoExiste = await prismaClient.detalledocumento.findUnique({
         where: { iddocumento: parseInt(iddocumento) }
       });
@@ -218,7 +198,6 @@ class DocumentoService {
         };
       }
 
-      // Si se proporciona fkclinica, validar que exista
       if (fkclinica) {
         const clinicas = await clinicaService.consultarClinica();
         const clinicaExiste = clinicas.data.some(c => c.idclinica === parseInt(fkclinica));
@@ -276,7 +255,7 @@ class DocumentoService {
   async eliminarDocumento(iddocumento, usuariomodificacion, tx = null) {
     try {
       const prismaClient = tx || prisma;
-      // Validar que el documento existe
+      
       const documentoExiste = await prismaClient.detalledocumento.findUnique({
         where: { iddocumento: parseInt(iddocumento) }
       });
@@ -288,7 +267,6 @@ class DocumentoService {
         };
       }
 
-      // Verificar que no esté ya eliminado
       if (documentoExiste.estado === 0) {
         return {
           success: false,
@@ -320,7 +298,7 @@ class DocumentoService {
   async cambiarEstado(iddocumento, nuevoEstado, usuarioModificador, tx = null) {
     try {
       const prismaClient = tx || prisma;
-      // Validar que el documento existe
+      
       const documentoExiste = await prismaClient.detalledocumento.findUnique({
         where: { iddocumento: parseInt(iddocumento) }
       });

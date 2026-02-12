@@ -12,10 +12,10 @@ const validarCambioClave = async (req, res, next) => {
             });
         }
 
-        next(); // Todo bien, continuar con la ruta
+        next(); 
     } catch (error) {
         console.error('Error en middleware checkPasswordChange:', error);
-        next(); // En caso de error, permitir continuar (fallback seguro)
+        next(); 
     }
 };
 

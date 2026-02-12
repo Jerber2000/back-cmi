@@ -1,9 +1,5 @@
-// middlewares/validaExpediente.js
 const { body, param, validationResult } = require('express-validator');
 
-/**
- * Middleware para manejar errores de validación
- */
 const manejarErroresValidacion = (req, res, next) => {
     const errores = validationResult(req);
     if (!errores.isEmpty()) {
@@ -16,11 +12,7 @@ const manejarErroresValidacion = (req, res, next) => {
     next();
 };
 
-/**
- * Validaciones para crear y actualizar expedientes médicos
- */
 const validarExpediente = [
-    // Validación del número de expediente
     body('numeroexpediente')
         .optional({ nullable: true, checkFalsy: true })
         .isLength({ min: 1, max: 50 })
@@ -28,29 +20,24 @@ const validarExpediente = [
         .matches(/^[a-zA-Z0-9\-_]+$/)
         .withMessage('El número de expediente solo puede contener letras, números, guiones y guiones bajos'),
 
-    // Validación del flag de generación automática
     body('generarAutomatico')
         .optional({ nullable: true })
         .isBoolean()
         .withMessage('generarAutomatico debe ser un valor booleano'),
 
-    // Validación personalizada para número de expediente
     body().custom((value, { req }) => {
         const { numeroexpediente, generarAutomatico } = req.body;
         
-        // Si se genera automáticamente, no necesita número manual
         if (generarAutomatico === true) {
             return true;
         }
         
-        // Si no se genera automáticamente, necesita número manual
         if (generarAutomatico === false) {
             if (!numeroexpediente || numeroexpediente.trim() === '') {
                 throw new Error('El número de expediente es obligatorio cuando no se genera automáticamente');
             }
         }
         
-        // Si no se especifica el modo, asumir automático
         if (generarAutomatico === undefined || generarAutomatico === null) {
             return true;
         }
@@ -58,13 +45,11 @@ const validarExpediente = [
         return true;
     }),
 
-    // Historia de enfermedad
     body('historiaenfermedad')
         .optional({ nullable: true, checkFalsy: true })
         .isLength({ max: 5000 })
         .withMessage('La historia de enfermedad no puede exceder 5000 caracteres'),
 
-    // Antecedentes médicos
     body('antmedico')
         .optional({ nullable: true, checkFalsy: true })
         .isLength({ max: 2000 })
@@ -100,7 +85,6 @@ const validarExpediente = [
         .isLength({ max: 2000 })
         .withMessage('Los antecedentes de sustancias no pueden exceder 2000 caracteres'),
 
-    // Antecedente intolerante lactosa
     body('antintolerantelactosa')
         .optional({ nullable: true, checkFalsy: true })
         .custom((valor) => {
@@ -114,7 +98,6 @@ const validarExpediente = [
             return true;
         }),
 
-    // Antecedentes fisiológicos
     body('antfisoinmunizacion')
         .optional({ nullable: true, checkFalsy: true })
         .isLength({ max: 2000 })
@@ -135,7 +118,6 @@ const validarExpediente = [
         .isLength({ max: 2000 })
         .withMessage('Los antecedentes de alimentos no pueden exceder 2000 caracteres'),
 
-    // Antecedentes gineco-obstétricos - texto
     body('gineobsprenatales')
         .optional({ nullable: true, checkFalsy: true })
         .isLength({ max: 2000 })
@@ -151,7 +133,6 @@ const validarExpediente = [
         .isLength({ max: 2000 })
         .withMessage('Los antecedentes postnatales no pueden exceder 2000 caracteres'),
 
-    // Antecedentes gineco-obstétricos - números
     body('gineobsgestas')
         .optional({ nullable: true, checkFalsy: true })
         .custom((valor) => {
@@ -204,7 +185,6 @@ const validarExpediente = [
             return true;
         }),
 
-    // Otros campos gineco-obstétricos
     body('gineobshv')
         .optional({ nullable: true, checkFalsy: true })
         .isLength({ max: 500 })
@@ -215,7 +195,6 @@ const validarExpediente = [
         .isLength({ max: 500 })
         .withMessage('Gineco MH no puede exceder 500 caracteres'),
 
-    // Fecha de última regla
     body('gineobsfur')
         .optional({ nullable: true, checkFalsy: true })
         .isISO8601()
@@ -231,7 +210,6 @@ const validarExpediente = [
         .isLength({ max: 500 })
         .withMessage('La menarquia no puede exceder 500 caracteres'),
 
-    // Examen físico - temperatura corporal
     body('examenfistc')
         .optional({ nullable: true, checkFalsy: true })
         .custom((valor) => {
@@ -245,7 +223,6 @@ const validarExpediente = [
             return true;
         }),
 
-    // Examen físico - presión arterial
     body('examenfispa')
         .optional({ nullable: true, checkFalsy: true })
         .isLength({ max: 20 })
@@ -253,7 +230,6 @@ const validarExpediente = [
         .matches(/^[0-9\/\-\s]*$/)
         .withMessage('La presión arterial solo puede contener números, barras y guiones'),
 
-    // Examen físico - frecuencia cardíaca
     body('examenfisfc')
         .optional({ nullable: true, checkFalsy: true })
         .custom((valor) => {
@@ -267,7 +243,6 @@ const validarExpediente = [
             return true;
         }),
 
-    // Examen físico - frecuencia respiratoria
     body('examenfisfr')
         .optional({ nullable: true, checkFalsy: true })
         .custom((valor) => {
@@ -281,7 +256,6 @@ const validarExpediente = [
             return true;
         }),
 
-    // Examen físico - saturación de oxígeno
     body('examenfissao2')
         .optional({ nullable: true, checkFalsy: true })
         .custom((valor) => {
@@ -295,7 +269,6 @@ const validarExpediente = [
             return true;
         }),
 
-    // Examen físico - peso
     body('examenfispeso')
         .optional({ nullable: true, checkFalsy: true })
         .custom((valor) => {
@@ -309,7 +282,6 @@ const validarExpediente = [
             return true;
         }),
 
-    // Examen físico - talla
     body('examenfistalla')
         .optional({ nullable: true, checkFalsy: true })
         .custom((valor) => {
@@ -323,7 +295,6 @@ const validarExpediente = [
             return true;
         }),
 
-    // Examen físico - IMC
     body('examenfisimc')
         .optional({ nullable: true, checkFalsy: true })
         .custom((valor) => {
@@ -337,7 +308,6 @@ const validarExpediente = [
             return true;
         }),
 
-    // Examen físico - GMT
     body('examenfisgmt')
         .optional({ nullable: true, checkFalsy: true })
         .isLength({ max: 2000 })
@@ -346,9 +316,6 @@ const validarExpediente = [
     manejarErroresValidacion
 ];
 
-/**
- * Validación para parámetros de ID de expediente
- */
 const validarIdExpediente = [
     param('id')
         .isInt({ min: 1 })

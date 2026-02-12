@@ -1,4 +1,3 @@
-// middlewares/validacionHistorialMedico.js
 const { body, param, validationResult } = require('express-validator');
 
 // Manejar errores de validación

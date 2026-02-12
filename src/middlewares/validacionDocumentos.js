@@ -1,4 +1,3 @@
-// src/middlewares/validacionDocumentos.js
 
 const validarCrearDocumento = (req, res, next) => {
   try {
@@ -27,7 +26,7 @@ const validarCrearDocumento = (req, res, next) => {
       });
     }
 
-    // Validar clínica (campo requerido)
+    // Validar clínica 
     if (!fkclinica) {
       return res.status(400).json({
         success: false,
@@ -50,7 +49,7 @@ const validarCrearDocumento = (req, res, next) => {
       });
     }
 
-    // Validar descripción (opcional pero con límite)
+    // Validar descripción 
     if (req.body.descripcion && req.body.descripcion.trim().length > 500) {
       return res.status(400).json({
         success: false,

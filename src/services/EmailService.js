@@ -304,7 +304,6 @@ const ResetearClave = async (correo_) => {
             throw new Error('Credenciales inválidas');
         }
 
-        //Verifica si el usuario esta activo
         if(!usuario.estado){
             throw new Error('Usuario inactivo. Contacte al administrador');
         }

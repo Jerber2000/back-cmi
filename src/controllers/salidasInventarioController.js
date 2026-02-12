@@ -1,14 +1,10 @@
-// src/controllers/salidasInventarioController.js
 const salidasInventarioService = require('../services/salidasInventarioService');
 
 class SalidasInventarioController {
   
-  // GET /api/inventario/salidas - Listar todas las salidas
   async listarTodas(req, res) {
     try {
-      console.log('🔍 Intentando listar salidas...');
       const salidas = await salidasInventarioService.listarTodas();
-      console.log('✅ Salidas obtenidas:', salidas.length);
       
       return res.status(200).json({
         success: true,
@@ -16,8 +12,7 @@ class SalidasInventarioController {
         total: salidas.length
       });
     } catch (error) {
-      console.error('❌ Error en SalidasInventarioController.listarTodas:', error);
-      console.error('❌ Stack:', error.stack);
+      console.error('Error en SalidasInventarioController.listarTodas:', error);
       return res.status(500).json({
         success: false,
         message: 'Error interno del servidor',
@@ -26,7 +21,6 @@ class SalidasInventarioController {
     }
   }
 
-  // GET /api/inventario/salidas/:id - Obtener salida por ID
   async obtenerPorId(req, res) {
     try {
       const { id } = req.params;
@@ -47,7 +41,6 @@ class SalidasInventarioController {
     }
   }
 
-  // GET /api/inventario/:idmedicina/salidas - Historial de salidas de un medicamento
   async obtenerPorMedicamento(req, res) {
     try {
       const { idmedicina } = req.params;
@@ -74,7 +67,6 @@ class SalidasInventarioController {
     }
   }
 
-  // POST /api/inventario/salidas - Crear nueva salida
   async crear(req, res) {
     try {
       const resultado = await salidasInventarioService.crear(req.body);
@@ -87,7 +79,6 @@ class SalidasInventarioController {
     } catch (error) {
       console.error('Error en SalidasInventarioController.crear:', error.message);
       
-      // Determinar código de estado según el tipo de error
       let statusCode = 500;
       if (error.message.includes('no encontrado')) {
         statusCode = 404;
@@ -107,7 +98,6 @@ class SalidasInventarioController {
     }
   }
 
-  // PUT /api/inventario/salidas/:id/anular - Anular una salida
   async anular(req, res) {
     try {
       const { id } = req.params;
@@ -130,7 +120,6 @@ class SalidasInventarioController {
     } catch (error) {
       console.error('Error en SalidasInventarioController.anular:', error.message);
       
-      // Determinar código de estado según el tipo de error
       let statusCode = 500;
       if (error.message.includes('no encontrada')) {
         statusCode = 404;
@@ -146,7 +135,6 @@ class SalidasInventarioController {
     }
   }
 
-  // GET /api/inventario/salidas/estadisticas - Obtener estadísticas
   async obtenerEstadisticas(req, res) {
     try {
       const estadisticas = await salidasInventarioService.obtenerEstadisticas();

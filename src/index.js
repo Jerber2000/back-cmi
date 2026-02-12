@@ -2,7 +2,6 @@ BigInt.prototype.toJSON = function() {
     return this.toString();
 };
 
-// src/index.js
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -11,14 +10,8 @@ const morgan = require('morgan');
 
 const app = express();
 
-// ========================
-// MIDDLEWARES GLOBALES
-// ========================
-
-// Seguridad
 app.use(helmet());
 
-// CORS
 app.use(cors({
   origin: '*',
   credentials: true,
@@ -26,18 +19,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Logging
 app.use(morgan('combined'));
 
-// ========================
-// 🔧 MIDDLEWARE PARA JSON
-// ========================
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// ========================
-// RUTAS
-// ========================
 
 const authRoutes = require('./routes/authRoutes');
 const usuarioRoute = require('./routes/usuarioRoutes');
@@ -69,7 +54,6 @@ app.use('/api/salidas', salidasInventarioRoutes);
 app.use('/api/reporteria', reporteriaRoutes);
 app.use('/api/documentos', documentoRoutes);  
 
-// Ruta raíz
 app.get('/', (req, res) => {
   res.json({
     success: true,
@@ -155,10 +139,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// ========================
-// MANEJO DE ERRORES
-// ========================
-
 // Middleware para rutas no encontradas
 app.use((req, res, next) => {
   res.status(404).json({
@@ -167,20 +147,14 @@ app.use((req, res, next) => {
   });
 });
 
-// 🔧 MIDDLEWARE MEJORADO PARA MANEJO DE ERRORES
 app.use((error, req, res, next) => {
-  console.error('❌ Error no manejado:', error);
-  
-  // 🆕 Manejo especial para errores de parsing JSON
   if (error.type === 'entity.parse.failed') {
-    console.error('❌ Error de parsing JSON en ruta:', req.path);
     return res.status(400).json({
       success: false,
       message: 'Error al procesar los datos enviados. Verifique el formato.'
     });
   }
   
-  // Errores de multer (archivos)
   if (error.code === 'LIMIT_FILE_SIZE') {
     return res.status(400).json({
       success: false,
@@ -202,7 +176,6 @@ app.use((error, req, res, next) => {
     });
   }
   
-  // Error genérico
   res.status(500).json({
     success: false,
     message: 'Error interno del servidor',
@@ -215,27 +188,16 @@ app.use((error, req, res, next) => {
   });
 });
 
-// ========================
-// INICIALIZAR SERVIDOR
-// ========================
-
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`✅ Servidor ejecutándose en puerto ${PORT}`);
-  console.log(`🔗 URL: http://localhost:${PORT}`);
-  console.log(`📁 Archivos genéricos: /api/archivo`);
-  console.log(`🔧 Sistema de archivos configurado correctamente`);
 });
 
-// Manejo de errores no capturados
 process.on('uncaughtException', (error) => {
-  console.error('❌ Excepción no capturada:', error);
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Promesa rechazada no manejada:', reason);
   process.exit(1);
 });
 

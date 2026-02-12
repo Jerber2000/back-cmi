@@ -1,14 +1,11 @@
-// src/controllers/reporteriaController.js
 const reporteriaService = require('../services/reporteriaService');
 
 const reporteriaController = {
 
-  // GET /api/reporteria/dashboard - Estadísticas generales
   async obtenerDashboard(req, res) {
     try {
       const usuario = req.usuario;
 
-      // ✅ Llama al método único del service
       const dashboard = await reporteriaService.obtenerDashboard(usuario);
 
       return res.status(200).json({
@@ -26,7 +23,6 @@ const reporteriaController = {
     }
   },
 
-  // GET /api/reporteria/pacientes - Reporte de pacientes
   async obtenerReportePacientes(req, res) {
     try {
       const {
@@ -72,7 +68,6 @@ const reporteriaController = {
     }
   },
 
-  // GET /api/reporteria/salidas - Reporte de salidas de inventario
   async obtenerReporteSalidas(req, res) {
     try {
       const {
@@ -120,7 +115,6 @@ const reporteriaController = {
     }
   },
 
-  // GET /api/reporteria/consultas - Reporte de consultas
   async obtenerReporteConsultas(req, res) {
     try {
       const {
@@ -164,7 +158,6 @@ const reporteriaController = {
     }
   },
 
-  // GET /api/reporteria/inventario - Reporte de inventario
   async obtenerReporteInventario(req, res) {
     try {
       const {
@@ -205,7 +198,6 @@ const reporteriaController = {
     }
   },
 
-  // GET /api/reporteria/agenda - Reporte de agenda
   async obtenerReporteAgenda(req, res) {
     try {
       const {
@@ -251,7 +243,6 @@ const reporteriaController = {
     }
   },
 
-  // GET /api/reporteria/referencias - Reporte de referencias
   async obtenerReporteReferencias(req, res) {
     try {
       const {
@@ -297,7 +288,6 @@ const reporteriaController = {
     }
   },
 
-  // POST /api/reporteria/generar-pdf - Generar PDF
   async generarPDF(req, res) {
     try {
       const { tipoReporte, filtros, titulo } = req.body;
@@ -334,7 +324,6 @@ const reporteriaController = {
     }
   },
 
-  // POST /api/reporteria/exportar-excel - Exportar a Excel
   async exportarExcel(req, res) {
     try {
       const { tipoReporte, filtros, nombreArchivo } = req.body;

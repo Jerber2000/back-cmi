@@ -3,7 +3,6 @@ const { CONFIGURACION_AUDITORIA, NivelAuditoria, CAMPOS_SENSIBLES } = require('.
 
 class AuditoriaUtils {
   
-  // Determinar el nivel de auditoría de una tabla
   static obtenerNivelAuditoria(tabla) {
     if (CONFIGURACION_AUDITORIA.CRITICO.includes(tabla.toLowerCase())) {
       return NivelAuditoria.CRITICO;
@@ -17,7 +16,6 @@ class AuditoriaUtils {
     return NivelAuditoria.SIN_AUDITORIA;
   }
   
-  // Verificar si una acción debe auditarse
   static debeAuditar(tabla, accion) {
     const nivel = this.obtenerNivelAuditoria(tabla);
     
@@ -25,17 +23,14 @@ class AuditoriaUtils {
       return false;
     }
     
-    // Crítico: auditar todo
     if (nivel === NivelAuditoria.CRITICO) {
       return true;
     }
     
-    // Importante: auditar cambios y eliminaciones
     if (nivel === NivelAuditoria.IMPORTANTE) {
       return ['create', 'update', 'delete', 'updateMany', 'deleteMany'].includes(accion);
     }
     
-    // Normal: solo eliminaciones
     if (nivel === NivelAuditoria.NORMAL) {
       return ['delete', 'deleteMany'].includes(accion);
     }
@@ -43,7 +38,6 @@ class AuditoriaUtils {
     return false;
   }
   
-  // Ofuscar datos sensibles
   static ofuscarDatosSensibles(datos) {
     if (!datos || typeof datos !== 'object') {
       return datos;
@@ -60,7 +54,6 @@ class AuditoriaUtils {
     return datosOfuscados;
   }
   
-  // Detectar campos modificados
   static detectarCambios(anterior, nuevo) {
     if (!anterior || !nuevo) return [];
     
@@ -75,7 +68,6 @@ class AuditoriaUtils {
     return camposModificados;
   }
   
-  // Generar descripción legible
   static generarDescripcion(tabla, accion, datos) {
     const accionTexto = {
       'create': 'creó',
@@ -97,18 +89,15 @@ class AuditoriaUtils {
     return `${accionTexto} ${tablaTexto}`;
   }
   
-  // Extraer ID del registro
   static extraerRegistroId(params, result) {
     let id = null;
     
-    // Lista de posibles nombres de campos ID
     const camposId = [
       'idpaciente', 'idusuario', 'iddocumento', 'idrefpaciente', 'idhistorial', 'idexpediente', 
       'idagenda', 'idagenda_recurrente', 'idmedicina', 'idsalida', 
       'idclinica'
     ];
     
-    // 1. Intentar desde params.args.where
     if (params.args && params.args.where) {
       for (const campo of camposId) {
         if (params.args.where[campo] !== undefined) {
@@ -118,7 +107,6 @@ class AuditoriaUtils {
       }
     }
     
-    // 2. Intentar desde params.args.data
     if (!id && params.args && params.args.data) {
       for (const campo of camposId) {
         if (params.args.data[campo] !== undefined) {
@@ -128,7 +116,6 @@ class AuditoriaUtils {
       }
     }
     
-    // 3. Intentar desde result (cuando es create o update)
     if (!id && result) {
       for (const campo of camposId) {
         if (result[campo] !== undefined) {
@@ -138,7 +125,6 @@ class AuditoriaUtils {
       }
     }
     
-    // 4. Si result es un array (updateMany, deleteMany), tomar el primero
     if (!id && Array.isArray(result) && result.length > 0) {
       for (const campo of camposId) {
         if (result[0][campo] !== undefined) {

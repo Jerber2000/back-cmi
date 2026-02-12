@@ -1,8 +1,6 @@
-// src/middlewares/auditoria.middleware.js
-
 const AuditoriaUtils = require('../utils/auditoria.utils');
 const { AccionAuditoria, OPERACIONES_EXCLUIDAS, OPERACIONES_INTERNAS } = require('../config/auditoria');
-const { auditoriaStorage } = require('../utils/auditoria.storage');  // 👈 Cambio
+const { auditoriaStorage } = require('../utils/auditoria.storage'); 
 
 const crearAuditoriaMiddleware = () => {
   return async (params, next) => {
@@ -14,7 +12,6 @@ const crearAuditoriaMiddleware = () => {
     
     const tabla = model.toLowerCase();
 
-    // Ignorar updates de last_login_timestamp en usuario
     if (tabla === 'usuario' && action === 'update') {
       const dataKeys = Object.keys(params.args.data || {});
       if (dataKeys.length === 1 && dataKeys[0] === 'last_login_timestamp') {
@@ -22,7 +19,6 @@ const crearAuditoriaMiddleware = () => {
       }
     }
 
-    // Ignorar operaciones internas configuradas
     if (OPERACIONES_INTERNAS[tabla] && action === 'update' && params.args?.data) {
       const configuracionInterna = OPERACIONES_INTERNAS[tabla];
       
@@ -33,7 +29,6 @@ const crearAuditoriaMiddleware = () => {
         );
         
         if (soloActualizaRuta) {
-          console.log(`⏭️ Ignorando operación interna: ${tabla}.actualizarRutaDocumento`);
           return next(params);
         }
       }
@@ -44,7 +39,6 @@ const crearAuditoriaMiddleware = () => {
     }
     
     try {
-      // 🔥 Obtener contexto desde AsyncLocalStorage
       const contexto = auditoriaStorage.getStore() || {};
       
       // Capturar datos anteriores para UPDATE y DELETE
@@ -83,7 +77,6 @@ const crearAuditoriaMiddleware = () => {
       
       const accionAuditoria = accionMap[action] || action.toUpperCase();
       
-      // 🔥 El contexto se mantiene disponible gracias a AsyncLocalStorage
       setImmediate(async () => {
         try {
           const { prisma } = require('../config/prisma');
@@ -95,7 +88,6 @@ const crearAuditoriaMiddleware = () => {
               accion: accionAuditoria,
               datos_anteriores: datosAnteriores ? AuditoriaUtils.ofuscarDatosSensibles(datosAnteriores) : null,
               datos_nuevos: datosNuevos ? AuditoriaUtils.ofuscarDatosSensibles(datosNuevos) : null,
-              //campos_modificados: camposModificados,
               usuario_id: contexto.usuario_id || null,
               usuario_nombre: contexto.usuario_nombre || null,
               ip_address: contexto.ip_address || null,
@@ -105,8 +97,7 @@ const crearAuditoriaMiddleware = () => {
             }
           });
         } catch (error) {
-          console.error('❌ Error creando registro de auditoría:', error);
-          console.error('Contexto disponible:', contexto);
+          console.error('Error creando registro de auditoría:', error);
           console.error('Datos:', { tabla, registroId, accionAuditoria });
         }
       });

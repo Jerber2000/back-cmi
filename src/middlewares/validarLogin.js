@@ -1,4 +1,3 @@
-//exporta la libreria joi
 const Joi = require('joi');
 
 const validarLogin = (req, res, next) => {

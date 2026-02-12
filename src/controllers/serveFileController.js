@@ -1,4 +1,3 @@
-//contolerlers/serveFileController.js
 
 const { fileService } = require('../services/fileService');
 const path = require('path');
@@ -54,7 +53,6 @@ class ServeFileController {
       res.setHeader('Content-Type', contentType);
       res.setHeader('Cache-Control', 'public, max-age=86400');
       
-      // IMPORTANTE: Para imágenes, usar res.sendFile con headers apropiados
       res.sendFile(foundPath);
 
     } catch (error) {
@@ -91,7 +89,6 @@ class ServeFileController {
             }
           }
         } catch (error) {
-          // Si no puede leer el directorio, continuar
           return null;
         }
         return null;
