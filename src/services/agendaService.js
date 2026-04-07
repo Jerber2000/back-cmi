@@ -519,7 +519,7 @@ class AgendaService{
     async eliminarCita(idagenda, usuarioModificacion, tx = null){
         try{
             const prismaClient = tx || prisma;
-            // Validar que la cita existe
+            
             const citaExistente = await prisma.agenda.findUnique({
                 where: { idagenda: parseInt(idagenda) }
             });
@@ -530,16 +530,14 @@ class AgendaService{
                     message: 'La cita no existe'
                 };
             }
-
-            // Verificar que no esté ya eliminada
+            
             if(citaExistente.estado === 0){
                 return{
                     success: false,
                     message: 'La cita ya está eliminada'
                 };
             }
-
-            // Cambiar estado a ELIMINADA 
+            
             const citaEliminada = await prismaClient.agenda.update({
                 where: {
                     idagenda: parseInt(idagenda)
@@ -569,7 +567,6 @@ class AgendaService{
         const [año, mes, dia] = fecha_inicio.split('-').map(Number);
         let fechaActual = new Date(año, mes - 1, dia);
 
-        let contador = 0;
         const maxOcurrencias = numero_ocurrencias || 365;
 
         let fechaFinObj = null;
@@ -577,55 +574,68 @@ class AgendaService{
             const [añoFin, mesFin, diaFin] = fecha_fin.split('-').map(Number);
             fechaFinObj = new Date(añoFin, mesFin - 1, diaFin);
         }
-        
-        while (contador < maxOcurrencias) {
-            if (fechaFinObj && fechaActual > fechaFinObj) {
-                break;
-            }
-            
-            let agregarFecha = false;
-            
-            switch (tipo_recurrencia) {
-                case 'diaria':
-                    agregarFecha = true;
-                    break;
-                    
-                case 'semanal':
-                    const diasPermitidos = dias_semana ? dias_semana.split(',').map(d => parseInt(d)) : [];
-                    const diaActual = fechaActual.getDay();
-                    agregarFecha = diasPermitidos.includes(diaActual);
-                    break;
-                    
-                case 'mensual':
-                    agregarFecha = true;
-                    break;
-            }
-            
-            if (agregarFecha) {
-                const fechaParaAgregar = new Date(fechaActual.getFullYear(), fechaActual.getMonth(), fechaActual.getDate());
-                fechas.push(fechaParaAgregar);
-                contador++;
-                            
-                contador++;
+
+        if (tipo_recurrencia === 'semanal') {
+
+            const diasPermitidos = dias_semana
+                ? dias_semana.split(',').map(d => parseInt(d))
+                : [];
+
+            const diaSemanaInicio = fechaActual.getDay(); 
+            const inicioSemana = new Date(fechaActual);
+            const diasHastaLunes = diaSemanaInicio === 0 ? -6 : 1 - diaSemanaInicio;
+            inicioSemana.setDate(inicioSemana.getDate() + diasHastaLunes);
+
+            let semanaActual = new Date(inicioSemana);
+
+            while (fechas.length < maxOcurrencias) {
                 
-                if (numero_ocurrencias && contador >= numero_ocurrencias) {
-                    break;
+                for (let d = 0; d < 7; d++) {
+                    const diaRevision = new Date(semanaActual);
+                    diaRevision.setDate(semanaActual.getDate() + d);
+                    
+                    if (diaRevision < fechaActual) continue;
+                    
+                    if (fechaFinObj && diaRevision > fechaFinObj) return fechas;
+                    
+                    if (diasPermitidos.includes(diaRevision.getDay())) {
+                        fechas.push(new Date(
+                            diaRevision.getFullYear(),
+                            diaRevision.getMonth(),
+                            diaRevision.getDate()
+                        ));
+
+                        if (fechas.length >= maxOcurrencias) return fechas;
+                    }
+                }
+                
+                semanaActual.setDate(semanaActual.getDate() + (7 * intervalo));
+                
+                if (fechaFinObj && semanaActual > fechaFinObj) break;
+            }
+
+        } else {
+            
+            while (fechas.length < maxOcurrencias) {
+                if (fechaFinObj && fechaActual > fechaFinObj) break;
+
+                fechas.push(new Date(
+                    fechaActual.getFullYear(),
+                    fechaActual.getMonth(),
+                    fechaActual.getDate()
+                ));
+
+                switch (tipo_recurrencia) {
+                    case 'diaria':
+                        fechaActual.setDate(fechaActual.getDate() + intervalo);
+                        break;
+                    case 'mensual':
+                        fechaActual.setMonth(fechaActual.getMonth() + intervalo);
+                        break;
                 }
             }
-            
-            switch (tipo_recurrencia) {
-                case 'diaria':
-                    fechaActual.setDate(fechaActual.getDate() + intervalo);
-                    break;
-                case 'semanal':
-                    fechaActual.setDate(fechaActual.getDate() + 1);
-                    break;
-                case 'mensual':
-                    fechaActual.setMonth(fechaActual.getMonth() + intervalo);
-                    break;
-            }
         }
-        
+
         return fechas;
     }
 
@@ -709,13 +719,17 @@ class AgendaService{
             
             const resultado = await prisma.$transaction(async (tx) => {
 
-                const [año, mes, dia] = fecha_inicio.split('-').map(Number);
-                const fechaInicioObj = new Date(año, mes - 1, dia);
+                const fechaInicioObj = new Date(fecha_inicio + 'T00:00:00.000Z');
 
                 let fechaFinObj = null;
                 if (fecha_fin) {
-                    const [añoFin, mesFin, diaFin] = fecha_fin.split('-').map(Number);
-                    fechaFinObj = new Date(añoFin, mesFin - 1, diaFin);
+                    fechaFinObj = new Date(fecha_fin + 'T00:00:00.000Z');
+                } else if (fechas.length > 0) {
+                    const ultimaFecha = fechas[fechas.length - 1];
+                    const y = ultimaFecha.getFullYear();
+                    const m = String(ultimaFecha.getMonth() + 1).padStart(2, '0');
+                    const d = String(ultimaFecha.getDate()).padStart(2, '0');
+                    fechaFinObj = new Date(`${y}-${m}-${d}T00:00:00.000Z`);
                 }
                 
                 const agendaRecurrente = await tx.agenda_recurrente.create({
@@ -926,9 +940,19 @@ class AgendaService{
                 };
             }
 
+            const serieFormateada = {
+                ...serie,
+                fecha_inicio: serie.fecha_inicio 
+                    ? serie.fecha_inicio.toISOString().split('T')[0] 
+                    : null,
+                fecha_fin: serie.fecha_fin 
+                    ? serie.fecha_fin.toISOString().split('T')[0] 
+                    : null
+            };
+
             return{
                 success: true,
-                data: serie
+                data: serieFormateada
             };
         }catch(error){
             return{

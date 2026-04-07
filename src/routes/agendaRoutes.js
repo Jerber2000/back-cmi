@@ -28,7 +28,7 @@ router.get(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave, 
-    checkRole(1,4,8), 
+    checkRole(1,4,7), 
     agendaController.obtenerCitasConTransporte
 );
 
