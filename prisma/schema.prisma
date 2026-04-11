@@ -3,6 +3,21 @@ generator client {
   output   = "../src/generated/prisma"
 }
 
+model programa {
+  idprograma          Int                   @id @default(autoincrement())
+  nombre              String                @db.VarChar(100)
+  expedientes         expediente_programa[]
+}
+
+model expediente_programa {
+  idexpediente Int
+  idprograma   Int
+  expediente   expediente @relation(fields: [idexpediente], references: [idexpediente], onDelete: Cascade)
+  programa     programa   @relation(fields: [idprograma], references: [idprograma], onDelete: Cascade)
+
+  @@id([idexpediente, idprograma])
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -189,6 +204,7 @@ model expediente {
   estado                 Int?                     @default(1) @db.SmallInt
   fkpaciente             Int?
   detallereferirpaciente detallereferirpaciente[]
+  programas              expediente_programa[]
   paciente               paciente?                @relation(fields: [fkpaciente], references: [idpaciente], onDelete: NoAction, onUpdate: NoAction, map: "fk_expediente_paciente")
 
   @@index([fkpaciente], map: "idx_expediente_fkpaciente")

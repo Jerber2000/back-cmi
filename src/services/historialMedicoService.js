@@ -80,8 +80,17 @@ class HistorialMedicoService {
           fechanacimiento: true,
           expedientes: {
             select: {
+              idexpediente: true,
               numeroexpediente: true,
-              fechacreacion: true
+              fechacreacion: true,
+              programas: {
+                select: {
+                  idprograma: true,
+                  programa: {
+                    select: { nombre: true }
+                  }
+                }
+              }
             }
           }
         }

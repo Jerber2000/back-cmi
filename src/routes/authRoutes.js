@@ -29,6 +29,11 @@ router.get('/verificar',
   }
 );
 
+router.post('/refresh',
+  validarToken,
+  authController.refresh
+);
+
 router.post('/resetearPass',
   ResetearClaveLimiter,
   validarResetearPass,

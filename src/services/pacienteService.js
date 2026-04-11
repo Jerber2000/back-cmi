@@ -120,7 +120,15 @@ class PacienteService {
               idexpediente: true,
               numeroexpediente: true,
               historiaenfermedad: true,
-              fechacreacion: true
+              fechacreacion: true,
+              programas: {
+                select: {
+                  idprograma: true,
+                  programa: {
+                    select: { nombre: true }
+                  }
+                }
+              }
             }
           },
           clinica: {

@@ -108,6 +108,9 @@ class ExpedienteService {
                   }
                 }
               }
+            },
+            programas: {
+              include: { programa: true }
             }
           }
         }),
@@ -160,6 +163,9 @@ class ExpedienteService {
                 }
               }
             }
+          },
+          programas: {
+            include: { programa: true }
           }
         }
       });
@@ -188,6 +194,7 @@ class ExpedienteService {
         fkpaciente,
         numeroexpediente,
         generarAutomatico,
+        programas,
         historiaenfermedad,
         antmedico,
         antmedicamento,
@@ -329,9 +336,22 @@ class ExpedienteService {
                 }
               }
             }
+          },
+          programas: {
+            include: { programa: true }
           }
         }
       });
+
+      // Guardar programas seleccionados
+      if (programas && Array.isArray(programas) && programas.length > 0) {
+        await prismaClient.expediente_programa.createMany({
+          data: programas.map(idprograma => ({
+            idexpediente: expediente.idexpediente,
+            idprograma: parseInt(idprograma)
+          }))
+        });
+      }
 
       return {
         success: true,
@@ -397,6 +417,10 @@ class ExpedienteService {
         }
       });
 
+      const programas = datosActualizacion.programas;
+      delete datosActualizacion.programas;
+      delete datosActualizacion.generarAutomatico;
+
       const expedienteActualizado = await prismaClient.expediente.update({
         where: {
           idexpediente: parseInt(id)
@@ -421,9 +445,27 @@ class ExpedienteService {
                 }
               }
             }
+          },
+          programas: {
+            include: { programa: true }
           }
         }
       });
+
+      // Actualizar programas: eliminar los anteriores y reinsertar
+      if (Array.isArray(programas)) {
+        await prismaClient.expediente_programa.deleteMany({
+          where: { idexpediente: parseInt(id) }
+        });
+        if (programas.length > 0) {
+          await prismaClient.expediente_programa.createMany({
+            data: programas.map(idprograma => ({
+              idexpediente: parseInt(id),
+              idprograma: parseInt(idprograma)
+            }))
+          });
+        }
+      }
 
       return {
         success: true,

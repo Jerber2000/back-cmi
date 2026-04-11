@@ -39,6 +39,8 @@ const reporteriaRoutes = require('./routes/reporteriaRoutes');
 const documentoRoutes = require('./routes/documentoRoutes');
 const salidasInventarioRoutes = require('./routes/salidasInventarioRoutes');
 
+const programaRoutes = require('./routes/programaRoutes');
+
 app.use('/api/auth', authRoutes);
 app.use('/api/pacientes', pacienteRoutes);
 app.use('/api/usuario', usuarioRoute);
@@ -53,6 +55,8 @@ app.use('/api/inventario', inventarioMedico);
 app.use('/api/salidas', salidasInventarioRoutes);
 app.use('/api/reporteria', reporteriaRoutes);
 app.use('/api/documentos', documentoRoutes);  
+
+app.use('/api/programas', programaRoutes);
 
 app.get('/', (req, res) => {
   res.json({
