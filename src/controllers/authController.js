@@ -164,9 +164,19 @@ const CambiarClaveTemporal = async (req, res) => {
     }
 };
 
+const refresh = async (req, res) => {
+    try {
+        const nuevoToken = await authService.refreshToken(req.usuario);
+        res.json({ success: true, data: { token: nuevoToken } });
+    } catch (error) {
+        res.status(401).json({ success: false, message: error.message });
+    }
+};
+
 module.exports = {
     login,
     logout,
     RecuperarClave,
-    CambiarClaveTemporal
+    CambiarClaveTemporal,
+    refresh
 };

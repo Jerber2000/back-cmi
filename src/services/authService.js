@@ -41,9 +41,17 @@ class AuthService{
                 const timestampBD = Number(usuario.last_login_timestamp);
                 const ahora = Date.now();
                 const tiempoTranscurrido = ahora - timestampBD;
-                
-                const horasExpiracion = parseInt(process.env.JWT_EXPIRES_IN) || 3;
-                const TIEMPO_EXPIRACION = horasExpiracion * 60 * 60 * 1000;
+
+                // Parsear JWT_EXPIRES_IN que puede ser "5m", "1h", "30s", etc.
+                const parsearExpiracion = (val = '1h') => {
+                    const num = parseInt(val);
+                    if (val.endsWith('s')) return num * 1000;
+                    if (val.endsWith('m')) return num * 60 * 1000;
+                    if (val.endsWith('h')) return num * 60 * 60 * 1000;
+                    if (val.endsWith('d')) return num * 24 * 60 * 60 * 1000;
+                    return num * 60 * 60 * 1000; // default horas
+                };
+                const TIEMPO_EXPIRACION = parsearExpiracion(process.env.JWT_EXPIRES_IN);
                 
                 if (tiempoTranscurrido < TIEMPO_EXPIRACION) {
                     throw new Error(
@@ -206,6 +214,29 @@ class AuthService{
             console.error('Error en AuthService.cerrarSesion:', error.message);
             return false;
         }
+    }
+
+    async refreshToken(usuarioPayload) {
+        // Verificar que el usuario sigue activo
+        const usuario = await prisma.usuario.findUnique({
+            where: { idusuario: usuarioPayload.id || usuarioPayload.idusuario },
+            include: { rol: { select: { idrol: true, nombre: true } } }
+        });
+
+        if (!usuario || usuario.estado !== 1) {
+            throw new Error('Usuario no encontrado o inactivo');
+        }
+
+        const nuevoToken = generarToken({
+            id: usuario.idusuario,
+            usuario: usuario.usuario,
+            nombre: usuario.nombres,
+            rol: usuario.rol?.idrol,
+            rolNombre: usuario.rol?.nombre,
+            fkclinica: usuario.fkclinica
+        });
+
+        return nuevoToken;
     }
 }
 
