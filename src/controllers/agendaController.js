@@ -162,6 +162,34 @@ const obtenerDetallesSerieRecurrente = async (req, res) => {
     }
 };
 
+const actualizarEstadoCita = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { estado, comentario, usuariomodificacion } = req.body;
+
+        if (!estado || !usuariomodificacion) {
+            return res.status(200).json({
+                success: false,
+                message: 'El estado y el usuario de modificación son requeridos'
+            });
+        }
+
+        const resultado = await conAuditoria(req, 'agenda', async (tx) => {
+            return await agendaService.actualizarEstadoCita(
+                id, estado, comentario, usuariomodificacion
+            );
+        });
+
+        res.status(200).json(resultado);
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
 module.exports = {
     crearCita,
     obtenerCitas,
@@ -171,5 +199,6 @@ module.exports = {
     crearCitaRecurrente,
     cancelarCitaRecurrente,
     cancelarSerieCompleta,
-    obtenerDetallesSerieRecurrente
+    obtenerDetallesSerieRecurrente,
+    actualizarEstadoCita
 };

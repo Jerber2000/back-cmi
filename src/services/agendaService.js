@@ -121,7 +121,9 @@ class AgendaService{
         try{
             const agenda = await prisma.agenda.findMany({
                 where:{
-                    estado: 1
+                    estado: { 
+                        in: [ 1,2,3 ]
+                    }
                 },
                 select:{
                     idagenda:            true,
@@ -958,6 +960,68 @@ class AgendaService{
             return{
                 success: false,
                 message: 'Error al obtener detalles de serie: ' + error.message
+            };
+        }
+    }
+    
+    async actualizarEstadoCita(idagenda, estado, comentario, usuariomodificacion) {
+        try {
+            const citaExistente = await prisma.agenda.findUnique({
+                where: { idagenda: parseInt(idagenda) }
+            });
+
+            if (!citaExistente) {
+                return {
+                    success: false,
+                    message: 'La cita no existe'
+                };
+            }
+
+            if (citaExistente.estado === 0) {
+                return {
+                    success: false,
+                    message: 'No se puede actualizar el estado de una cita eliminada'
+                };
+            }
+
+            const estadosPermitidos = [2, 3];
+            if (!estadosPermitidos.includes(parseInt(estado))) {
+                return {
+                    success: false,
+                    message: 'Estado inválido. Use 2 (confirmada) o 3 (no se presentó)'
+                };
+            }
+
+            const citaActualizada = await prisma.agenda.update({
+                where: { idagenda: parseInt(idagenda) },
+                data: {
+                    estado:              parseInt(estado),
+                    comentario:          comentario || citaExistente.comentario,
+                    usuariomodificacion: usuariomodificacion,
+                    fechamodificacion:   new Date()
+                },
+                select: {
+                    idagenda:  true,
+                    estado:    true,
+                    comentario: true
+                }
+            });
+
+            const mensajes = {
+                2: 'Asistencia confirmada correctamente',
+                3: 'Inasistencia registrada correctamente'
+            };
+
+            return {
+                success: true,
+                message: mensajes[parseInt(estado)],
+                data: citaActualizada
+            };
+
+        } catch (error) {
+            return {
+                success: false,
+                message: 'Error al actualizar el estado de la cita: ' + error.message
             };
         }
     }
