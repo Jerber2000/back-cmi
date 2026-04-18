@@ -114,8 +114,30 @@ class AuthService{
                 ? Number(usuario.last_login_timestamp) 
                 : null;
 
-            if (!timestampBD || timestampBD !== timestamp_) {
+            if (!timestampBD) {
                 return false; 
+            }
+
+            // CAMBIO: En lugar de comparar timestamps exactos, verificar que estén dentro de una ventana razonable
+            // Esto permite que la sesión sea válida durante el tiempo que dura el JWT
+            // (normalmente 24h o lo que esté configurado en JWT_EXPIRES_IN)
+            const ahora = Date.now();
+            const diferencia = Math.abs(ahora - timestampBD);
+            
+            // Parsear JWT_EXPIRES_IN que puede ser "5m", "1h", "30s", etc.
+            const parsearExpiracion = (val = '24h') => {
+                const num = parseInt(val);
+                if (val.endsWith('s')) return num * 1000;
+                if (val.endsWith('m')) return num * 60 * 1000;
+                if (val.endsWith('h')) return num * 60 * 60 * 1000;
+                if (val.endsWith('d')) return num * 24 * 60 * 60 * 1000;
+                return num * 60 * 60 * 1000; // default 1 hora
+            };
+            const TIEMPO_EXPIRACION = parsearExpiracion(process.env.JWT_EXPIRES_IN);
+            
+            // Si la diferencia es mayor que la expiración, la sesión ya no es válida
+            if (diferencia > TIEMPO_EXPIRACION) {
+                return false;
             }
 
             return true;

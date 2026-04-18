@@ -28,6 +28,30 @@ function esFechaValida(fecha) {
   return date instanceof Date && !isNaN(date.getTime());
 }
 
+/**
+ * Convierte string de fecha (YYYY-MM-DD) a Date en hora local
+ * Evita problemas de zona horaria
+ */
+function parsearFechaLocal(fechaString, horaFin = false) {
+  if (!esFechaValida(fechaString)) return null;
+  
+  // Parsear string en formato YYYY-MM-DD
+  const [year, month, day] = fechaString.split('-').map(Number);
+  
+  // Crear fecha en hora local (no UTC)
+  const date = new Date(year, month - 1, day);
+  
+  if (horaFin) {
+    // HASTA: final del día (23:59:59.999)
+    date.setHours(23, 59, 59, 999);
+  } else {
+    // DESDE: inicio del día (00:00:00)
+    date.setHours(0, 0, 0, 0);
+  }
+  
+  return date;
+}
+
 function generarPDFDashboard(doc, data) {
   doc.fontSize(14).font('Helvetica-Bold').text('Estadísticas Generales', { underline: true });
   doc.moveDown(0.5);
@@ -871,17 +895,75 @@ const reporteriaService = {
     }
   },
 
+  async obtenerMedicosDisponibles() {
+    try {
+      const medicos = await prisma.usuario.findMany({
+        where: {
+          estado: 1,  // Usuarios activos
+          rol: {
+            nombre: {
+              in: ['Médico', 'Doctor', 'Profesional Médico']  // Buscar por roles que sean médicos
+            }
+          }
+        },
+        select: {
+          idusuario: true,
+          nombres: true,
+          apellidos: true,
+          profesion: true
+        },
+        orderBy: {
+          nombres: 'asc'
+        }
+      });
+
+      return medicos;
+    } catch (error) {
+      console.error('Error en obtenerMedicosDisponibles service:', error);
+      throw error;
+    }
+  },
+
   async obtenerReportePacientes(filtros) {
     try {
-      const { desde, hasta, genero, municipio, edadMin, edadMax, tipodiscapacidad, page, limit } = filtros;
+      const { nombre, cui, desde, hasta, genero, municipio, edadMin, edadMax, tipodiscapacidad, page, limit } = filtros;
       const skip = (page - 1) * limit;
 
       const whereClause = { estado: 1 };
 
+      // Búsqueda por nombre
+      if (nombre && nombre !== '') {
+        whereClause.OR = [
+          { nombres: { contains: nombre, mode: 'insensitive' } },
+          { apellidos: { contains: nombre, mode: 'insensitive' } }
+        ];
+      }
+
+      // Búsqueda por CUI
+      if (cui && cui !== '') {
+        whereClause.cui = { contains: cui, mode: 'insensitive' };
+      }
+
       if (esFechaValida(desde) || esFechaValida(hasta)) {
-        whereClause.fechacreacion = {};
-        if (esFechaValida(desde)) whereClause.fechacreacion.gte = new Date(desde);
-        if (esFechaValida(hasta)) whereClause.fechacreacion.lte = new Date(hasta);
+        const conditions = [];
+        
+        if (esFechaValida(desde)) {
+          const fechaDesdeStr = desde.split('T')[0]; // 2026-04-16
+          conditions.push({
+            fechacreacion: { gte: new Date(fechaDesdeStr + 'T00:00:00Z') }
+          });
+        }
+        
+        if (esFechaValida(hasta)) {
+          const fechaHastaStr = hasta.split('T')[0]; // 2026-04-18
+          conditions.push({
+            fechacreacion: { lte: new Date(fechaHastaStr + 'T23:59:59Z') }
+          });
+        }
+        
+        if (conditions.length > 0) {
+          whereClause.AND = conditions;
+        }
       }
 
       if (genero && genero !== '') whereClause.genero = genero.toUpperCase();
@@ -954,7 +1036,7 @@ const reporteriaService = {
 
   async obtenerReporteConsultas(filtros, usuario) {
     try {
-      const { desde, hasta, medico, paciente, diagnostico, page, limit } = filtros;
+      const { nombrePaciente, cuiPaciente, desde, hasta, medico, diagnostico, page, limit } = filtros;
       const skip = (page - 1) * limit;
 
       const usuarioConRol = await prisma.usuario.findUnique({
@@ -967,17 +1049,46 @@ const reporteriaService = {
 
       if (!esAdmin) whereClause.fkusuario = usuario.idusuario;
       
+      // Búsqueda por nombre del paciente
+      if (nombrePaciente && nombrePaciente !== '') {
+        whereClause.paciente = {
+          OR: [
+            { nombres: { contains: nombrePaciente, mode: 'insensitive' } },
+            { apellidos: { contains: nombrePaciente, mode: 'insensitive' } }
+          ]
+        };
+      }
+
+      // Búsqueda por CUI del paciente
+      if (cuiPaciente && cuiPaciente !== '') {
+        whereClause.paciente = { ...whereClause.paciente, cui: { contains: cuiPaciente, mode: 'insensitive' } };
+      }
+      
       if (esFechaValida(desde) || esFechaValida(hasta)) {
-        whereClause.fecha = {};
-        if (esFechaValida(desde)) whereClause.fecha.gte = new Date(desde);
-        if (esFechaValida(hasta)) whereClause.fecha.lte = new Date(hasta);
+        const conditions = [];
+        
+        if (esFechaValida(desde)) {
+          const fechaDesdeStr = desde.split('T')[0]; // 2026-04-16
+          conditions.push({
+            fecha: { gte: new Date(fechaDesdeStr + 'T00:00:00Z') }
+          });
+        }
+        
+        if (esFechaValida(hasta)) {
+          const fechaHastaStr = hasta.split('T')[0]; // 2026-04-18
+          conditions.push({
+            fecha: { lte: new Date(fechaHastaStr + 'T23:59:59Z') }
+          });
+        }
+        
+        if (conditions.length > 0) {
+          whereClause.AND = conditions;
+        }
       }
       
       const medicoNum = parseInt(medico);
-      const pacienteNum = parseInt(paciente);
       
       if (!isNaN(medicoNum) && esAdmin) whereClause.fkusuario = medicoNum;
-      if (!isNaN(pacienteNum)) whereClause.fkpaciente = pacienteNum;
       if (diagnostico && diagnostico !== '') whereClause.diagnosticotratamiento = { contains: diagnostico, mode: 'insensitive' };
 
       const [consultas, total] = await Promise.all([
@@ -1116,7 +1227,7 @@ const reporteriaService = {
 
   async obtenerReporteAgenda(filtros, usuario) {
     try {
-      const { desde, hasta, medico, mes, anio, transporte, page, limit } = filtros;
+      const { nombrePaciente, cuiPaciente, desde, hasta, medico, transporte, estado, page, limit } = filtros;
       const skip = (page - 1) * limit;
 
       const usuarioConRol = await prisma.usuario.findUnique({
@@ -1125,29 +1236,67 @@ const reporteriaService = {
       });
 
       const esAdmin = usuarioConRol.rol.nombre.toLowerCase().includes('admin');
-      const whereClause = { estado: 1 };
+      const whereClause = {};
 
       if (!esAdmin) whereClause.fkusuario = usuario.idusuario;
       
-      if (esFechaValida(desde) || esFechaValida(hasta)) {
-        whereClause.fechaatencion = {};
-        if (esFechaValida(desde)) whereClause.fechaatencion.gte = new Date(desde);
-        if (esFechaValida(hasta)) whereClause.fechaatencion.lte = new Date(hasta);
+      // Búsqueda por nombre del paciente
+      if (nombrePaciente && nombrePaciente !== '') {
+        whereClause.paciente = {
+          OR: [
+            { nombres: { contains: nombrePaciente, mode: 'insensitive' } },
+            { apellidos: { contains: nombrePaciente, mode: 'insensitive' } }
+          ]
+        };
+      }
+
+      // Búsqueda por CUI del paciente
+      if (cuiPaciente && cuiPaciente !== '') {
+        whereClause.paciente = { ...whereClause.paciente, cui: { contains: cuiPaciente, mode: 'insensitive' } };
       }
       
-      const mesNum = parseInt(mes);
-      const anioNum = parseInt(anio);
+      // Filtro de fechas desde/hasta
+      // @db.Date: Prisma extrae la fecha en UTC del objeto Date.
+      // Usando T00:00:00.000Z garantiza que la fecha UTC = la fecha que el usuario indicó.
+      if (esFechaValida(desde) || esFechaValida(hasta)) {
+        whereClause.fechaatencion = {};
+        if (esFechaValida(desde)) {
+          whereClause.fechaatencion.gte = new Date(desde.split('T')[0] + 'T00:00:00.000Z');
+        }
+        if (esFechaValida(hasta)) {
+          whereClause.fechaatencion.lte = new Date(hasta.split('T')[0] + 'T00:00:00.000Z');
+        }
+      }
+      
+      // Filtros adicionales
       const medicoNum = parseInt(medico);
       const transporteNum = parseInt(transporte);
       
-      if (!isNaN(mesNum) && !isNaN(anioNum)) {
-        const primerDia = new Date(anioNum, mesNum - 1, 1);
-        const ultimoDia = new Date(anioNum, mesNum, 0);
-        whereClause.fechaatencion = { gte: primerDia, lte: ultimoDia };
-      }
-      
       if (!isNaN(medicoNum) && esAdmin) whereClause.fkusuario = medicoNum;
       if (!isNaN(transporteNum)) whereClause.transporte = transporteNum;
+      
+      // Filtro de estado - manejo robusto de array
+      if (estado) {
+        if (Array.isArray(estado) && estado.length > 0) {
+          // Convertir a números e filtrar
+          const estadosParsed = estado
+            .map(e => {
+              const parsed = parseInt(e);
+              return isNaN(parsed) ? null : parsed;
+            })
+            .filter(e => e !== null);
+          
+          if (estadosParsed.length > 0) {
+            whereClause.estado = { in: estadosParsed };
+          }
+        } else if (typeof estado === 'string' && estado !== '') {
+          // Si viene como string único
+          const estadoNum = parseInt(estado);
+          if (!isNaN(estadoNum)) {
+            whereClause.estado = estadoNum;
+          }
+        }
+      }
 
       const [citas, total] = await Promise.all([
         prisma.agenda.findMany({
@@ -1185,7 +1334,11 @@ const reporteriaService = {
         
         return {
           ...cita,
-          horaatencion: horaFormateada
+          horaatencion: horaFormateada,
+          // Retornar como string 'YYYY-MM-DD' para evitar desplazamiento de zona horaria en el frontend
+          fechaatencion: cita.fechaatencion instanceof Date
+            ? cita.fechaatencion.toISOString().split('T')[0]
+            : cita.fechaatencion
         };
       });
 

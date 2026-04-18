@@ -23,9 +23,30 @@ const reporteriaController = {
     }
   },
 
+  async obtenerMedicosDisponibles(req, res) {
+    try {
+      const medicos = await reporteriaService.obtenerMedicosDisponibles();
+
+      return res.status(200).json({
+        ok: true,
+        data: medicos
+      });
+
+    } catch (error) {
+      console.error('Error en obtenerMedicosDisponibles:', error);
+      return res.status(500).json({
+        ok: false,
+        mensaje: 'Error al obtener médicos disponibles',
+        error: error.message
+      });
+    }
+  },
+
   async obtenerReportePacientes(req, res) {
     try {
       const {
+        nombre,
+        cui,
         desde,
         hasta,
         genero,
@@ -38,6 +59,8 @@ const reporteriaController = {
       } = req.query;
 
       const filtros = {
+        nombre,
+        cui,
         desde,
         hasta,
         genero,
@@ -118,10 +141,11 @@ const reporteriaController = {
   async obtenerReporteConsultas(req, res) {
     try {
       const {
+        nombrePaciente,
+        cuiPaciente,
         desde,
         hasta,
         medico,
-        paciente,
         diagnostico,
         page = 1,
         limit = 10
@@ -130,10 +154,11 @@ const reporteriaController = {
       const usuario = req.usuario;
 
       const filtros = {
+        nombrePaciente,
+        cuiPaciente,
         desde,
         hasta,
         medico: medico ? parseInt(medico) : null,
-        paciente: paciente ? parseInt(paciente) : null,
         diagnostico,
         page: parseInt(page),
         limit: parseInt(limit)
@@ -201,25 +226,40 @@ const reporteriaController = {
   async obtenerReporteAgenda(req, res) {
     try {
       const {
+        nombrePaciente,
+        cuiPaciente,
         desde,
         hasta,
         medico,
-        mes,
-        anio,
         transporte,
+        estado,
         page = 1,
         limit = 10
       } = req.query;
 
       const usuario = req.usuario;
 
+      // Procesamiento especial para estado (que puede ser array)
+      let estadoProcessado = estado;
+      if (estado) {
+        // Si es string, convertir a array si es necesario
+        if (typeof estado === 'string') {
+          estadoProcessado = [estado];
+        } else if (!Array.isArray(estado)) {
+          estadoProcessado = [estado];
+        }
+        // Filtrar valores vacíos
+        estadoProcessado = estadoProcessado.filter(e => e !== undefined && e !== null && e !== '');
+      }
+
       const filtros = {
+        nombrePaciente,
+        cuiPaciente,
         desde,
         hasta,
         medico: medico ? parseInt(medico) : null,
-        mes: mes ? parseInt(mes) : null,
-        anio: anio ? parseInt(anio) : null,
         transporte: transporte !== undefined ? parseInt(transporte) : null,
+        estado: estadoProcessado,
         page: parseInt(page),
         limit: parseInt(limit)
       };
