@@ -3,7 +3,8 @@ const { conAuditoria } = require('../utils/auditoria.helper');
 
 const obtenerUsuarios = async (req, res) => {
     try{
-        const resultado = await usuarioService.obtenerUsuarios();
+        const incluirInactivos = req.query.includeInactive === 'true' && (req.usuario.fkrol === 1 || req.usuario.fkrol === 4 || req.usuario.fkrol === 7);
+        const resultado = await usuarioService.obtenerUsuarios(!incluirInactivos);
 
         if(resultado.success){
             res.status(200).json(resultado);

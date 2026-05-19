@@ -324,6 +324,7 @@ model usuario {
   cambiarclave             Boolean?                  @default(false)
   last_login_timestamp     BigInt?
   fkclinica                Int?
+  sesion_grupal  Boolean?  @default(false)
   bitacoras                Bitacora[]
   agendas                  agenda[]
   agenda_recurrente        agenda_recurrente[]

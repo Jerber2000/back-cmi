@@ -56,22 +56,29 @@ class AgendaService{
                 };
             }
 
-            const citaExistenteUsuario = await prisma.agenda.findFirst({
-                where:{
-                    fkusuario:     parseInt(fkusuario),
-                    fechaatencion: fechaConvertida,
-                    horaatencion:  horaConvertida,
-                    estado:{
-                        not: 0
-                    }
-                }
+            const profesional = await prisma.usuario.findUnique({
+                where: { idusuario: parseInt(fkusuario) },
+                select: { sesion_grupal: true }
             });
 
-            if(citaExistenteUsuario){
-                return{
-                    success: false,
-                    message: 'El profesional ya tiene cita programada en la fecha y hora seleccionada'
-                };
+            if (!profesional?.sesion_grupal) {
+                const citaExistenteUsuario = await prisma.agenda.findFirst({
+                    where: {
+                        fkusuario:     parseInt(fkusuario),
+                        fechaatencion: fechaConvertida,
+                        horaatencion:  horaConvertida,
+                        estado: {
+                            not: 0
+                        }
+                    }
+                });
+
+                if (citaExistenteUsuario) {
+                    return {
+                        success: false,
+                        message: 'El profesional ya tiene cita programada en la fecha y hora seleccionada'
+                    };
+                }
             }
 
             const citaNueva = await prismaClient.agenda.create({
@@ -403,25 +410,32 @@ class AgendaService{
                 };
             }
 
-            const citaExistenteUsuario = await prisma.agenda.findFirst({
-                where:{
-                    fkusuario:     parseInt(fkusuario),
-                    fechaatencion: fechaConvertida,
-                    horaatencion:  horaConvertida,
-                    estado:{
-                        not: 0
-                    },
-                    idagenda: {
-                        not: parseInt(idagenda)
-                    }
-                }
+            const profesional = await prisma.usuario.findUnique({
+                where: { idusuario: parseInt(fkusuario) },
+                select: { sesion_grupal: true }
             });
 
-            if(citaExistenteUsuario){
-                return{
-                    success: false,
-                    message: 'El profesional ya tiene cita programada en la fecha y hora seleccionada'
-                };
+            if (!profesional?.sesion_grupal) {
+                const citaExistenteUsuario = await prisma.agenda.findFirst({
+                    where: {
+                        fkusuario:     parseInt(fkusuario),
+                        fechaatencion: fechaConvertida,
+                        horaatencion:  horaConvertida,
+                        estado: {
+                            not: 0
+                        },
+                        idagenda: {
+                            not: parseInt(idagenda)
+                        }
+                    }
+                });
+
+                if (citaExistenteUsuario) {
+                    return {
+                        success: false,
+                        message: 'El profesional ya tiene cita programada en la fecha y hora seleccionada'
+                    };
+                }
             }
 
             let horaTransporteFormateada = null;
@@ -533,21 +547,25 @@ class AgendaService{
                 };
             }
             
-            if(citaExistente.estado === 0){
-                return{
-                    success: false,
-                    message: 'La cita ya está eliminada'
-                };
-            }
+            // if(citaExistente.estado === 0){
+            //     return{
+            //         success: false,
+            //         message: 'La cita ya está eliminada'
+            //     };
+            // }
             
-            const citaEliminada = await prismaClient.agenda.update({
-                where: {
-                    idagenda: parseInt(idagenda)
-                },
-                data: {
-                    estado: 0,
-                    usuariomodificacion: usuarioModificacion
-                }
+            // const citaEliminada = await prismaClient.agenda.update({
+            //     where: {
+            //         idagenda: parseInt(idagenda)
+            //     },
+            //     data: {
+            //         estado: 0,
+            //         usuariomodificacion: usuarioModificacion
+            //     }
+            // });
+
+            await prismaClient.agenda.delete({
+                where: { idagenda: parseInt(idagenda) }
             });
 
             return{

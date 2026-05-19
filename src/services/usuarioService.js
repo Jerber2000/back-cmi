@@ -18,9 +18,10 @@ class UsuarioService {
         return fecha;
     }
 
-    async obtenerUsuarios(){
+    async obtenerUsuarios(soloActivos = true){
         try{
             const usuario = await prisma.usuario.findMany({
+                where: soloActivos ? { estado: 1 } : undefined,
                 select:{
                     idusuario:                true,
                     fkrol:                    true,
@@ -39,7 +40,8 @@ class UsuarioService {
                     telefonoemergencia:       true,
                     observaciones:            true,
                     rutafotoperfil:           true,
-                    fkclinica:                true
+                    fkclinica:                true,
+                    sesion_grupal:            true 
                 },
                 orderBy:{
                     usuario: 'asc'
@@ -124,15 +126,17 @@ class UsuarioService {
 
             const usuarioPorRol = await prisma.usuario.findMany({
                 select: {
-                    idusuario: true,
-                    nombres: true,
-                    apellidos: true,
-                    fkrol: true
+                    idusuario:          true,
+                    nombres:            true,
+                    apellidos:          true,
+                    fkrol:              true,
+                    sesion_grupal:      true 
                 },
                 where: {
                     fkrol: {
                         in: rolesArray
-                    }
+                    },
+                    estado: 1
                 },
                 orderBy: {
                     usuario: 'asc'
@@ -405,6 +409,10 @@ class UsuarioService {
 
             if(updateData.usuariomodificacion !== undefined){
                 dataParaActualizar.usuariomodificacion = updateData.usuariomodificacion?.trim();
+            }
+
+            if (updateData.sesion_grupal !== undefined) {
+                dataParaActualizar.sesion_grupal = Boolean(updateData.sesion_grupal);
             }
 
             const fechaGuatemala = DateTime.now().setZone("America/Guatemala").toJSDate();
