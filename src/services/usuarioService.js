@@ -393,7 +393,7 @@ class UsuarioService {
 
             if(updateData.nombrecontactoemergencia !== undefined){
                 dataParaActualizar.nombrecontactoemergencia = updateData.nombrecontactoemergencia?.trim();
-            }
+            } 
 
             if(updateData.telefonoemergencia !== undefined){
                 dataParaActualizar.telefonoemergencia = updateData.telefonoemergencia?.trim();

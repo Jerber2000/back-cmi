@@ -18,7 +18,7 @@ const crearCita = async (req, res) => {
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
-};
+}; 
 
 const obtenerCitas = async (req, res) => {
     try{

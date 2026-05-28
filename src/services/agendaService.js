@@ -1042,7 +1042,7 @@ class AgendaService{
                 message: 'Error al actualizar el estado de la cita: ' + error.message
             };
         }
-    }
+    } 
 }
 
 module.exports = new AgendaService();

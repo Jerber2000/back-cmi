@@ -18,7 +18,7 @@ const obtenerUsuarios = async (req, res) => {
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
-};
+}; 
 
 const obtenerUsuarioPorId = async (req, res) => {
     try{
