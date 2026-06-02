@@ -5,16 +5,33 @@ const autenticacion = require('../middlewares/auth');
 const checkRole = require('../middlewares/checkRole');
 const validarCambioClave = require('../middlewares/validarCambioClave');
 
-const auth = [autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave];
-const soloAdmin = [...auth, checkRole(1, 4)];
-
 // Ruta que llama el roleGuard en el frontend para saber qué páginas puede ver el usuario
-router.get('/mis-rutas', auth, permisoController.obtenerMisRutas);
+router.get('/mis-rutas',
+  autenticacion.validarToken,
+  autenticacion.verificarUsuarioEnBD,
+  validarCambioClave,
+  permisoController.obtenerMisRutas
+);
 
 // Rutas de administración — solo Administrador (1) y Sistemas (4)
-router.get('/',                soloAdmin, permisoController.obtenerTodos);
-router.get('/resumen',         soloAdmin, permisoController.obtenerResumen);
-router.get('/rol/:idrol',      soloAdmin, permisoController.obtenerPorRol);
-router.put('/rol/:idrol',      soloAdmin, permisoController.actualizarPorRol);
+router.get('/',
+  autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave, checkRole(1, 4),
+  permisoController.obtenerTodos
+);
+
+router.get('/resumen',
+  autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave, checkRole(1, 4),
+  permisoController.obtenerResumen
+);
+
+router.get('/rol/:idrol',
+  autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave, checkRole(1, 4),
+  permisoController.obtenerPorRol
+);
+
+router.put('/rol/:idrol',
+  autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave, checkRole(1, 4),
+  permisoController.actualizarPorRol
+);
 
 module.exports = router;
