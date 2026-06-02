@@ -3,7 +3,7 @@ const router = express.Router();
 const permisoController = require('../controllers/permisoController');
 const autenticacion = require('../middlewares/auth');
 const checkRole = require('../middlewares/checkRole');
-const validarCambioClave = require('../middlewares/validarCambioClave');
+const { validarCambioClave } = require('../middlewares/validarCambioClave');
 
 // Ruta que llama el roleGuard en el frontend para saber qué páginas puede ver el usuario
 router.get('/mis-rutas',
