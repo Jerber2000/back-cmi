@@ -40,6 +40,7 @@ const documentoRoutes = require('./routes/documentoRoutes');
 const salidasInventarioRoutes = require('./routes/salidasInventarioRoutes');
 
 const programaRoutes = require('./routes/programaRoutes');
+const permisoRoutes = require('./routes/permisoRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/pacientes', pacienteRoutes);
@@ -57,6 +58,7 @@ app.use('/api/reporteria', reporteriaRoutes);
 app.use('/api/documentos', documentoRoutes);  
 
 app.use('/api/programas', programaRoutes);
+app.use('/api/permisos', permisoRoutes);
 
 app.get('/', (req, res) => {
   res.json({
