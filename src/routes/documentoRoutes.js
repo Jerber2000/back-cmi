@@ -1,102 +1,35 @@
-
 const express = require('express');
 const router = express.Router();
 const documentoController = require('../controllers/documentoController');
 const autenticacion = require('../middlewares/auth');
 const { validarCambioClave } = require('../middlewares/validarCambioClave');
 const { fileService } = require('../services/fileService');
-const clinicaService = require('../services/clinicaService'); 
+const clinicaService = require('../services/clinicaService');
 const {
-  validarCrearDocumento,
-  validarActualizarDocumento,
-  validarIdDocumento,
-  validarCambioEstado,
-  validarParametrosBusqueda
+  validarCrearDocumento, validarActualizarDocumento, validarIdDocumento,
+  validarCambioEstado, validarParametrosBusqueda
 } = require('../middlewares/validacionDocumentos');
+const { verificarPermiso } = require('../middlewares/checkPermiso');
 
 const uploadDocumento = fileService.createGenericMiddleware(['document'], 1);
+const auth = [autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave];
+const perm = verificarPermiso('documentos');
 
-router.get(
-  '/',
-  autenticacion.validarToken,
-  autenticacion.verificarUsuarioEnBD,
-  validarCambioClave,
-  validarParametrosBusqueda,
-  documentoController.listarDocumentos
-);
-
-router.get(
-  '/:id',
-  autenticacion.validarToken,
-  autenticacion.verificarUsuarioEnBD,
-  validarCambioClave,
-  validarIdDocumento,
-  documentoController.obtenerDocumento
-);
-
-router.post(
-  '/',
-  autenticacion.validarToken,
-  autenticacion.verificarUsuarioEnBD,
-  validarCambioClave,
-  uploadDocumento.single('documento'),
-  validarCrearDocumento,
-  documentoController.crearDocumento
-);
-
-router.put(
-  '/:id',
-  autenticacion.validarToken,
-  autenticacion.verificarUsuarioEnBD,
-  validarCambioClave,
-  validarIdDocumento,
-  uploadDocumento.single('documento'),
-  validarActualizarDocumento,
-  documentoController.actualizarDocumento
-);
-
-router.delete(
-  '/:id',
-  autenticacion.validarToken,
-  autenticacion.verificarUsuarioEnBD,
-  validarCambioClave,
-  validarIdDocumento,
-  documentoController.eliminarDocumento
-);
-
-router.patch(
-  '/:id/estado',
-  autenticacion.validarToken,
-  autenticacion.verificarUsuarioEnBD,
-  validarCambioClave,
-  validarIdDocumento,
-  validarCambioEstado,
-  documentoController.cambiarEstado
-);
-
-router.get(
-  '/clinicas/listar',
-  autenticacion.validarToken,
-  autenticacion.verificarUsuarioEnBD,
-  validarCambioClave,
-  async (req, res) => {
+// Clínicas — utilidad para dropdowns
+router.get('/clinicas/listar', ...auth, async (req, res) => {
     try {
-      const resultado = await clinicaService.consultarClinica();
-      
-      if (resultado.success) {
-        res.status(200).json(resultado);
-      } else {
-        res.status(400).json(resultado);
-      }
+        const resultado = await clinicaService.consultarClinica();
+        resultado.success ? res.status(200).json(resultado) : res.status(400).json(resultado);
     } catch (error) {
-      console.error('Error al consultar clínicas:', error.message);
-      res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
-      });
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
     }
-  }
-);
+});
+
+router.get('/',        ...auth, validarParametrosBusqueda, perm, documentoController.listarDocumentos);
+router.get('/:id',     ...auth, validarIdDocumento, perm, documentoController.obtenerDocumento);
+router.post('/',       ...auth, uploadDocumento.single('documento'), validarCrearDocumento, perm, documentoController.crearDocumento);
+router.put('/:id',     ...auth, validarIdDocumento, uploadDocumento.single('documento'), validarActualizarDocumento, perm, documentoController.actualizarDocumento);
+router.delete('/:id',  ...auth, validarIdDocumento, perm, documentoController.eliminarDocumento);
+router.patch('/:id/estado', ...auth, validarIdDocumento, validarCambioEstado, perm, documentoController.cambiarEstado);
 
 module.exports = router;

@@ -1,4 +1,5 @@
 const permisoService = require('../services/permisoService');
+const { limpiarCacheRol } = require('../middlewares/checkPermiso');
 
 /**
  * GET /api/permisos
@@ -69,6 +70,8 @@ exports.actualizarPorRol = async (req, res) => {
     }
 
     await permisoService.actualizarPermisosPorRol(idrol, permisosIds);
+    // Limpiar caché del servidor para este rol
+    limpiarCacheRol(parseInt(idrol));
     res.json({ success: true, message: 'Permisos actualizados correctamente' });
   } catch (error) {
     if (error.message.includes('No se pueden modificar')) {

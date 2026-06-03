@@ -1,100 +1,64 @@
 const express = require('express');
 const router = express.Router();
-const { 
-    obtenerUsuarios,
-    obtenerUsuarioPorId,
-    obtenerUsuarioPorRol,
-    crearUsuario,
-    actuarlizarUsuario,
-    eliminarUsuario
- } = require('../controllers/usuarioController');
+const { obtenerUsuarios, obtenerUsuarioPorId, obtenerUsuarioPorRol, crearUsuario, actuarlizarUsuario, eliminarUsuario } = require('../controllers/usuarioController');
 const autenticacion = require('../middlewares/auth');
 const { validarCambioClave } = require('../middlewares/validarCambioClave');
 const { validarUsuarioCreacion, validarUsuarioActualizar } = require('../middlewares/validacionMiddleware');
 const RolService = require('../services/rolService');
 const clinicaService = require('../services/clinicaService');
-const checkRole = require('../middlewares/checkRole');
+const { verificarPermiso } = require('../middlewares/checkPermiso');
 
-router.get(
-    '/buscarUsuarios',
-    autenticacion.validarToken,
-    autenticacion.verificarUsuarioEnBD,
-    validarCambioClave,
-    checkRole(1,4,7),
+// Gestión de usuarios — requiere permiso de página 'usuario'
+router.get('/buscarUsuarios',
+    autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave,
+    verificarPermiso('usuario'),
     obtenerUsuarios
 );
 
-router.get(
-    '/buscarPorId/:idusuario',
-    autenticacion.validarToken,
-    autenticacion.verificarUsuarioEnBD,
-    validarCambioClave,
-    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
-    obtenerUsuarioPorId
-);
-
-router.get(
-    '/buscarPorRol/:rol',
-    autenticacion.validarToken,
-    autenticacion.verificarUsuarioEnBD,
-    validarCambioClave,
-    obtenerUsuarioPorRol
-);
-
-router.post(
-    '/crearUsuario',
-    autenticacion.validarToken,
-    autenticacion.verificarUsuarioEnBD,
-    validarCambioClave,
+router.post('/crearUsuario',
+    autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave,
     validarUsuarioCreacion,
-    checkRole(1,4,8),
+    verificarPermiso('usuario'),
     crearUsuario
 );
 
-router.put(
-    '/actualizarUsuario/:idusuario',
-    autenticacion.validarToken,
-    autenticacion.verificarUsuarioEnBD,
-    validarCambioClave,
-    validarUsuarioActualizar,
-    checkRole(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
-    actuarlizarUsuario
-);
-
-router.delete(
-    '/eliminarUsuario/:idusuario',
-    autenticacion.validarToken,
-    autenticacion.verificarUsuarioEnBD,
-    validarCambioClave,
-    checkRole(1,4,8),
+router.delete('/eliminarUsuario/:idusuario',
+    autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave,
+    verificarPermiso('usuario'),
     eliminarUsuario
 );
 
+// Endpoints de utilidad — accesibles a cualquier usuario autenticado
+// (usados internamente por otros módulos: agenda, perfil, etc.)
+router.get('/buscarPorId/:idusuario',
+    autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave,
+    obtenerUsuarioPorId
+);
+
+router.get('/buscarPorRol/:rol',
+    autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave,
+    obtenerUsuarioPorRol
+);
+
+router.put('/actualizarUsuario/:idusuario',
+    autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave,
+    validarUsuarioActualizar,
+    actuarlizarUsuario
+);
+
 router.get('/roles',
-    autenticacion.validarToken,
-    autenticacion.verificarUsuarioEnBD,
+    autenticacion.validarToken, autenticacion.verificarUsuarioEnBD,
     async (req, res) => {
-        try{
-            const roles = await RolService.consultarRol();
-            res.json(roles);
-        }catch(error){
-            res.status(500).json({ error: error.message });
-        }
+        try { const roles = await RolService.consultarRol(); res.json(roles); }
+        catch (error) { res.status(500).json({ error: error.message }); }
     }
 );
 
-router.get(
-    '/clinicas',
-    autenticacion.validarToken,
-    autenticacion.verificarUsuarioEnBD,
-    validarCambioClave,
+router.get('/clinicas',
+    autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave,
     async (req, res) => {
-        try{
-            const clinicas = await clinicaService.consultarClinica();
-            res.json(clinicas);
-        }catch(error){
-            res.status(500).json({ error: error.message });
-        }
+        try { const clinicas = await clinicaService.consultarClinica(); res.json(clinicas); }
+        catch (error) { res.status(500).json({ error: error.message }); }
     }
 );
 
