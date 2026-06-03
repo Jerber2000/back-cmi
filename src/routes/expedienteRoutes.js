@@ -4,8 +4,7 @@ const ExpedienteController = require('../controllers/expedienteController');
 const autenticacion = require('../middlewares/auth');
 const { validarExpediente, validarIdExpediente } = require('../middlewares/validaExpediente');
 const { verificarPermiso } = require('../middlewares/checkPermiso');
-const { PrismaClient } = require('../generated/prisma');
-const prisma = new PrismaClient();
+const { prisma } = require('../config/prisma');
 
 const auth = [autenticacion.validarToken, autenticacion.verificarUsuarioEnBD];
 const perm = verificarPermiso('expedientes');

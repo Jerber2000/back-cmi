@@ -7,8 +7,7 @@
  * Cache en memoria con TTL de 5 minutos para no golpear la BD en cada request.
  */
 
-const { PrismaClient } = require('../generated/prisma');
-const prisma = new PrismaClient();
+const { prisma } = require('../config/prisma');
 
 const ROLES_SUPERADMIN = [1, 4];
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
