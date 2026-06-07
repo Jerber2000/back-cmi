@@ -54,6 +54,7 @@ const reporteriaController = {
         edadMin,
         edadMax,
         tipodiscapacidad,
+        programa,
         page = 1,
         limit = 10
       } = req.query;
@@ -68,6 +69,7 @@ const reporteriaController = {
         edadMin: edadMin ? parseInt(edadMin) : null,
         edadMax: edadMax ? parseInt(edadMax) : null,
         tipodiscapacidad,
+        programa: programa ? parseInt(programa) : null,
         page: parseInt(page),
         limit: parseInt(limit)
       };
@@ -98,6 +100,7 @@ const reporteriaController = {
         hasta,
         estado,
         medicamento,
+        nombreMedicamento,
         usuario: usuarioFiltro,
         motivo,
         destino,
@@ -112,6 +115,7 @@ const reporteriaController = {
         hasta,
         estado,
         medicamento: medicamento ? parseInt(medicamento) : null,
+        nombreMedicamento,
         usuarioFiltro: usuarioFiltro ? parseInt(usuarioFiltro) : null,
         motivo,
         destino,
@@ -146,6 +150,7 @@ const reporteriaController = {
         desde,
         hasta,
         medico,
+        programa,
         diagnostico,
         page = 1,
         limit = 10
@@ -159,6 +164,7 @@ const reporteriaController = {
         desde,
         hasta,
         medico: medico ? parseInt(medico) : null,
+        programa: programa ? parseInt(programa) : null,
         diagnostico,
         page: parseInt(page),
         limit: parseInt(limit)
@@ -190,6 +196,7 @@ const reporteriaController = {
         stockMinimo,
         proximosVencer,
         usuario,
+        nombreMedicamento,
         page = 1,
         limit = 10
       } = req.query;
@@ -199,6 +206,7 @@ const reporteriaController = {
         stockMinimo: stockMinimo ? parseInt(stockMinimo) : null,
         proximosVencer: proximosVencer ? parseInt(proximosVencer) : null,
         usuario: usuario ? parseInt(usuario) : null,
+        nombreMedicamento,
         page: parseInt(page),
         limit: parseInt(limit)
       };
@@ -286,10 +294,13 @@ const reporteriaController = {
   async obtenerReporteReferencias(req, res) {
     try {
       const {
+        nombrePaciente,
+        cuiPaciente,
         tipo,
         estado,
         clinica,
-        medico,
+        enviadoPor,
+        confirmadoPor,
         desde,
         hasta,
         page = 1,
@@ -299,10 +310,13 @@ const reporteriaController = {
       const usuario = req.usuario;
 
       const filtros = {
+        nombrePaciente,
+        cuiPaciente,
         tipo,
         estado,
         clinica: clinica ? parseInt(clinica) : null,
-        medico: medico ? parseInt(medico) : null,
+        enviadoPor: enviadoPor ? parseInt(enviadoPor) : null,
+        confirmadoPor,
         desde,
         hasta,
         page: parseInt(page),
