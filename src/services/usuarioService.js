@@ -171,7 +171,7 @@ class UsuarioService {
             const prismaClient = tx || prisma;
 
             const { fkrol, usuario, clave, nombres, apellidos, fechanacimiento, correo, puesto, profesion, telinstitucional, extension, telefonopersonal,
-                    nombrecontactoemergencia, telefonoemergencia, rutafotoperfil, observaciones, usuariocreacion, estado, fkclinica } = usuarioData;
+                    nombrecontactoemergencia, telefonoemergencia, rutafotoperfil, observaciones, usuariocreacion, estado, fkclinica, sesion_grupal } = usuarioData;
             
             if(!usuario || !clave || !nombres || !apellidos || !correo){
                 return{
@@ -249,7 +249,8 @@ class UsuarioService {
                     observaciones:            observaciones?.trim(), 
                     usuariocreacion:          usuariocreacion,
                     estado:                   parseInt(estado),
-                    fkclinica:                parseInt(fkclinica)
+                    fkclinica:                parseInt(fkclinica),
+                    sesion_grupal:            Boolean(sesion_grupal)
                 },
                 select: {
                     fkrol:                    true,
@@ -268,7 +269,8 @@ class UsuarioService {
                     rutafotoperfil:           true,
                     observaciones:            true,
                     estado:                   true,
-                    fkclinica:                true
+                    fkclinica:                true,
+                    sesion_grupal:            true
                 }
             });
 
