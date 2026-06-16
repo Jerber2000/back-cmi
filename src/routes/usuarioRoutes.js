@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { obtenerUsuarios, obtenerUsuarioPorId, obtenerUsuarioPorRol, crearUsuario, actuarlizarUsuario, eliminarUsuario } = require('../controllers/usuarioController');
+const { obtenerUsuarios, obtenerUsuarioPorId, obtenerUsuarioPorRol, obtenerProfesionalesAgenda, crearUsuario, actuarlizarUsuario, eliminarUsuario } = require('../controllers/usuarioController');
 const autenticacion = require('../middlewares/auth');
 const { validarCambioClave } = require('../middlewares/validarCambioClave');
 const { validarUsuarioCreacion, validarUsuarioActualizar } = require('../middlewares/validacionMiddleware');
@@ -38,6 +38,11 @@ router.get('/buscarPorId/:idusuario',
 router.get('/buscarPorRol/:rol',
     autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave,
     obtenerUsuarioPorRol
+);
+
+router.get('/profesionalesAgenda',
+    autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave,
+    obtenerProfesionalesAgenda
 );
 
 router.put('/actualizarUsuario/:idusuario',
