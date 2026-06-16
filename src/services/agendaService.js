@@ -3,15 +3,24 @@ const { prisma } = require('../config/prisma');
 class AgendaService{
     convertirFecha(fechaString) {
         if (!fechaString) return null;
-        
+
         if (fechaString instanceof Date) return fechaString;
-        
+
+        // Para strings de fecha pura (YYYY-MM-DD), usar mediodía local (12:00)
+        // en lugar de medianoche UTC (00:00Z).
+        // Con TZ=America/Guatemala (UTC-6), medianoche UTC = 18:00 del día ANTERIOR
+        // en hora local → PostgreSQL guarda la fecha equivocada.
+        // Mediodía local nunca cruza al día anterior con UTC-6.
+        if (/^\d{4}-\d{2}-\d{2}$/.test(fechaString)) {
+            return new Date(`${fechaString}T12:00:00`);
+        }
+
         const fecha = new Date(fechaString);
-        
+
         if (isNaN(fecha.getTime())) {
             throw new Error(`Fecha inválida: ${fechaString}`);
         }
-        
+
         return fecha;
     }
 

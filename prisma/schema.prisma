@@ -269,15 +269,37 @@ model paciente {
 }
 
 model rol {
-  idrol               Int       @id @default(autoincrement())
-  nombre              String    @db.VarChar(100)
+  idrol               Int           @id @default(autoincrement())
+  nombre              String        @db.VarChar(100)
   descripcion         String?
-  usuariocreacion     String    @db.VarChar(100)
-  fechacreacion       DateTime? @default(now()) @db.Timestamp(6)
-  usuariomodificacion String?   @db.VarChar(100)
-  fechamodificacion   DateTime? @db.Timestamp(6)
-  estado              Int?      @default(1) @db.SmallInt
+  usuariocreacion     String        @db.VarChar(100)
+  fechacreacion       DateTime?     @default(now()) @db.Timestamp(6)
+  usuariomodificacion String?       @db.VarChar(100)
+  fechamodificacion   DateTime?     @db.Timestamp(6)
+  estado              Int?          @default(1) @db.SmallInt
+  permisos            rol_permiso[]
   usuario             usuario[]
+}
+
+// Página/módulo del sistema al que se puede controlar el acceso
+model permiso {
+  idpermiso   Int           @id @default(autoincrement())
+  nombre      String        @db.VarChar(100)
+  descripcion String?       @db.VarChar(255)
+  ruta        String        @unique @db.VarChar(100)  // ruta Angular, ej: "usuario"
+  icono       String?       @db.VarChar(50)
+  orden       Int?          @default(0)
+  roles       rol_permiso[]
+}
+
+// Tabla pivote: qué roles tienen acceso a qué páginas
+model rol_permiso {
+  fkrol     Int
+  fkpermiso Int
+  rol       rol     @relation(fields: [fkrol], references: [idrol], onDelete: Cascade)
+  permiso   permiso @relation(fields: [fkpermiso], references: [idpermiso], onDelete: Cascade)
+
+  @@id([fkrol, fkpermiso])
 }
 
 model salidasinventario {

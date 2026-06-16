@@ -897,14 +897,22 @@ const reporteriaService = {
 
   async obtenerMedicosDisponibles() {
     try {
+      // Los roles "médicos" varían según la clínica (Medico General, Odontólogo,
+      // Psicólogo, Fisioterapeuta, etc.), así que filtrar por nombre de rol es frágil.
+      // En su lugar, mostramos a quienes realmente aparecen como profesional en
+      // consultas, agenda o referencias — que es justo lo que estos filtros buscan.
+      const [enConsultas, enAgenda, enReferencias] = await Promise.all([
+        prisma.detallehistorialclinico.findMany({ where: { estado: 1 }, select: { fkusuario: true }, distinct: ['fkusuario'] }),
+        prisma.agenda.findMany({ where: { estado: 1 }, select: { fkusuario: true }, distinct: ['fkusuario'] }),
+        prisma.detallereferirpaciente.findMany({ where: { estado: 1 }, select: { fkusuario: true }, distinct: ['fkusuario'] })
+      ]);
+
+      const idsUsuarios = [...new Set([...enConsultas, ...enAgenda, ...enReferencias].map(r => r.fkusuario))];
+
       const medicos = await prisma.usuario.findMany({
         where: {
-          estado: 1,  // Usuarios activos
-          rol: {
-            nombre: {
-              in: ['Médico', 'Doctor', 'Profesional Médico']  // Buscar por roles que sean médicos
-            }
-          }
+          estado: 1,
+          idusuario: { in: idsUsuarios }
         },
         select: {
           idusuario: true,
@@ -926,7 +934,7 @@ const reporteriaService = {
 
   async obtenerReportePacientes(filtros) {
     try {
-      const { nombre, cui, desde, hasta, genero, municipio, edadMin, edadMax, tipodiscapacidad, page, limit } = filtros;
+      const { nombre, cui, desde, hasta, genero, municipio, edadMin, edadMax, tipodiscapacidad, programa, page, limit } = filtros;
       const skip = (page - 1) * limit;
 
       const whereClause = { estado: 1 };
@@ -970,6 +978,16 @@ const reporteriaService = {
       if (municipio && municipio !== '') whereClause.municipio = { contains: municipio, mode: 'insensitive' };
       if (tipodiscapacidad && tipodiscapacidad !== '') whereClause.tipodiscapacidad = { contains: tipodiscapacidad, mode: 'insensitive' };
 
+      // Filtrar por programa al que pertenece el paciente (vía su expediente)
+      if (programa) {
+        whereClause.expedientes = {
+          some: {
+            estado: 1,
+            programas: { some: { idprograma: programa } }
+          }
+        };
+      }
+
       const edadMinNum = parseInt(edadMin);
       const edadMaxNum = parseInt(edadMax);
       
@@ -992,12 +1010,17 @@ const reporteriaService = {
         prisma.paciente.findMany({
           where: whereClause,
           include: {
-            expedientes: { 
-              where: { estado: 1 }, 
-              select: { 
-                numeroexpediente: true, 
-                fechacreacion: true 
-              } 
+            expedientes: {
+              where: { estado: 1 },
+              select: {
+                numeroexpediente: true,
+                fechacreacion: true,
+                programas: {
+                  select: {
+                    programa: { select: { idprograma: true, nombre: true } }
+                  }
+                }
+              }
             }
           },
           orderBy: { fechacreacion: 'desc' },
@@ -1010,7 +1033,8 @@ const reporteriaService = {
       const pacientesConEdad = pacientes.map(p => ({
         ...p,
         edad: calcularEdad(p.fechanacimiento),
-        tieneExpediente: p.expedientes.length > 0
+        tieneExpediente: p.expedientes.length > 0,
+        programas: p.expedientes.flatMap(e => e.programas.map(ep => ep.programa))
       }));
 
       const resumen = {
@@ -1036,7 +1060,7 @@ const reporteriaService = {
 
   async obtenerReporteConsultas(filtros, usuario) {
     try {
-      const { nombrePaciente, cuiPaciente, desde, hasta, medico, diagnostico, page, limit } = filtros;
+      const { nombrePaciente, cuiPaciente, desde, hasta, medico, programa, diagnostico, page, limit } = filtros;
       const skip = (page - 1) * limit;
 
       const usuarioConRol = await prisma.usuario.findUnique({
@@ -1087,9 +1111,23 @@ const reporteriaService = {
       }
       
       const medicoNum = parseInt(medico);
-      
+      const programaNum = parseInt(programa);
+
       if (!isNaN(medicoNum) && esAdmin) whereClause.fkusuario = medicoNum;
       if (diagnostico && diagnostico !== '') whereClause.diagnosticotratamiento = { contains: diagnostico, mode: 'insensitive' };
+
+      // Filtrar por programa al que pertenece el paciente (vía su expediente)
+      if (!isNaN(programaNum)) {
+        whereClause.paciente = {
+          ...whereClause.paciente,
+          expedientes: {
+            some: {
+              estado: 1,
+              programas: { some: { idprograma: programaNum } }
+            }
+          }
+        };
+      }
 
       const [consultas, total] = await Promise.all([
         prisma.detallehistorialclinico.findMany({
@@ -1151,25 +1189,28 @@ const reporteriaService = {
 
   async obtenerReporteInventario(filtros) {
     try {
-      const { estado, stockMinimo, proximosVencer, usuario, page, limit } = filtros;
+      const { estado, stockMinimo, proximosVencer, usuario, nombreMedicamento, page, limit } = filtros;
       const skip = (page - 1) * limit;
       const whereClause = {};
 
       if (estado === 'activo') whereClause.estado = 1;
       else if (estado === 'inactivo') whereClause.estado = 0;
-      
+
       const stockMin = parseInt(stockMinimo);
       const diasVencer = parseInt(proximosVencer);
       const usuarioNum = parseInt(usuario);
-      
+
       if (!isNaN(stockMin)) whereClause.unidades = { lte: stockMin };
-      
+
       if (!isNaN(diasVencer)) {
         const fechaLimite = new Date(Date.now() + diasVencer * 24 * 60 * 60 * 1000);
         whereClause.fechavencimiento = { lte: fechaLimite };
       }
-      
+
       if (!isNaN(usuarioNum)) whereClause.fkusuario = usuarioNum;
+      if (nombreMedicamento && nombreMedicamento !== '') {
+        whereClause.nombre = { contains: nombreMedicamento, mode: 'insensitive' };
+      }
 
       const [medicamentos, total] = await Promise.all([
         prisma.inventariomedico.findMany({
@@ -1361,7 +1402,7 @@ const reporteriaService = {
 
   async obtenerReporteReferencias(filtros, usuario) {
     try {
-      const { tipo, estado, clinica, medico, desde, hasta, page, limit } = filtros;
+      const { nombrePaciente, cuiPaciente, tipo, estado, clinica, enviadoPor, confirmadoPor, desde, hasta, page, limit } = filtros;
       const skip = (page - 1) * limit;
 
       const usuarioConRol = await prisma.usuario.findUnique({
@@ -1388,14 +1429,30 @@ const reporteriaService = {
       } else if (estado === 'completado') whereClause.confirmacion4 = 1;
 
       const clinicaNum = parseInt(clinica);
-      const medicoNum = parseInt(medico);
-      
+      const enviadoPorNum = parseInt(enviadoPor);
+
       if (!isNaN(clinicaNum)) whereClause.fkclinica = clinicaNum;
-      if (!isNaN(medicoNum)) {
+      if (!isNaN(enviadoPorNum)) whereClause.fkusuario = enviadoPorNum;
+      if (confirmadoPor && confirmadoPor !== '') {
         whereClause.OR = [
-          { fkusuario: medicoNum },
-          { fkusuariodestino: medicoNum }
+          { usuarioconfirma1: { contains: confirmadoPor, mode: 'insensitive' } },
+          { usuarioconfirma2: { contains: confirmadoPor, mode: 'insensitive' } },
+          { usuarioconfirma3: { contains: confirmadoPor, mode: 'insensitive' } },
+          { usuarioconfirma4: { contains: confirmadoPor, mode: 'insensitive' } }
         ];
+      }
+
+      if (nombrePaciente && nombrePaciente !== '') {
+        whereClause.paciente = {
+          OR: [
+            { nombres: { contains: nombrePaciente, mode: 'insensitive' } },
+            { apellidos: { contains: nombrePaciente, mode: 'insensitive' } }
+          ]
+        };
+      }
+
+      if (cuiPaciente && cuiPaciente !== '') {
+        whereClause.paciente = { ...whereClause.paciente, cui: { contains: cuiPaciente, mode: 'insensitive' } };
       }
       
       if (esFechaValida(desde) || esFechaValida(hasta)) {
@@ -1602,8 +1659,9 @@ async obtenerReporteSalidas(filtros, usuario) {
     const {
       desde,
       hasta,
-      estado, 
+      estado,
       medicamento,
+      nombreMedicamento,
       usuarioFiltro,
       motivo,
       destino,
@@ -1627,6 +1685,12 @@ async obtenerReporteSalidas(filtros, usuario) {
 
     if (medicamento) {
       where.fkmedicina = parseInt(medicamento);
+    }
+
+    if (nombreMedicamento) {
+      where.medicamento = {
+        nombre: { contains: nombreMedicamento, mode: 'insensitive' }
+      };
     }
 
     if (usuarioFiltro) {
