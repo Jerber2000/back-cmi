@@ -70,6 +70,11 @@ class UsuarioService {
             const usuarioPorId = await prisma.usuario.findUnique({
                 where:{
                     idusuario: parseInt(idusuario)
+                },
+                include:{
+                    rol: {
+                        select: { idrol: true, nombre: true }
+                    }
                 }
             });
 

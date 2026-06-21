@@ -25,7 +25,8 @@ const reporteriaController = {
 
   async obtenerMedicosDisponibles(req, res) {
     try {
-      const medicos = await reporteriaService.obtenerMedicosDisponibles();
+      const { contexto } = req.query;
+      const medicos = await reporteriaService.obtenerMedicosDisponibles(contexto);
 
       return res.status(200).json({
         ok: true,
@@ -37,6 +38,25 @@ const reporteriaController = {
       return res.status(500).json({
         ok: false,
         mensaje: 'Error al obtener médicos disponibles',
+        error: error.message
+      });
+    }
+  },
+
+  async obtenerConfirmadoresReferidos(req, res) {
+    try {
+      const confirmadores = await reporteriaService.obtenerConfirmadoresReferidos();
+
+      return res.status(200).json({
+        ok: true,
+        data: confirmadores
+      });
+
+    } catch (error) {
+      console.error('Error en obtenerConfirmadoresReferidos:', error);
+      return res.status(500).json({
+        ok: false,
+        mensaje: 'Error al obtener confirmadores de referidos',
         error: error.message
       });
     }
@@ -55,6 +75,7 @@ const reporteriaController = {
         edadMax,
         tipodiscapacidad,
         programa,
+        fkclinica,
         page = 1,
         limit = 10
       } = req.query;
@@ -70,6 +91,7 @@ const reporteriaController = {
         edadMax: edadMax ? parseInt(edadMax) : null,
         tipodiscapacidad,
         programa: programa ? parseInt(programa) : null,
+        fkclinica: fkclinica ? parseInt(fkclinica) : null,
         page: parseInt(page),
         limit: parseInt(limit)
       };
