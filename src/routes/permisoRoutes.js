@@ -13,24 +13,25 @@ router.get('/mis-rutas',
   permisoController.obtenerMisRutas
 );
 
-// Rutas de administración — solo Administrador (1) y Sistemas (4)
+// Rutas de administración — solo Administrador y Sistemas (por nombre, no por ID:
+// el idrol de cada uno cambia entre entornos)
 router.get('/',
-  autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave, checkRole(1, 4),
+  autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave, checkRole.byName('Administrador', 'Sistemas'),
   permisoController.obtenerTodos
 );
 
 router.get('/resumen',
-  autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave, checkRole(1, 4),
+  autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave, checkRole.byName('Administrador', 'Sistemas'),
   permisoController.obtenerResumen
 );
 
 router.get('/rol/:idrol',
-  autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave, checkRole(1, 4),
+  autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave, checkRole.byName('Administrador', 'Sistemas'),
   permisoController.obtenerPorRol
 );
 
 router.put('/rol/:idrol',
-  autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave, checkRole(1, 4),
+  autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, validarCambioClave, checkRole.byName('Administrador', 'Sistemas'),
   permisoController.actualizarPorRol
 );
 

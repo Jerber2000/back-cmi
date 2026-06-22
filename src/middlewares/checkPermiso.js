@@ -3,17 +3,32 @@
  * Middleware dinámico: verifica si el rol del usuario tiene acceso
  * a una página específica según la tabla rol_permiso en BD.
  *
- * Roles 1 (Admin) y 4 (Sistemas) siempre tienen acceso total.
+ * Los roles "Administrador" y "Sistemas" (por nombre) siempre tienen acceso total.
  * Cache en memoria con TTL de 5 minutos para no golpear la BD en cada request.
  */
 
 const { prisma } = require('../config/prisma');
 
-const ROLES_SUPERADMIN = [1, 4];
+// Por NOMBRE, no por ID — el idrol de cada uno cambia entre entornos (local/produccion)
+const ROLES_SUPERADMIN_NOMBRES = ['Administrador', 'Sistemas'];
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
 
 // Map<"fkrol:rutaPagina", { tieneAcceso: bool, expires: number }>
 const _cache = new Map();
+
+// Cache del mapeo idrol -> nombre, para no consultar la BD en cada request
+let _rolesPorId = null;
+let _rolesPorIdExpira = 0;
+
+async function esRolSuperadmin(fkrol) {
+  const ahora = Date.now();
+  if (!_rolesPorId || ahora > _rolesPorIdExpira) {
+    const roles = await prisma.rol.findMany({ select: { idrol: true, nombre: true } });
+    _rolesPorId = new Map(roles.map(r => [r.idrol, r.nombre]));
+    _rolesPorIdExpira = ahora + CACHE_TTL;
+  }
+  return ROLES_SUPERADMIN_NOMBRES.includes(_rolesPorId.get(fkrol));
+}
 
 /**
  * Middleware factory.
@@ -28,8 +43,8 @@ const verificarPermiso = (rutaPagina) => {
         return res.status(401).json({ success: false, message: 'No autenticado' });
       }
 
-      // Superadmin: acceso total sin consultar BD
-      if (ROLES_SUPERADMIN.includes(fkrol)) {
+      // Superadmin: acceso total (resuelto por nombre de rol, con cache)
+      if (await esRolSuperadmin(fkrol)) {
         return next();
       }
 
