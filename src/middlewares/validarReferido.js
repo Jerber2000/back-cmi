@@ -1,5 +1,6 @@
 
 const { prisma } = require('../config/prisma');
+const { tienePermiso } = require('./checkPermiso');
 
 const validarReferido = {
 
@@ -149,7 +150,7 @@ validarPermisoConfirmar: async (req, res, next) => {
       include: { rol: true }
     });
 
-    const esAdmin = usuarioConRol.fkrol === 1 || usuarioConRol.fkrol === 7;
+    const esAdmin = await tienePermiso(usuarioConRol.fkrol, 'referidos-autorizar');
 
     if (referido.confirmacion2 === 0 && referido.confirmacion1 === 1) {
       if (!esAdmin) {
@@ -231,7 +232,7 @@ validarPermisoActualizar: async (req, res, next) => {
       include: { rol: true }
     });
 
-    const esAdmin = usuarioConRol.fkrol === 1 || usuarioConRol.fkrol === 7;
+    const esAdmin = await tienePermiso(usuarioConRol.fkrol, 'referidos-autorizar');
     const esCreador = referido.fkusuario === usuario.idusuario;
 
     const esEtapa4 = referido.confirmacion3 === 1 && referido.confirmacion4 === 0;
