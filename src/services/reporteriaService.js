@@ -895,19 +895,25 @@ const reporteriaService = {
     }
   },
 
-  async obtenerMedicosDisponibles() {
+  async obtenerMedicosDisponibles(contexto) {
     try {
       // Los roles "médicos" varían según la clínica (Medico General, Odontólogo,
       // Psicólogo, Fisioterapeuta, etc.), así que filtrar por nombre de rol es frágil.
       // En su lugar, mostramos a quienes realmente aparecen como profesional en
-      // consultas, agenda o referencias — que es justo lo que estos filtros buscan.
-      const [enConsultas, enAgenda, enReferencias] = await Promise.all([
-        prisma.detallehistorialclinico.findMany({ where: { estado: 1 }, select: { fkusuario: true }, distinct: ['fkusuario'] }),
-        prisma.agenda.findMany({ where: { estado: 1 }, select: { fkusuario: true }, distinct: ['fkusuario'] }),
-        prisma.detallereferirpaciente.findMany({ where: { estado: 1 }, select: { fkusuario: true }, distinct: ['fkusuario'] })
-      ]);
+      // el contexto del filtro (consultas, agenda o referencias) — no la unión de
+      // los tres, porque eso mostraría médicos que no tienen nada que ver con ese reporte.
+      const fuentesPorContexto = {
+        historial: () => prisma.detallehistorialclinico.findMany({ where: { estado: 1 }, select: { fkusuario: true }, distinct: ['fkusuario'] }),
+        agenda: () => prisma.agenda.findMany({ where: { estado: 1 }, select: { fkusuario: true }, distinct: ['fkusuario'] }),
+        referencias: () => prisma.detallereferirpaciente.findMany({ where: { estado: 1 }, select: { fkusuario: true }, distinct: ['fkusuario'] })
+      };
 
-      const idsUsuarios = [...new Set([...enConsultas, ...enAgenda, ...enReferencias].map(r => r.fkusuario))];
+      const obtenerFuentes = contexto && fuentesPorContexto[contexto]
+        ? [fuentesPorContexto[contexto]()]
+        : Object.values(fuentesPorContexto).map(fn => fn());
+
+      const resultados = await Promise.all(obtenerFuentes);
+      const idsUsuarios = [...new Set(resultados.flat().map(r => r.fkusuario))];
 
       const medicos = await prisma.usuario.findMany({
         where: {
@@ -932,9 +938,43 @@ const reporteriaService = {
     }
   },
 
+  async obtenerConfirmadoresReferidos() {
+    try {
+      // "Confirmado Por" en la tabla muestra solo usuarioconfirma4 (la confirmación
+      // final; las demás son pasos intermedios del flujo de aprobación que nunca
+      // se muestran como "Confirmado Por"), así que el filtro debe basarse solo en esa columna.
+      const registros = await prisma.detallereferirpaciente.findMany({
+        where: { estado: 1, usuarioconfirma4: { not: null } },
+        select: { usuarioconfirma4: true },
+        distinct: ['usuarioconfirma4']
+      });
+
+      const usernames = registros.map(r => r.usuarioconfirma4).filter(Boolean);
+
+      if (usernames.length === 0) return [];
+
+      const confirmadores = await prisma.usuario.findMany({
+        where: { usuario: { in: usernames } },
+        select: {
+          idusuario: true,
+          usuario: true,
+          nombres: true,
+          apellidos: true,
+          profesion: true
+        },
+        orderBy: { nombres: 'asc' }
+      });
+
+      return confirmadores;
+    } catch (error) {
+      console.error('Error en obtenerConfirmadoresReferidos service:', error);
+      throw error;
+    }
+  },
+
   async obtenerReportePacientes(filtros) {
     try {
-      const { nombre, cui, desde, hasta, genero, municipio, edadMin, edadMax, tipodiscapacidad, programa, page, limit } = filtros;
+      const { nombre, cui, desde, hasta, genero, municipio, edadMin, edadMax, tipodiscapacidad, programa, fkclinica, page, limit } = filtros;
       const skip = (page - 1) * limit;
 
       const whereClause = { estado: 1 };
@@ -977,6 +1017,7 @@ const reporteriaService = {
       if (genero && genero !== '') whereClause.genero = genero.toUpperCase();
       if (municipio && municipio !== '') whereClause.municipio = { contains: municipio, mode: 'insensitive' };
       if (tipodiscapacidad && tipodiscapacidad !== '') whereClause.tipodiscapacidad = { contains: tipodiscapacidad, mode: 'insensitive' };
+      if (fkclinica) whereClause.fkclinica = fkclinica;
 
       // Filtrar por programa al que pertenece el paciente (vía su expediente)
       if (programa) {
@@ -1434,12 +1475,7 @@ const reporteriaService = {
       if (!isNaN(clinicaNum)) whereClause.fkclinica = clinicaNum;
       if (!isNaN(enviadoPorNum)) whereClause.fkusuario = enviadoPorNum;
       if (confirmadoPor && confirmadoPor !== '') {
-        whereClause.OR = [
-          { usuarioconfirma1: { contains: confirmadoPor, mode: 'insensitive' } },
-          { usuarioconfirma2: { contains: confirmadoPor, mode: 'insensitive' } },
-          { usuarioconfirma3: { contains: confirmadoPor, mode: 'insensitive' } },
-          { usuarioconfirma4: { contains: confirmadoPor, mode: 'insensitive' } }
-        ];
+        whereClause.usuarioconfirma4 = { equals: confirmadoPor, mode: 'insensitive' };
       }
 
       if (nombrePaciente && nombrePaciente !== '') {

@@ -4,6 +4,9 @@
 -- =============================================================
 
 -- 1. Insertar páginas del sistema
+-- NOTA: se quitaron 'administracion', 'educacion-inclusiva', 'fisioterapia',
+--       'medicina-general', 'nutricion' y 'psicologia' — eran rutas y permisos
+--       sin ningún link en la app (ningún sidebar/botón navegaba a ellas).
 INSERT INTO permiso (nombre, descripcion, ruta, icono, orden) VALUES
   ('Gestión de Usuarios',     'Administración de usuarios del sistema',   'usuario',            'fa-users',          1),
   ('Pacientes',               'Registro y gestión de pacientes',           'pacientes',          'fa-user-injured',   2),
@@ -14,13 +17,7 @@ INSERT INTO permiso (nombre, descripcion, ruta, icono, orden) VALUES
   ('Reportería',              'Reportes y estadísticas del sistema',       'reporteria',         'fa-chart-bar',      7),
   ('Documentos',              'Documentos institucionales',                'documentos',         'fa-file-alt',       8),
   ('Inventario',              'Inventario de medicamentos e insumos',      'inventario',         'fa-pills',          9),
-  ('Salidas de Inventario',   'Registro de salidas del inventario',        'salida-inventario',  'fa-box-open',       10),
-  ('Administración',          'Panel de administración de clínicas',       'administracion',     'fa-cog',            11),
-  ('Educación Inclusiva',     'Módulo de educación inclusiva',             'educacion-inclusiva','fa-graduation-cap', 12),
-  ('Fisioterapia',            'Módulo de fisioterapia',                    'fisioterapia',       'fa-walking',        13),
-  ('Medicina General',        'Módulo de medicina general',                'medicina-general',   'fa-stethoscope',    14),
-  ('Nutrición',               'Módulo de nutrición',                       'nutricion',          'fa-apple-alt',      15),
-  ('Psicología',              'Módulo de psicología',                      'psicologia',         'fa-brain',          16)
+  ('Salidas de Inventario',   'Registro de salidas del inventario',        'salida-inventario',  'fa-box-open',       10)
 ON CONFLICT (ruta) DO NOTHING;
 
 -- 2. Asignar permisos por rol
@@ -28,30 +25,27 @@ ON CONFLICT (ruta) DO NOTHING;
 --          Tienen acceso total por lógica de negocio (bypass en el guard y el middleware).
 
 -- ── Rol 2: Enfermero ─────────────────────────────────────────────────────────
--- Acceso según app.routes.ts: pacientes, expedientes, historial, agenda,
---   referidos, reporteria, documentos, medicina-general
 INSERT INTO rol_permiso (fkrol, fkpermiso)
 SELECT 2, idpermiso FROM permiso
-WHERE ruta IN ('pacientes','expedientes','historial','agenda','referidos','reporteria','documentos','medicina-general')
+WHERE ruta IN ('pacientes','expedientes','historial','agenda','referidos','reporteria','documentos')
 ON CONFLICT DO NOTHING;
 
 -- ── Rol 3: Recepcionista ─────────────────────────────────────────────────────
 INSERT INTO rol_permiso (fkrol, fkpermiso)
 SELECT 3, idpermiso FROM permiso
-WHERE ruta IN ('pacientes','expedientes','historial','agenda','referidos','reporteria','documentos','medicina-general')
+WHERE ruta IN ('pacientes','expedientes','historial','agenda','referidos','reporteria','documentos')
 ON CONFLICT DO NOTHING;
 
 -- ── Rol 5: Fisioterapeuta ────────────────────────────────────────────────────
 INSERT INTO rol_permiso (fkrol, fkpermiso)
 SELECT 5, idpermiso FROM permiso
-WHERE ruta IN ('pacientes','expedientes','historial','agenda','referidos','reporteria','documentos',
-               'administracion','fisioterapia','medicina-general','educacion-inclusiva','nutricion','psicologia')
+WHERE ruta IN ('pacientes','expedientes','historial','agenda','referidos','reporteria','documentos')
 ON CONFLICT DO NOTHING;
 
 -- ── Rol 6: Medico General ────────────────────────────────────────────────────
 INSERT INTO rol_permiso (fkrol, fkpermiso)
 SELECT 6, idpermiso FROM permiso
-WHERE ruta IN ('pacientes','expedientes','historial','agenda','referidos','reporteria','documentos','fisioterapia','medicina-general')
+WHERE ruta IN ('pacientes','expedientes','historial','agenda','referidos','reporteria','documentos')
 ON CONFLICT DO NOTHING;
 
 -- ── Rol 7: Auxiliar Administrativa ──────────────────────────────────────────
@@ -65,7 +59,7 @@ ON CONFLICT DO NOTHING;
 -- ── Rol 8: Digitador ─────────────────────────────────────────────────────────
 INSERT INTO rol_permiso (fkrol, fkpermiso)
 SELECT 8, idpermiso FROM permiso
-WHERE ruta IN ('pacientes','expedientes','historial','agenda','referidos','reporteria','documentos','administracion')
+WHERE ruta IN ('pacientes','expedientes','historial','agenda','referidos','reporteria','documentos')
 ON CONFLICT DO NOTHING;
 
 -- ── Rol 9: Farmacia ──────────────────────────────────────────────────────────
@@ -77,13 +71,13 @@ ON CONFLICT DO NOTHING;
 -- ── Rol 10: Psicólogo ────────────────────────────────────────────────────────
 INSERT INTO rol_permiso (fkrol, fkpermiso)
 SELECT 10, idpermiso FROM permiso
-WHERE ruta IN ('pacientes','expedientes','historial','agenda','referidos','reporteria','documentos','psicologia')
+WHERE ruta IN ('pacientes','expedientes','historial','agenda','referidos','reporteria','documentos')
 ON CONFLICT DO NOTHING;
 
 -- ── Rol 11: Asistente de Psicología ─────────────────────────────────────────
 INSERT INTO rol_permiso (fkrol, fkpermiso)
 SELECT 11, idpermiso FROM permiso
-WHERE ruta IN ('pacientes','expedientes','historial','agenda','referidos','reporteria','documentos','psicologia')
+WHERE ruta IN ('pacientes','expedientes','historial','agenda','referidos','reporteria','documentos')
 ON CONFLICT DO NOTHING;
 
 -- ── Rol 12: Odontólogo ───────────────────────────────────────────────────────
@@ -95,26 +89,25 @@ ON CONFLICT DO NOTHING;
 -- ── Rol 13: Nutricionista ────────────────────────────────────────────────────
 INSERT INTO rol_permiso (fkrol, fkpermiso)
 SELECT 13, idpermiso FROM permiso
-WHERE ruta IN ('pacientes','expedientes','historial','agenda','referidos','reporteria','documentos','nutricion')
+WHERE ruta IN ('pacientes','expedientes','historial','agenda','referidos','reporteria','documentos')
 ON CONFLICT DO NOTHING;
 
 -- ── Rol 14: Asistente ────────────────────────────────────────────────────────
 INSERT INTO rol_permiso (fkrol, fkpermiso)
 SELECT 14, idpermiso FROM permiso
-WHERE ruta IN ('pacientes','expedientes','historial','agenda','referidos','reporteria','documentos',
-               'fisioterapia','medicina-general','nutricion')
+WHERE ruta IN ('pacientes','expedientes','historial','agenda','referidos','reporteria','documentos')
 ON CONFLICT DO NOTHING;
 
 -- ── Rol 15: Psicopedagogo ────────────────────────────────────────────────────
 INSERT INTO rol_permiso (fkrol, fkpermiso)
 SELECT 15, idpermiso FROM permiso
-WHERE ruta IN ('pacientes','expedientes','historial','agenda','referidos','reporteria','documentos','educacion-inclusiva')
+WHERE ruta IN ('pacientes','expedientes','historial','agenda','referidos','reporteria','documentos')
 ON CONFLICT DO NOTHING;
 
 -- ── Rol 16: Asistente de Psicopedagogía ─────────────────────────────────────
 INSERT INTO rol_permiso (fkrol, fkpermiso)
 SELECT 16, idpermiso FROM permiso
-WHERE ruta IN ('pacientes','expedientes','historial','agenda','referidos','reporteria','documentos','educacion-inclusiva')
+WHERE ruta IN ('pacientes','expedientes','historial','agenda','referidos','reporteria','documentos')
 ON CONFLICT DO NOTHING;
 
 -- Verificar resultado

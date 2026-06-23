@@ -70,6 +70,11 @@ class UsuarioService {
             const usuarioPorId = await prisma.usuario.findUnique({
                 where:{
                     idusuario: parseInt(idusuario)
+                },
+                include:{
+                    rol: {
+                        select: { idrol: true, nombre: true }
+                    }
                 }
             });
 
@@ -162,6 +167,63 @@ class UsuarioService {
             };
         } catch (error) {
             console.error("Error en usuarioService al consultar por rol: ", error);
+            throw error;
+        }
+    }
+
+    /**
+     * Profesionales que pueden recibir citas en agenda: pertenecen a una clínica
+     * de atención al paciente (se excluyen las clínicas administrativas, ej.
+     * Administración/Sistemas) y su rol no es de apoyo/administrativo (asistentes,
+     * enfermería, recepción, farmacia, etc.). Se filtra por clínica y nombre de
+     * rol asignados en BD — no por una lista fija de IDs — para que la asignación
+     * que hace el admin en "Usuarios" se refleje aquí automáticamente.
+     */
+    async obtenerProfesionalesAgenda() {
+        try {
+            const CLINICAS_NO_ASISTENCIALES = ['Administracion', 'Sistemas'];
+            const PATRONES_ROL_NO_CLINICO = [
+                'Asistente', 'Enfermero', 'Recepcionista', 'Auxiliar',
+                'Digitador', 'Farmacia', 'Administrador', 'Sistemas'
+            ];
+
+            const usuarios = await prisma.usuario.findMany({
+                select: {
+                    idusuario:     true,
+                    nombres:       true,
+                    apellidos:     true,
+                    fkrol:         true,
+                    sesion_grupal: true
+                },
+                where: {
+                    estado: 1,
+                    clinica: {
+                        nombreclinica: { notIn: CLINICAS_NO_ASISTENCIALES }
+                    },
+                    rol: {
+                        NOT: PATRONES_ROL_NO_CLINICO.map(patron => ({
+                            nombre: { contains: patron, mode: 'insensitive' }
+                        }))
+                    }
+                },
+                orderBy: {
+                    usuario: 'asc'
+                }
+            });
+
+            if (usuarios.length === 0) {
+                return {
+                    success: false,
+                    message: 'No se encontraron profesionales disponibles'
+                };
+            }
+
+            return {
+                success: true,
+                data: usuarios
+            };
+        } catch (error) {
+            console.error("Error en usuarioService al consultar profesionales de agenda: ", error);
             throw error;
         }
     }

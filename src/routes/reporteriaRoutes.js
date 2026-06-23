@@ -10,17 +10,20 @@ router.use(verificarUsuarioEnBD);
 
 // /medicos — utilidad para dropdowns de filtros
 router.get('/medicos', reporteriaController.obtenerMedicosDisponibles);
+router.get('/confirmadores-referidos', reporteriaController.obtenerConfirmadoresReferidos);
 
-// Reportes generales — requieren permiso de página 'reporteria'
+// Dashboard — requiere permiso general de la página 'reporteria'
 router.get('/dashboard',   verificarPermiso('reporteria'), reporteriaController.obtenerDashboard);
-router.get('/pacientes',   validarReporteria.validarFiltrosPacientes,  verificarPermiso('reporteria'), reporteriaController.obtenerReportePacientes);
-router.get('/consultas',   validarReporteria.validarFiltrosConsultas,  verificarPermiso('reporteria'), reporteriaController.obtenerReporteConsultas);
-router.get('/agenda',      validarReporteria.validarFiltrosAgenda,     verificarPermiso('reporteria'), reporteriaController.obtenerReporteAgenda);
-router.get('/referencias', validarReporteria.validarFiltrosReferencias,verificarPermiso('reporteria'), reporteriaController.obtenerReporteReferencias);
 
-// Reportes de inventario — requieren permiso de inventario
-router.get('/inventario',  validarReporteria.validarFiltrosInventario, verificarPermiso('inventario'), reporteriaController.obtenerReporteInventario);
-router.get('/salidas',     validarReporteria.validarFiltrosSalidas,    verificarPermiso('salida-inventario'), reporteriaController.obtenerReporteSalidas);
+// Reportes por pestaña — cada uno requiere su propio permiso granular,
+// para poder dar acceso a Reportería sin dar acceso a todas las pestañas
+// (ej: Farmacia solo ve la pestaña de Inventario)
+router.get('/pacientes',   validarReporteria.validarFiltrosPacientes,  verificarPermiso('reporteria-pacientes'), reporteriaController.obtenerReportePacientes);
+router.get('/consultas',   validarReporteria.validarFiltrosConsultas,  verificarPermiso('reporteria-historial'), reporteriaController.obtenerReporteConsultas);
+router.get('/agenda',      validarReporteria.validarFiltrosAgenda,     verificarPermiso('reporteria-agenda'), reporteriaController.obtenerReporteAgenda);
+router.get('/referencias', validarReporteria.validarFiltrosReferencias,verificarPermiso('reporteria-referencias'), reporteriaController.obtenerReporteReferencias);
+router.get('/inventario',  validarReporteria.validarFiltrosInventario, verificarPermiso('reporteria-inventario'), reporteriaController.obtenerReporteInventario);
+router.get('/salidas',     validarReporteria.validarFiltrosSalidas,    verificarPermiso('reporteria-inventario'), reporteriaController.obtenerReporteSalidas);
 
 // Exportación — requieren permiso de reporteria
 router.post('/generar-pdf',    validarReporteria.validarGeneracionPDF,   verificarPermiso('reporteria'), reporteriaController.generarPDF);

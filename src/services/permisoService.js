@@ -1,8 +1,18 @@
 const { PrismaClient } = require('../generated/prisma');
 const prisma = new PrismaClient();
 
-// Roles que siempre tienen acceso total — no necesitan registro en rol_permiso
-const ROLES_SUPERADMIN = [1, 4];
+// Roles que siempre tienen acceso total — no necesitan registro en rol_permiso.
+// Por NOMBRE, no por ID: el idrol de cada uno cambia entre entornos (local/produccion)
+const ROLES_SUPERADMIN_NOMBRES = ['Administrador', 'Sistemas'];
+
+/** Resuelve si un idrol corresponde a un rol superadmin, por nombre */
+const esIdrolSuperadmin = async (idrol) => {
+  const rol = await prisma.rol.findUnique({
+    where: { idrol: parseInt(idrol) },
+    select: { nombre: true }
+  });
+  return !!rol && ROLES_SUPERADMIN_NOMBRES.includes(rol.nombre);
+};
 
 /**
  * Obtiene todas las páginas (permisos) del sistema
@@ -27,7 +37,7 @@ const obtenerPermisosPorRol = async (idrol) => {
  * Los superadmins reciben ['*'] (todo el acceso).
  */
 const obtenerRutasPorRol = async (idrol) => {
-  if (ROLES_SUPERADMIN.includes(parseInt(idrol))) {
+  if (await esIdrolSuperadmin(idrol)) {
     return ['*'];
   }
 
@@ -47,7 +57,7 @@ const actualizarPermisosPorRol = async (idrol, permisosIds) => {
   const fkrol = parseInt(idrol);
 
   // No permitir modificar roles superadmin
-  if (ROLES_SUPERADMIN.includes(fkrol)) {
+  if (await esIdrolSuperadmin(fkrol)) {
     throw new Error('No se pueden modificar los permisos de los roles de administración.');
   }
 
@@ -68,7 +78,7 @@ const obtenerResumenPermisos = async () => {
     prisma.rol.findMany({
       where: {
         estado: 1,
-        idrol: { notIn: ROLES_SUPERADMIN }
+        nombre: { notIn: ROLES_SUPERADMIN_NOMBRES }
       },
       include: {
         permisos: { select: { fkpermiso: true } }
@@ -89,7 +99,7 @@ const obtenerResumenPermisos = async () => {
 };
 
 module.exports = {
-  ROLES_SUPERADMIN,
+  ROLES_SUPERADMIN_NOMBRES,
   obtenerTodosLosPermisos,
   obtenerPermisosPorRol,
   obtenerRutasPorRol,

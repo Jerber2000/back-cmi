@@ -71,4 +71,52 @@ const checkRole = (...idsRolesPermitidos) => {
   };
 };
 
+/**
+ * Igual que checkRole, pero compara por NOMBRE de rol en vez de ID numerico.
+ * El idrol de cada rol puede variar entre entornos (local/produccion), pero
+ * el nombre es estable — por eso esta variante es la forma segura de
+ * proteger rutas para roles especificos como "Administrador" o "Sistemas".
+ * @param {...string} nombresRolesPermitidos - Nombres de los roles que pueden acceder
+ */
+const checkRoleByName = (...nombresRolesPermitidos) => {
+  return async (req, res, next) => {
+    try {
+      const fkrol = req.usuario.fkrol;
+
+      if (!fkrol) {
+        return res.status(403).json({
+          success: false,
+          message: 'No se pudo determinar el rol del usuario'
+        });
+      }
+
+      const roles = await obtenerRolesParaMensajes();
+      const rolUsuario = roles.find(r => r.idrol === fkrol);
+      const tienePermiso = !!rolUsuario && nombresRolesPermitidos.includes(rolUsuario.nombre);
+
+      if (!tienePermiso) {
+        return res.status(403).json({
+          success: false,
+          message: 'No tienes permisos para realizar esa acción',
+          detalles: {
+            tuRol: rolUsuario ? rolUsuario.nombre : `ID: ${fkrol}`,
+            rolesPermitidos: nombresRolesPermitidos
+          }
+        });
+      }
+
+      next();
+    } catch (error) {
+      console.error('Error en checkRoleByName:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error al verificar permisos',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  };
+};
+
+checkRole.byName = checkRoleByName;
+
 module.exports = checkRole;

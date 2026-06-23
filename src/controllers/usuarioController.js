@@ -58,6 +58,23 @@ const obtenerUsuarioPorRol = async (req, res) => {
     }
 }
 
+const obtenerProfesionalesAgenda = async (req, res) => {
+    try {
+        const resultado = await usuarioService.obtenerProfesionalesAgenda();
+
+        if (!resultado.success) {
+            return res.status(404).json(resultado);
+        }
+
+        return res.status(200).json(resultado);
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor'
+        });
+    }
+}
+
 const crearUsuario = async (req, res) => {
     try{
         const usuarioData = req.body;
@@ -179,6 +196,7 @@ module.exports = {
     obtenerUsuarios,
     obtenerUsuarioPorId,
     obtenerUsuarioPorRol,
+    obtenerProfesionalesAgenda,
     crearUsuario,
     actuarlizarUsuario,
     eliminarUsuario,
