@@ -273,7 +273,7 @@ validarDatosActualizacion: (req, res, next) => {
     try {
       const { fkclinica, comentario, rutadocumentoinicial, rutadocumentofinal } = req.body;
 
-      if (!fkclinica && comentario === undefined && !rutadocumentoinicial && !rutadocumentofinal) {
+      if (fkclinica === undefined && comentario === undefined && rutadocumentoinicial === undefined && rutadocumentofinal === undefined) {
         return res.status(400).json({
           ok: false,
           mensaje: 'Debe proporcionar al menos un campo para actualizar'
