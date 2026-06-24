@@ -1104,16 +1104,8 @@ const reporteriaService = {
       const { nombrePaciente, cuiPaciente, desde, hasta, medico, programa, diagnostico, page, limit } = filtros;
       const skip = (page - 1) * limit;
 
-      const usuarioConRol = await prisma.usuario.findUnique({
-        where: { idusuario: usuario.idusuario },
-        include: { rol: true }
-      });
-
-      const esAdmin = usuarioConRol.rol.nombre.toLowerCase().includes('admin');
       const whereClause = { estado: 1 };
 
-      if (!esAdmin) whereClause.fkusuario = usuario.idusuario;
-      
       // Búsqueda por nombre del paciente
       if (nombrePaciente && nombrePaciente !== '') {
         whereClause.paciente = {
@@ -1154,7 +1146,7 @@ const reporteriaService = {
       const medicoNum = parseInt(medico);
       const programaNum = parseInt(programa);
 
-      if (!isNaN(medicoNum) && esAdmin) whereClause.fkusuario = medicoNum;
+      if (!isNaN(medicoNum)) whereClause.fkusuario = medicoNum;
       if (diagnostico && diagnostico !== '') whereClause.diagnosticotratamiento = { contains: diagnostico, mode: 'insensitive' };
 
       // Filtrar por programa al que pertenece el paciente (vía su expediente)
@@ -1312,16 +1304,8 @@ const reporteriaService = {
       const { nombrePaciente, cuiPaciente, desde, hasta, medico, transporte, estado, page, limit } = filtros;
       const skip = (page - 1) * limit;
 
-      const usuarioConRol = await prisma.usuario.findUnique({
-        where: { idusuario: usuario.idusuario },
-        include: { rol: true }
-      });
-
-      const esAdmin = usuarioConRol.rol.nombre.toLowerCase().includes('admin');
       const whereClause = {};
 
-      if (!esAdmin) whereClause.fkusuario = usuario.idusuario;
-      
       // Búsqueda por nombre del paciente
       if (nombrePaciente && nombrePaciente !== '') {
         whereClause.paciente = {
@@ -1354,7 +1338,7 @@ const reporteriaService = {
       const medicoNum = parseInt(medico);
       const transporteNum = parseInt(transporte);
       
-      if (!isNaN(medicoNum) && esAdmin) whereClause.fkusuario = medicoNum;
+      if (!isNaN(medicoNum)) whereClause.fkusuario = medicoNum;
       if (!isNaN(transporteNum)) whereClause.transporte = transporteNum;
       
       // Filtro de estado - manejo robusto de array
@@ -1446,22 +1430,10 @@ const reporteriaService = {
       const { nombrePaciente, cuiPaciente, tipo, estado, clinica, enviadoPor, confirmadoPor, desde, hasta, page, limit } = filtros;
       const skip = (page - 1) * limit;
 
-      const usuarioConRol = await prisma.usuario.findUnique({
-        where: { idusuario: usuario.idusuario },
-        include: { rol: true }
-      });
-
-      const esAdmin = usuarioConRol.rol.nombre.toLowerCase().includes('admin');
       const whereClause = { estado: 1 };
 
       if (tipo === 'enviadas') whereClause.fkusuario = usuario.idusuario;
       else if (tipo === 'recibidas') whereClause.fkusuariodestino = usuario.idusuario;
-      else if (!esAdmin) {
-        whereClause.OR = [
-          { fkusuario: usuario.idusuario },
-          { fkusuariodestino: usuario.idusuario }
-        ];
-      }
 
       if (estado === 'pendiente') whereClause.confirmacion4 = 0;
       else if (estado === 'proceso') {
