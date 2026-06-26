@@ -786,7 +786,7 @@ const reporteriaService = {
       const citasMes = await prisma.agenda.count({
         where: {
           fechaatencion: { gte: primerDiaMes },
-          estado: 1,
+          estado: { not: 0 }, // en agenda, estado es Pendiente/Confirmada/No se presento, no activo/inactivo; solo 0 es eliminada
           ...(esAdmin ? {} : { fkusuario: usuario.idusuario })
         }
       });
@@ -904,7 +904,10 @@ const reporteriaService = {
       // los tres, porque eso mostraría médicos que no tienen nada que ver con ese reporte.
       const fuentesPorContexto = {
         historial: () => prisma.detallehistorialclinico.findMany({ where: { estado: 1 }, select: { fkusuario: true }, distinct: ['fkusuario'] }),
-        agenda: () => prisma.agenda.findMany({ where: { estado: 1 }, select: { fkusuario: true }, distinct: ['fkusuario'] }),
+        // En agenda, "estado" no es activo/inactivo: 0=eliminada, 1=Pendiente, 2=Confirmada,
+        // 3=No se presento. Filtrar por estado:1 dejaba fuera a cualquier medico cuyas citas
+        // ya estuvieran confirmadas o marcadas como no-presento.
+        agenda: () => prisma.agenda.findMany({ where: { estado: { not: 0 } }, select: { fkusuario: true }, distinct: ['fkusuario'] }),
         referencias: () => prisma.detallereferirpaciente.findMany({ where: { estado: 1 }, select: { fkusuario: true }, distinct: ['fkusuario'] })
       };
 
