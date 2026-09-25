@@ -113,6 +113,42 @@ class InventarioMiddleware {
     next();
   }
 
+  validarCodigo(req, res, next) {
+    const { codigo } = req.params;
+
+    if (!codigo || codigo.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'El código de producto es requerido'
+      });
+    }
+
+    next();
+  }
+
+  validarSumarStock(req, res, next) {
+    const { cantidad, usuariomodificacion } = req.body;
+    const errores = [];
+
+    if (cantidad === undefined || cantidad === null || isNaN(cantidad) || cantidad <= 0) {
+      errores.push('El campo cantidad es obligatorio y debe ser mayor a 0');
+    }
+
+    if (!usuariomodificacion || usuariomodificacion.trim() === '') {
+      errores.push('El campo usuariomodificacion es obligatorio');
+    }
+
+    if (errores.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Errores de validación',
+        errores
+      });
+    }
+
+    next();
+  }
+
   validarCambiarEstado(req, res, next) {
     const { usuariomodificacion } = req.body;
 

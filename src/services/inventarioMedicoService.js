@@ -147,6 +147,60 @@ class InventarioMedicoService {
     }
   }
 
+  async buscarPorCodigo(codigo) {
+    try {
+      const medicamento = await prisma.inventariomedico.findUnique({
+        where: { codigoproducto: codigo },
+        include: {
+          usuario: {
+            select: {
+              idusuario: true,
+              nombres: true,
+              apellidos: true,
+              profesion: true
+            }
+          }
+        }
+      });
+
+      return medicamento;
+    } catch (error) {
+      throw new Error(`Error al buscar medicamento por código: ${error.message}`);
+    }
+  }
+
+  async sumarStock(id, cantidad, usuarioModificacion, tx = null) {
+    try {
+      const prismaClient = tx || prisma;
+      const medicamento = await this.obtenerPorId(id);
+
+      if (medicamento.estado === 0) {
+        throw new Error('El medicamento está inactivo');
+      }
+
+      const medicamentoActualizado = await prismaClient.inventariomedico.update({
+        where: { idmedicina: parseInt(id) },
+        data: {
+          unidades: (medicamento.unidades || 0) + cantidad,
+          usuariomodificacion: usuarioModificacion,
+          fechamodificacion: new Date()
+        },
+        include: {
+          usuario: {
+            select: {
+              nombres: true,
+              apellidos: true
+            }
+          }
+        }
+      });
+
+      return medicamentoActualizado;
+    } catch (error) {
+      throw new Error(`Error al sumar stock: ${error.message}`);
+    }
+  }
+
   async cambiarEstado(id, usuarioModificacion, tx = null) {
     try {
       const prismaClient = tx || prisma;

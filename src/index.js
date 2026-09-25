@@ -113,7 +113,9 @@ app.get('/', (req, res) => {
         obtener: 'GET /api/inventario/:id',
         crear: 'POST /api/inventario',
         actualizar: 'PUT /api/inventario/:id',
-        cambiarEstado: 'PUT /api/inventario/:id/estado'
+        cambiarEstado: 'PUT /api/inventario/:id/estado',
+        buscarPorCodigo: 'GET /api/inventario/codigo/:codigo',
+        sumarStock: 'PUT /api/inventario/:id/sumar-stock'
       },
       reporteria: {
         dashboard: 'GET /api/reporteria/dashboard',

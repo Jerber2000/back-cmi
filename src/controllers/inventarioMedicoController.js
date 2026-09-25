@@ -98,6 +98,62 @@ class InventarioMedicoController {
     }
   }
 
+  async buscarPorCodigo(req, res) {
+    try {
+      const { codigo } = req.params;
+      const medicamento = await inventarioMedicoService.buscarPorCodigo(codigo);
+
+      return res.status(200).json({
+        success: true,
+        data: medicamento
+      });
+    } catch (error) {
+      console.error('Error en InventarioMedicoController.buscarPorCodigo:', error.message);
+      return res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
+
+  async sumarStock(req, res) {
+    try {
+      const { id } = req.params;
+      const { cantidad, usuariomodificacion } = req.body;
+
+      const medicamentoActualizado = await conAuditoria(req, 'Inventario Medico', async (tx) => {
+        return await inventarioMedicoService.sumarStock(
+          id,
+          cantidad,
+          usuariomodificacion,
+          tx
+        );
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: 'Stock actualizado exitosamente',
+        data: medicamentoActualizado
+      });
+    } catch (error) {
+      console.error('Error en InventarioMedicoController.sumarStock:', error.message);
+
+      let statusCode = 500;
+      if (error.message.includes('no encontrado')) {
+        statusCode = 404;
+      } else if (error.message.includes('inactivo')) {
+        statusCode = 400;
+      }
+
+      return res.status(statusCode).json({
+        success: false,
+        message: error.message,
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
+
   async cambiarEstado(req, res) {
     try {
       const { id } = req.params;
