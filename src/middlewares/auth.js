@@ -25,10 +25,16 @@ const validarToken = async (req, res, next) => {
         );
         
         if (!sesionValida) {
+            // No se afirma "iniciaste sesión en otro dispositivo": con el
+            // rastreador de sesiones actual, una sesión activa nunca se
+            // invalida porque otro dispositivo inicie sesión (el login nuevo
+            // se bloquea en su lugar). Esto puede pasar por: el token venció
+            // de forma natural, cerraste sesión, o el servidor se reinició
+            // (ej. tras un deploy) y olvidó las sesiones en memoria.
             return res.status(401).json({
                 success: false,
-                message: 'Tu sesión fue cerrada porque iniciaste sesión en otro dispositivo',
-                sessionCerrada: true
+                message: 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+                sesionExpirada: true
             });
         }
         
