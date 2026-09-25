@@ -4,8 +4,11 @@ const jwt = require('jsonwebtoken');
 const generarToken = (payload) => {
     return jwt.sign(
         {
-            ...payload,
-            timestamp: Date.now()
+            // Si el payload ya trae su propio timestamp (ej. authService.login,
+            // para que coincida exactamente con el que registra sessionTracker),
+            // se respeta; si no, se genera uno aquí (comportamiento anterior).
+            timestamp: Date.now(),
+            ...payload
         },
         process.env.JWT_SECRET,
         {

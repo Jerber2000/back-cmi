@@ -1,6 +1,7 @@
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
 const { prisma } = require('../config/prisma');
+const sessionTracker = require('../utils/sessionTracker');
 
 const transporte = nodemailer.createTransport({
     host: 'smtp.gmail.com',
@@ -319,6 +320,10 @@ const ResetearClave = async (correo_) => {
                 last_login_timestamp: null
             }
         });
+
+        // Libera todas las sesiones activas de este usuario (PC, celular,
+        // etc.) para que la nueva contraseña temporal permita iniciar sesión.
+        sessionTracker.eliminarTodasLasSesiones(usuario.idusuario);
 
         await EnviarClaveReseteada(correo_, tempPass, usuario.nombres);
 

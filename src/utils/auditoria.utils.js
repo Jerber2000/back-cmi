@@ -54,17 +54,26 @@ class AuditoriaUtils {
     return datosOfuscados;
   }
   
+  // JSON.stringify no soporta BigInt de forma nativa (ej. el campo
+  // last_login_timestamp) y lanza TypeError. Este replacer lo convierte a
+  // string solo para efectos de comparación/registro de auditoría.
+  static _stringificarSeguro(valor) {
+    return JSON.stringify(valor, (_key, val) =>
+      typeof val === 'bigint' ? val.toString() : val
+    );
+  }
+
   static detectarCambios(anterior, nuevo) {
     if (!anterior || !nuevo) return [];
-    
+
     const camposModificados = [];
-    
+
     for (const key in nuevo) {
-      if (JSON.stringify(anterior[key]) !== JSON.stringify(nuevo[key])) {
+      if (this._stringificarSeguro(anterior[key]) !== this._stringificarSeguro(nuevo[key])) {
         camposModificados.push(key);
       }
     }
-    
+
     return camposModificados;
   }
   

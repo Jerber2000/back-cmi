@@ -26,20 +26,25 @@ const login = async (req, res) => {
 
         let statusCode = 500;
         let message = error.message;
-        
-        if(error.message.includes('Ya tienes una sesión activa')){
+
+        // Cubre tanto el mensaje de límite de 1 sesión como el de 2 sesiones
+        // (roles con acceso a Inventario/Salidas) - ver authService.login
+        const esErrorLimiteSesiones = error.message.includes('sesión activa en otro dispositivo')
+            || error.message.includes('sesiones activas simultáneas');
+
+        if(esErrorLimiteSesiones){
             statusCode = 409;
             message = error.message;
         } else if(error.message === 'Credenciales inválidas'){
             statusCode = 401;
         } else if(error.message.includes('inactivo')){
-            statusCode = 403; 
+            statusCode = 403;
         }
 
         res.status(statusCode).json({
             success: false,
             message: message,
-            sessionActiva: error.message.includes('Ya tienes una sesión activa')
+            sessionActiva: esErrorLimiteSesiones
         });
     }
 };
@@ -47,9 +52,9 @@ const login = async (req, res) => {
 const logout = async (req, res) => {
     try {
         const idusuario = req.usuario?.id || req.usuario?.idusuario;
-        
+
         if (idusuario) {
-            await authService.cerrarSesion(idusuario);
+            await authService.cerrarSesion(idusuario, req.usuario?.timestamp);
             
             res.status(200).json({
                 success: true,
