@@ -1,3 +1,10 @@
+// ⚠️ DEPRECADO — NO USAR. Este script inventa 6 permisos
+// (administracion, educacion-inclusiva, fisioterapia, medicina-general,
+// nutricion, psicologia) que NUNCA existieron en el sistema real, y le
+// faltan los permisos de sub-pestañas reales (agenda-transporte,
+// reporteria-pacientes, etc.). Usar en su lugar: fix_catalogo_real.js,
+// que replica exactamente el catálogo de permisos de producción.
+//
 // seed_local.js — ejecutar UNA SOLA VEZ: node seed_local.js
 const { PrismaClient } = require('./src/generated/prisma');
 const prisma = new PrismaClient();
