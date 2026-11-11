@@ -3,10 +3,13 @@ const bcrypt = require('bcryptjs');
 const { prisma } = require('../config/prisma');
 const sessionTracker = require('../utils/sessionTracker');
 
+// Configurable por entorno: por defecto Gmail (compatibilidad con
+// despliegues existentes que solo definen EMAIL_USER/EMAIL_PASSWORD),
+// pero puede apuntar a cualquier servidor SMTP (ej. el de la Municipalidad).
 const transporte = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.EMAIL_PORT, 10) || 587,
+    secure: process.env.EMAIL_SECURE === 'true', // true = SSL implícito (465), false = STARTTLS (587)
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD
