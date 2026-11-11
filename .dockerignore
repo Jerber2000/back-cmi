@@ -1,0 +1,10 @@
+node_modules
+npm-debug.log*
+.env
+.env.*
+src/generated
+.git
+.gitignore
+*.log
+*.sql
+seed_local.js
