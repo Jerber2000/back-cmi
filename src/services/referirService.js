@@ -110,7 +110,9 @@ const referirService = {
           break;
 
         case 'recibidos':
-          whereClause.fkclinica = usuarioConRol.fkclinica;
+          if (!esAdmin) {
+            whereClause.fkclinica = usuarioConRol.fkclinica;
+          }
           break;
 
         case 'completados':
