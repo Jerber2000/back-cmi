@@ -16,6 +16,49 @@ const transporte = nodemailer.createTransport({
     }
 });
 
+// Si hay RESEND_API_KEY configurada, el correo se envía vía la API HTTPS de
+// Resend (https://resend.com) en lugar de SMTP. Esto es necesario en redes
+// (como la de la Municipalidad) donde el firewall bloquea los puertos SMTP
+// (25/465/587/2525) pero sí permite salida HTTPS normal (443).
+const usarResend = !!process.env.RESEND_API_KEY;
+
+const enviarCorreo = async ({ to, subject, html, text }) => {
+    if (usarResend) {
+        const response = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                from: process.env.EMAIL_FROM || `${process.env.NOMBRE_EMPRESA || 'CMI'} <onboarding@resend.dev>`,
+                to: [to],
+                subject,
+                html,
+                text
+            })
+        });
+
+        if (!response.ok) {
+            const detalle = await response.text();
+            throw new Error(`Resend respondió ${response.status}: ${detalle}`);
+        }
+
+        return response.json();
+    }
+
+    return transporte.sendMail({
+        from: {
+            name: process.env.NOMBRE_EMPRESA,
+            address: process.env.EMAIL_USER
+        },
+        to,
+        subject,
+        html,
+        text
+    });
+};
+
 const EnviarClaveReseteada = async (email_, tempClave_, nombreUsuario_) => {
     const htmlTemplate = `
     <!DOCTYPE html>
@@ -266,11 +309,7 @@ const EnviarClaveReseteada = async (email_, tempClave_, nombreUsuario_) => {
     </body>
     </html>
     `;
-    const mailOptions = {
-        from: {
-            name: process.env.NOMBRE_EMPRESA,
-            address: process.env.EMAIL_USER
-        },
+    return await enviarCorreo({
         to: email_,
         subject: 'Recuperación de contraseña',
         html: htmlTemplate,
@@ -292,8 +331,7 @@ const EnviarClaveReseteada = async (email_, tempClave_, nombreUsuario_) => {
         Saludos,
         Equipo de ${process.env.NOMBRE_EMPRESA}
         `
-    };
-    return await transporte.sendMail(mailOptions);
+    });
 };
 
 const ResetearClave = async (correo_) => {
